@@ -1,0 +1,50 @@
+---
+title: "Project Plan"
+author: "Don Ngo"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+#Packages (to be adjusted)
+```{r}
+install.packages("cry")
+install.packages("data.table")
+library(cry)
+library(data.table)
+library(readtext)
+library(stingr)
+```
+
+# General Objectives
+- Create a private GitHub repository.
+- Extract information from crystallography files.
+- Identify necessary information for cluster analyses.
+- Build functions.
+- Build a package.
+
+# Specific Objectives and Tasks
+
+## Task 1: Create a Private GitHub Repository
+
+**Action:** Set up a private repository on GitHub.  
+**Requirement:** Each code segment added should be accompanied by an explanation.
+
+## Task 2: Bind CIF Files into One Table
+
+**Steps:**
+
+1. **Download CIF files from the provided Google Drive link.**
+
+2. **Set the working directory:**
+
+```{r}
+setwd('/Users/dngo/repos/ml-crystals')
+```
+
+3. **List CIF files**
+
+```{r}
+cif_list <- list.files(pattern="\\.cif$", full.names = TRUE)
+cif_tab <- lapply(cif_list, readLines)
+```
+
