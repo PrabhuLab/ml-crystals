@@ -6,6 +6,7 @@ output: pdf_document
 ---
 
 #Packages (to be adjusted)
+
 ```{r}
 library(cry)
 library(data.table)
@@ -14,41 +15,44 @@ library(stringr)
 ```
 
 # General Objectives
-- Create a private GitHub repository.
-- Extract information from crystallography files.
-- Identify necessary information for cluster analyses.
-- Build functions.
-- Build a package.
+
+-   Create a private GitHub repository.
+-   Extract information from crystallography files.
+-   Identify necessary information for cluster analyses.
+-   Build functions.
+-   Build a package.
 
 # Specific Objectives and Tasks
 
 ## Task 1: Create a Private GitHub Repository
 
-**Action:** Set up a private repository on GitHub.  
+**Action:** Set up a private repository on GitHub.\
 **Requirement:** Each code segment added should be accompanied by an explanation.
 
 ## Task 2: Bind CIF Files into One Table
 
 **Steps:**
 
-1. **Download CIF files from the provided Google Drive link.**
+1.  **Download CIF files from the provided Google Drive link.**
 
-2. **Set the working directory:**
+2.  **Set the working directory:**
 
 ```{r}
-setwd('/Users/dngo/repos/ml-crystals/data')
+setwd("~/repos/ml-crystals/")
 ```
 
-3. **List CIF files**
+3.  **List CIF files**
 
 ```{r}
-cif_list <- list.files(pattern="\\.cif$", full.names = TRUE)
+#cif_list <- list.files(pattern="\\.cif$", full.names = TRUE, ignore.case = TRUE)
+cif_list <- Sys.glob(paths = "data/*.cif")
 cif_tab <- lapply(cif_list, readLines )
 ```
 
-#Task 3: Extracting Data
+##Task 3: Extracting Data
 
 ```{r}
+# Extracting the chemical formula
 extract_chemical_formula <- function(cif_content) {
   formula_lines <- grep("_chemical_formula_sum", cif_content, value = TRUE)
   if (length(formula_lines) > 0) {
@@ -60,7 +64,7 @@ extract_chemical_formula <- function(cif_content) {
     return(NA)
   }
 }
-
+# Extracting the structure type
 extract_structure_type <- function(cif_content) {
   structure_lines <- grep("_chemical_name_structure_type", cif_content, value = TRUE)
   if (length(structure_lines) > 0) {
@@ -72,7 +76,7 @@ extract_structure_type <- function(cif_content) {
     return(NA)
   }
 }
-
+# Extracting the space group
 extract_space_group_name <- function(cif_content) {
   space_group_lines <- grep("_space_group_name_H-M_alt", cif_content, value = TRUE)
   if (length(space_group_lines) > 0) {
@@ -96,6 +100,7 @@ extract_space_group_number <- function(cif_content) {
   }
 }
 
+# Extracting reference info
 extract_reference_info <- function(cif_content) {
   citation_lines <- grep("_citation_", cif_content, value = TRUE)
   if (length(citation_lines) > 0) {
@@ -143,9 +148,36 @@ extract_reference_info <- function(cif_content) {
     return(NA)
   }
 }
+
+# Function to extract unit cell length and associated errors
+extract_unit_cell_metrics <- function(cif_content) {
+  extract_value_with_error <- function(line) {
+    if (grepl("\\(", line)) {
+      value <- sub("\\(.*\\)", "", line)
+      error <- sub(".*\\((.*)\\).*", "\\1", line)
+      return(list(value = as.numeric(value), error = as.numeric(error)))
+    } else {
+      return(list(value = as.numeric(line), error = NA))
+    }
+  }
+  
+  a_line <- grep("_cell_length_a", cif_content, value = TRUE)
+  b_line <- grep("_cell_length_b", cif_content, value = TRUE)
+  c_line <- grep("_cell_length_c", cif_content, value = TRUE)
+  
+  a <- extract_value_with_error(gsub("_cell_length_a", "", a_line))
+  b <- extract_value_with_error(gsub("_cell_length_b", "", b_line))
+  c <- extract_value_with_error(gsub("_cell_length_c", "", c_line))
+  
+  return(list(
+    a = a$value, a_error = a$error,
+    b = b$value, b_error = b$error,
+    c = c$value, c_error = c$error
+  ))
+}
 ```
 
-Extracting from 422:
+Extracting from all the .cifs:
 
 ```{r}
 # Initialize an empty list to store the results
@@ -164,6 +196,7 @@ for (cif_file in cif_list) {
   space_group_name <- extract_space_group_name(cif_content)
   space_group_number <- extract_space_group_number(cif_content)
   reference_info <- extract_reference_info(cif_content)
+  unit_cell_metrics <- extract_unit_cell_metrics(cif_content)
   
   # Combine the data into a single list
   result <- list(
@@ -172,7 +205,8 @@ for (cif_file in cif_list) {
     structure_type = structure_type,
     space_group_name = space_group_name,
     space_group_number = space_group_number,
-    reference_info = reference_info
+    reference_info = reference_info,
+    unit_cell_metrics = unit_cell_metrics
   )
   
   # Append the result to the results list
