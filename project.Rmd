@@ -46,7 +46,7 @@ setwd("~/repos/ml-crystals/")
 ```{r}
 #cif_list <- list.files(pattern="\\.cif$", full.names = TRUE, ignore.case = TRUE)
 cif_list <- Sys.glob(paths = "data/*.cif")
-cif_tab <- lapply(cif_list, readLines )
+cif_tab <- lapply(cif_list, readLines , warn =  FALSE)
 ```
 
 ##Task 3: Extracting Data
@@ -101,53 +101,12 @@ extract_space_group_number <- function(cif_content) {
 }
 
 # Extracting reference info
-extract_reference_info <- function(cif_content) {
-  citation_lines <- grep("_citation_", cif_content, value = TRUE)
-  if (length(citation_lines) > 0) {
-    authors <- grep("_citation_author_name", cif_content, value = TRUE)
-    authors <- gsub("_citation_author_name", "", authors)
-    authors <- gsub("'", "", authors)
-    authors <- trimws(authors)
-    
-    title <- grep("_citation_title", cif_content, value = TRUE)
-    title <- gsub("_citation_title", "", title)
-    title <- gsub("'", "", title)
-    title <- trimws(title)
-    
-    journal <- grep("_citation_journal_full", cif_content, value = TRUE)
-    journal <- gsub("_citation_journal_full", "", journal)
-    journal <- gsub("'", "", journal)
-    journal <- trimws(journal)
-    
-    year <- grep("_citation_year", cif_content, value = TRUE)
-    year <- gsub("_citation_year", "", year)
-    year <- trimws(year)
-    
-    volume <- grep("_citation_journal_volume", cif_content, value = TRUE)
-    volume <- gsub("_citation_journal_volume", "", volume)
-    volume <- trimws(volume)
-    
-    pages_first <- grep("_citation_page_first", cif_content, value = TRUE)
-    pages_first <- gsub("_citation_page_first", "", pages_first)
-    pages_first <- trimws(pages_first)
-    
-    pages_last <- grep("_citation_page_last", cif_content, value = TRUE)
-    pages_last <- gsub("_citation_page_last", "", pages_last)
-    pages_last <- trimws(pages_last)
-    
-    pages <- paste(pages_first, pages_last, sep = "-")
-    
-    reference_info <- list(authors = authors,
-                           title = title,
-                           journal = journal,
-                           year = year,
-                           volume = volume,
-                           pages = pages)
-    return(reference_info)
-  } else {
-    return(NA)
-  }
-}
+# For each _citation_ tag, extract the authors, title, journal, year, volume, and pages
+# _citation_author_name, _citation_title, _citation_journal_full, _citation_year, _citation_journal_volume, _citation_page_first, _citation_page_last
+# Return a list of reference information
+# Multiple references are possible
+# references can be found next to the _citation_ tag or under the _citation_ tag until the next tag
+
 
 # Function to extract unit cell length and associated errors
 extract_unit_cell_metrics <- function(cif_content) {
@@ -160,15 +119,15 @@ extract_unit_cell_metrics <- function(cif_content) {
       return(list(value = as.numeric(line), error = NA))
     }
   }
-  
+
   a_line <- grep("_cell_length_a", cif_content, value = TRUE)
   b_line <- grep("_cell_length_b", cif_content, value = TRUE)
   c_line <- grep("_cell_length_c", cif_content, value = TRUE)
-  
+
   a <- extract_value_with_error(gsub("_cell_length_a", "", a_line))
   b <- extract_value_with_error(gsub("_cell_length_b", "", b_line))
   c <- extract_value_with_error(gsub("_cell_length_c", "", c_line))
-  
+
   return(list(
     a = a$value, a_error = a$error,
     b = b$value, b_error = b$error,
@@ -185,19 +144,19 @@ results <- list()
 
 for (cif_file in cif_list) {
   # Read the CIF file
-  cif_content <- readLines(cif_file)
-  
+  cif_content <- readLines(cif_file, warn = FALSE)
+
   # Extract the compound name from the file name
   compound_name <- tools::file_path_sans_ext(basename(cif_file))
-  
+
   # Extract the relevant data
   chemical_formula <- extract_chemical_formula(cif_content)
   structure_type <- extract_structure_type(cif_content)
   space_group_name <- extract_space_group_name(cif_content)
   space_group_number <- extract_space_group_number(cif_content)
-  reference_info <- extract_reference_info(cif_content)
+  #reference_info <- extract_reference_info(cif_content)
   unit_cell_metrics <- extract_unit_cell_metrics(cif_content)
-  
+
   # Combine the data into a single list
   result <- list(
     compound_name = compound_name,
@@ -205,15 +164,14 @@ for (cif_file in cif_list) {
     structure_type = structure_type,
     space_group_name = space_group_name,
     space_group_number = space_group_number,
-    reference_info = reference_info,
+    #reference_info = reference_info,
     unit_cell_metrics = unit_cell_metrics
   )
-  
+
   # Append the result to the results list
   results <- append(results, list(result))
 }
 
 # Convert the results list to a data frame
 results_df <- do.call(rbind, lapply(results, as.data.frame))
-
 ```
