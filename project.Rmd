@@ -44,12 +44,11 @@ setwd("~/repos/ml-crystals/")
 3.  **List CIF files**
 
 ```{r}
-#cif_list <- list.files(pattern="\\.cif$", full.names = TRUE, ignore.case = TRUE)
 cif_list <- Sys.glob(paths = "data/*.cif")
 cif_tab <- lapply(cif_list, readLines , warn =  FALSE)
 ```
 
-##Task 3: Extracting Data
+##Task 3 and 4: Extracting Data
 
 ```{r}
 # Extracting the chemical formula
@@ -100,14 +99,6 @@ extract_space_group_number <- function(cif_content) {
   }
 }
 
-# Extracting reference info
-# For each _citation_ tag, extract the authors, title, journal, year, volume, and pages
-# _citation_author_name, _citation_title, _citation_journal_full, _citation_year, _citation_journal_volume, _citation_page_first, _citation_page_last
-# Return a list of reference information
-# Multiple references are possible
-# references can be found next to the _citation_ tag or under the _citation_ tag until the next tag
-
-
 # Function to extract unit cell length and associated errors
 extract_unit_cell_metrics <- function(cif_content) {
   extract_value_with_error <- function(line) {
@@ -134,9 +125,94 @@ extract_unit_cell_metrics <- function(cif_content) {
     c = c$value, c_error = c$error
   ))
 }
+
 ```
 
-Extracting from all the .cifs:
+## Task 5: extracting atomic coordinates and symmetry operations and applying symmetry operations to the atomic coordinates
+
+``` {r}
+# Extracting atomic coordinates
+extract_atomic_coordinates <- function(cif_content) {
+  # Initialize lists to store atom properties
+  labels <- vector()
+  fractional_x <- vector()
+  fractional_y <- vector()
+  fractional_z <- vector()
+  x_errors <- vector()
+  y_errors <- vector()
+  z_errors <- vector()
+
+  # Find the start and end of the atom section
+  atom_start <- grep("_atom_site_occupancy", cif_content)
+  atom_end <- grep("^loop_|^#End", cif_content[atom_start:length(cif_content)]) + atom_start - 1
+
+  # If atom_end has multiple matches, take the first match after atom_start
+  if(length(atom_end) > 1) {
+    atom_end <- atom_end[1]
+  }
+
+  # Iterate over each line containing atomic coordinates
+  for (line in cif_content[(atom_start + 1):(atom_end - 1)]) {
+    # Extract atom properties from the line
+    properties <- strsplit(line, "\\s+")[[1]]
+
+    # Extract and store relevant information
+    labels <- c(labels, properties[1])
+
+    # Extract fractional coordinates and errors separately
+    fractional_x_val <- gsub("\\(.*\\)", "", properties[5])
+    fractional_y_val <- gsub("\\(.*\\)", "", properties[6])
+    fractional_z_val <- gsub("\\(.*\\)", "", properties[7])
+
+    x_error <- ifelse(grepl("\\(", properties[5]), gsub(".*\\((.*)\\).*", "\\1", properties[5]), NA)
+    y_error <- ifelse(grepl("\\(", properties[6]), gsub(".*\\((.*)\\).*", "\\1", properties[6]), NA)
+    z_error <- ifelse(grepl("\\(", properties[7]), gsub(".*\\((.*)\\).*", "\\1", properties[7]), NA)
+
+    fractional_x <- c(fractional_x, fractional_x_val)
+    fractional_y <- c(fractional_y, fractional_y_val)
+    fractional_z <- c(fractional_z, fractional_z_val)
+    x_errors <- c(x_errors, x_error)
+    y_errors <- c(y_errors, y_error)
+    z_errors <- c(z_errors, z_error)
+  }
+
+  # Create a data frame to store the atomic coordinates
+  atomic_coordinates <- data.frame(
+    Label = labels,
+    x_a = fractional_x,
+    y_b = fractional_y,
+    z_c = fractional_z,
+    x_error = x_errors,
+    y_error = y_errors,
+    z_error = z_errors
+  )
+  return(atomic_coordinates)
+}
+
+# Extracting symmetry operations
+extract_symmetry_operations <- function(cif_content) {
+  # Find the start and end of the symmetry operations section
+  symmetry_start <- grep("_space_group_symop_operation_xyz", cif_content)
+  symmetry_end <- grep("^loop_", cif_content[symmetry_start:length(cif_content)]) + symmetry_start - 1
+
+  # Extract the symmetry operations
+  symmetry_operations <- cif_content[(symmetry_start + 1):(symmetry_end - 1)]
+  return(symmetry_operations)
+}
+
+#test the symmetry operations
+cif_content <- readLines("data/ICSD138351.cif")
+symmetry_operations <- extract_symmetry_operations(cif_content)
+print(symmetry_operations)
+```
+
+## Task 6: Calculating distances between atoms
+
+```{r}
+# Insert logic here
+```
+
+# Extracting from all the .cifs:
 
 ```{r}
 # Initialize an empty list to store the results
@@ -154,9 +230,8 @@ for (cif_file in cif_list) {
   structure_type <- extract_structure_type(cif_content)
   space_group_name <- extract_space_group_name(cif_content)
   space_group_number <- extract_space_group_number(cif_content)
-  #reference_info <- extract_reference_info(cif_content)
   unit_cell_metrics <- extract_unit_cell_metrics(cif_content)
-
+  atomic_coordinates <- extract_atomic_coordinates(cif_content)
   # Combine the data into a single list
   result <- list(
     compound_name = compound_name,
@@ -164,14 +239,15 @@ for (cif_file in cif_list) {
     structure_type = structure_type,
     space_group_name = space_group_name,
     space_group_number = space_group_number,
-    #reference_info = reference_info,
-    unit_cell_metrics = unit_cell_metrics
+    unit_cell_metrics = unit_cell_metrics,
+    atomic_coordinates = atomic_coordinates
   )
 
-  # Append the result to the results list
+  # Append the result to the results lista
   results <- append(results, list(result))
 }
 
 # Convert the results list to a data frame
 results_df <- do.call(rbind, lapply(results, as.data.frame))
+print(results_df)
 ```
