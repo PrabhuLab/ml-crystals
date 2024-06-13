@@ -119,11 +119,13 @@ extract_unit_cell_metrics <- function(cif_content) {
   b <- extract_value_with_error(gsub("_cell_length_b", "", b_line))
   c <- extract_value_with_error(gsub("_cell_length_c", "", c_line))
 
-  return(list(
-    a = a$value, a_error = a$error,
-    b = b$value, b_error = b$error,
-    c = c$value, c_error = c$error
-  ))
+  unit_cell_metrics <- data.frame(
+    parameter = c("a", "b", "c"),
+    value = c(a$value, b$value, c$value),
+    error = c(a$error, b$error, c$error)
+  )
+
+  return(unit_cell_metrics)
 }
 
 ```
@@ -191,19 +193,31 @@ extract_atomic_coordinates <- function(cif_content) {
 
 # Extracting symmetry operations
 extract_symmetry_operations <- function(cif_content) {
-  # Find the start and end of the symmetry operations section
+  operation_x <- vector()
+  operation_y <- vector()
+  operation_z <- vector()
+  
   symmetry_start <- grep("_space_group_symop_operation_xyz", cif_content)
   symmetry_end <- grep("^loop_", cif_content[symmetry_start:length(cif_content)]) + symmetry_start - 1
+  
+  if (length(symmetry_end) > 1) {
+    symmetry_end <- symmetry_end[1]
+  }
 
-  # Extract the symmetry operations
-  symmetry_operations <- cif_content[(symmetry_start + 1):(symmetry_end - 1)]
+  for (line in cif_content[(symmetry_start + 1):(symmetry_end - 1)]) {
+    operations <- strsplit(gsub("'", "", line), ",\\s*")[[1]]
+    operation_x <- c(operation_x, operations[1])
+    operation_y <- c(operation_y, operations[2])
+    operation_z <- c(operation_z, operations[3])
+  }
+
+  symmetry_operations <- data.frame(
+    x = operation_x,
+    y = operation_y,
+    z = operation_z
+  )
   return(symmetry_operations)
 }
-
-#test the symmetry operations
-cif_content <- readLines("data/ICSD138351.cif")
-symmetry_operations <- extract_symmetry_operations(cif_content)
-print(symmetry_operations)
 ```
 
 ## Task 6: Calculating distances between atoms
@@ -232,6 +246,8 @@ for (cif_file in cif_list) {
   space_group_number <- extract_space_group_number(cif_content)
   unit_cell_metrics <- extract_unit_cell_metrics(cif_content)
   atomic_coordinates <- extract_atomic_coordinates(cif_content)
+  symmetry_operations <- extract_symmetry_operations(cif_content)
+
   # Combine the data into a single list
   result <- list(
     compound_name = compound_name,
@@ -240,14 +256,29 @@ for (cif_file in cif_list) {
     space_group_name = space_group_name,
     space_group_number = space_group_number,
     unit_cell_metrics = unit_cell_metrics,
-    atomic_coordinates = atomic_coordinates
+    atomic_coordinates = list(atomic_coordinates),
+    symmetry_operations = list(symmetry_operations)
   )
 
-  # Append the result to the results lista
+  # Append the result to the results list
   results <- append(results, list(result))
 }
 
 # Convert the results list to a data frame
-results_df <- do.call(rbind, lapply(results, as.data.frame))
+results_df <- do.call(rbind, lapply(results, function(x) {
+  data.frame(
+    compound_name = x$compound_name,
+    chemical_formula = x$chemical_formula,
+    structure_type = x$structure_type,
+    space_group_name = x$space_group_name,
+    space_group_number = x$space_group_number,
+    unit_cell_metrics = I(list(x$unit_cell_metrics)),
+    atomic_coordinates = I(x$atomic_coordinates),
+    symmetry_operations = I(x$symmetry_operations)
+  )
+}))
+
+# Print the results data frame
 print(results_df)
+
 ```
