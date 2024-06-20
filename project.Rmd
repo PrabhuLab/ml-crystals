@@ -8,7 +8,6 @@ output: pdf_document
 #Packages (to be adjusted)
 
 ```{r}
-library(cry)
 library(data.table)
 library(readtext)
 library(stringr)
@@ -205,7 +204,9 @@ extract_symmetry_operations <- function(cif_content) {
   }
 
   for (line in cif_content[(symmetry_start + 1):(symmetry_end - 1)]) {
-    operations <- strsplit(gsub("'", "", line), ",\\s*")[[1]]
+    # Remove leading numbers and quotes
+    clean_line <- gsub("^[0-9]+\\s+'|'", "", line)
+    operations <- strsplit(clean_line, ",\\s*")[[1]]
     operation_x <- c(operation_x, operations[1])
     operation_y <- c(operation_y, operations[2])
     operation_z <- c(operation_z, operations[3])
@@ -218,12 +219,82 @@ extract_symmetry_operations <- function(cif_content) {
   )
   return(symmetry_operations)
 }
+
+# Applying symmetry operations to atomic coordinates
+apply_symmetry_operations <- function(atomic_coordinates, symmetry_operations) {
+  apply_operation <- function(operation, x, y, z) {
+    # Replace x, y, z with their numeric values in the operation
+    operation <- gsub("x", sprintf("(%f)", x), operation)
+    operation <- gsub("y", sprintf("(%f)", y), operation)
+    operation <- gsub("z", sprintf("(%f)", z), operation)
+    # Evaluate the modified expression
+    eval(parse(text = operation))
+  }
+
+  apply_all_operations <- function(coord_row) {
+    x <- as.numeric(coord_row['x_a'])
+    y <- as.numeric(coord_row['y_b'])
+    z <- as.numeric(coord_row['z_c'])
+
+    new_coords <- do.call(rbind, lapply(1:nrow(symmetry_operations), function(i) {
+      new_x <- apply_operation(symmetry_operations[i, 'x'], x, y, z)
+      new_y <- apply_operation(symmetry_operations[i, 'y'], x, y, z)
+      new_z <- apply_operation(symmetry_operations[i, 'z'], x, y, z)
+
+      # Ensure values are between 0 and 1
+      new_x <- ifelse(new_x > 1, new_x - 1, ifelse(new_x < 0, new_x + 1, new_x))
+      new_y <- ifelse(new_y > 1, new_y - 1, ifelse(new_y < 0, new_y + 1, new_y))
+      new_z <- ifelse(new_z > 1, new_z - 1, ifelse(new_z < 0, new_z + 1, new_z))
+
+      return(data.frame(
+        Label = coord_row['Label'],
+        x_a = new_x,
+        y_b = new_y,
+        z_c = new_z
+      ))
+    }))
+    
+    return(new_coords)
+  }
+
+  transformed_coords <- do.call(rbind, lapply(1:nrow(atomic_coordinates), function(i) {
+    apply_all_operations(atomic_coordinates[i, ])
+  }))
+  
+  return(transformed_coords)
+}
 ```
 
 ## Task 6: Calculating distances between atoms
 
 ```{r}
-# Insert logic here
+# Function to calculate distances between all pairs of atoms
+calculate_distances <- function(transformed_coordinates) {
+  n <- nrow(transformed_coordinates)
+  distance_matrix <- matrix(0, n, n)
+  
+  for (i in 1:(n-1)) {
+    for (j in (i+1):n) {
+      x1 <- as.numeric(transformed_coordinates[i, 'x_a'])
+      y1 <- as.numeric(transformed_coordinates[i, 'y_b'])
+      z1 <- as.numeric(transformed_coordinates[i, 'z_c'])
+      
+      x2 <- as.numeric(transformed_coordinates[j, 'x_a'])
+      y2 <- as.numeric(transformed_coordinates[j, 'y_b'])
+      z2 <- as.numeric(transformed_coordinates[j, 'z_c'])
+      
+      distance <- sqrt((x2 - x1)^2 + (y2 - y1)^2 + (z2 - z1)^2)
+      distance_matrix[i, j] <- distance
+      distance_matrix[j, i] <- distance
+    }
+  }
+  
+  distance_df <- as.data.frame(distance_matrix)
+  unique_labels <- make.unique(transformed_coordinates$Label)
+  colnames(distance_df) <- unique_labels
+  rownames(distance_df) <- unique_labels
+  return(distance_df)
+}
 ```
 
 # Extracting from all the .cifs:
@@ -232,6 +303,7 @@ extract_symmetry_operations <- function(cif_content) {
 # Initialize an empty list to store the results
 results <- list()
 
+# Loop through each CIF file
 for (cif_file in cif_list) {
   # Read the CIF file
   cif_content <- readLines(cif_file, warn = FALSE)
@@ -248,37 +320,32 @@ for (cif_file in cif_list) {
   atomic_coordinates <- extract_atomic_coordinates(cif_content)
   symmetry_operations <- extract_symmetry_operations(cif_content)
 
-  # Combine the data into a single list
-  result <- list(
+  # Apply symmetry operations to atomic coordinates
+  transformed_coordinates <- apply_symmetry_operations(atomic_coordinates, symmetry_operations)
+
+  # Calculate distances between atoms
+  distance_df <- calculate_distances(transformed_coordinates)
+
+  # Create a data frame for the current CIF file results
+  result <- data.frame(
     compound_name = compound_name,
     chemical_formula = chemical_formula,
     structure_type = structure_type,
     space_group_name = space_group_name,
     space_group_number = space_group_number,
-    unit_cell_metrics = unit_cell_metrics,
-    atomic_coordinates = list(atomic_coordinates),
-    symmetry_operations = list(symmetry_operations)
+    unit_cell_metrics = I(list(unit_cell_metrics)),
+    atomic_coordinates = I(list(atomic_coordinates)),
+    transformed_coordinates = I(list(transformed_coordinates)),
+    distance_matrix = I(list(distance_df))
   )
 
   # Append the result to the results list
   results <- append(results, list(result))
 }
 
-# Convert the results list to a data frame
-results_df <- do.call(rbind, lapply(results, function(x) {
-  data.frame(
-    compound_name = x$compound_name,
-    chemical_formula = x$chemical_formula,
-    structure_type = x$structure_type,
-    space_group_name = x$space_group_name,
-    space_group_number = x$space_group_number,
-    unit_cell_metrics = I(list(x$unit_cell_metrics)),
-    atomic_coordinates = I(x$atomic_coordinates),
-    symmetry_operations = I(x$symmetry_operations)
-  )
-}))
+# Combine all results into a single data frame
+results_df <- do.call(rbind, results)
 
 # Print the results data frame
 print(results_df)
-
 ```
