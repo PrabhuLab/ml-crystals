@@ -1,0 +1,75 @@
+
+#(C) 2024 by FIZ Karlsruhe - Leibniz Institute for Information Infrastructure.  All rights reserved.
+data_118112-ICSD
+_database_code_ICSD 118112
+_audit_creation_date 2023-08-01
+_chemical_name_common 'Bismuth europium phosphate (0.947/0.053/1)'
+_chemical_formula_structural '(Bi0.801 Eu0.199) P O4'
+_chemical_formula_sum 'Bi0.801 Eu0.199 O4 P1'
+_chemical_name_structure_type CePO4
+_exptl_crystal_density_diffrn 5.38
+_citation_title
+
+;
+Is BiPO$_4$ a better luminescent host? Case study on doping and annealing
+effects
+;
+loop_
+_citation_id
+_citation_journal_full
+_citation_year
+_citation_journal_volume
+_citation_page_first
+_citation_page_last
+_citation_journal_id_ASTM
+primary 'Inorganic Chemistry' 2013 52 807 815 INOCAJ
+loop_
+_citation_author_citation_id
+_citation_author_name
+primary Zhao, Minglei
+primary Li, Liping
+primary Zheng, Jing
+primary 'Yang, Liusai'
+primary 'Li, Guangshe'
+_cell_length_a 6.9650(2)
+_cell_length_b 6.9650(2)
+_cell_length_c 6.4509(2)
+_cell_angle_alpha 90.
+_cell_angle_beta 90.
+_cell_angle_gamma 120.
+_cell_volume 271.01
+_cell_formula_units_Z 3
+_space_group_name_H-M_alt 'P 31 2 1'
+_space_group_IT_number 152
+loop_
+_space_group_symop_id
+_space_group_symop_operation_xyz
+1 'x-y, -y, -z+2/3'
+2 '-x, -x+y, -z+1/3'
+3 'y, x, -z'
+4 '-x+y, -x, z+2/3'
+5 '-y, x-y, z+1/3'
+6 'x, y, z'
+loop_
+_atom_type_symbol
+_atom_type_oxidation_number
+Bi3+ 3
+Eu3+ 3
+P5+ 5
+O2- -2
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_symmetry_multiplicity
+_atom_site_Wyckoff_symbol
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_B_iso_or_equiv
+_atom_site_occupancy
+Bi1 Bi3+ 3 b 0.4683 0 0.8333 . 0.801
+Eu1 Eu3+ 3 b 0.4683 0 0.8333 . 0.199
+P1 P5+ 3 a 0.4408 0 0.3333 . 1.
+O1 O2- 6 c 0.3372 0.1105 0.445 . 1.
+O2 O2- 6 c 0.6272 0.1108 0.1772 . 1.
+#End of TTdata_118112-ICSD

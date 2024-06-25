@@ -1,0 +1,88 @@
+
+#(C) 2024 by FIZ Karlsruhe - Leibniz Institute for Information Infrastructure.  All rights reserved.
+data_182862-ICSD
+_database_code_ICSD 182862
+_audit_creation_date 2012-08-01
+_chemical_name_common 'Lead tin disulfide'
+_chemical_formula_structural '((Fe0.431 Sn0.569) S2)0.741 (Pb1.002 Sn0.997 S2)'
+_chemical_formula_sum 'Fe0.319371 Pb1.002 S3.482 Sn1.418629'
+_chemical_name_mineral Franckeite
+_exptl_crystal_density_diffrn 5.72
+_citation_title
+'The crystal structure of franckeite, Pb21.7 Sn9.3 Fe4.0 Sb8.1 S56.9'
+loop_
+_citation_id
+_citation_journal_full
+_citation_year
+_citation_journal_volume
+_citation_page_first
+_citation_page_last
+_citation_journal_id_ASTM
+primary 'American Mineralogist' 2011 96 1686 1702 AMMIAY
+loop_
+_citation_author_citation_id
+_citation_author_name
+primary 'Makovicky, E.'
+primary 'Petricek, V.'
+primary 'Dusek, M.'
+primary 'Topa, D.'
+_cell_length_a 5.805(8)
+_cell_length_b 5.856(16)
+_cell_length_c 17.338(5)
+_cell_angle_alpha 94.97(2)
+_cell_angle_beta 88.45(2)
+_cell_angle_gamma 89.94(2)
+_cell_volume 586.96
+_cell_formula_units_Z 4
+_space_group_name_H-M_alt 'C -1'
+_space_group_IT_number 2
+loop_
+_space_group_symop_id
+_space_group_symop_operation_xyz
+1 '-x, -y, -z'
+2 'x, y, z'
+3 '-x+1/2, -y+1/2, -z'
+4 'x+1/2, y+1/2, z'
+loop_
+_atom_type_symbol
+_atom_type_oxidation_number
+Pb2+ 2
+Sn2+ 2
+Pb2+ 2
+Sn2+ 2
+S2- -2
+Fe4+ 4
+Sn4+ 4
+S2- -2
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_symmetry_multiplicity
+_atom_site_Wyckoff_symbol
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_U_iso_or_equiv
+_atom_site_occupancy
+Pb1 Pb2+ 4 i 0.63901(12) 0.97083(10) -0.23153(4) 0.0353(2) 0.74(2)
+Sn1 Sn2+ 4 i 0.63901(12) 0.97083(10) -0.23153(4) 0.0353(2) 0.26(2)
+Pb2 Pb2+ 4 i 0.17797(15) 0.95073(13) -0.41250(5) 0.0353(3) 0.265(18)
+Sn3 Sn2+ 4 i 0.17797(15) 0.95073(13) -0.41250(5) 0.0353(3) 0.735(18)
+S1 S2- 4 i 0.1435(6) 0.9653(5) -0.2660(2) 0.0354(12) 1.
+S2 S2- 4 i 0.1349(9) 0.4239(8) -0.4040(2) 0.0556(16) 1.
+loop_
+_atom_site_aniso_label
+_atom_site_aniso_type_symbol
+_atom_site_aniso_U_11
+_atom_site_aniso_U_22
+_atom_site_aniso_U_33
+_atom_site_aniso_U_12
+_atom_site_aniso_U_13
+_atom_site_aniso_U_23
+Pb1 Pb2+ 0.0269(4) 0.0301(3) 0.0484(5) -0.0008(2) 0.0000(3) 0.0010(3)
+Sn1 Sn2+ 0.0269(4) 0.0301(3) 0.0484(5) -0.0008(2) 0.0000(3) 0.0010(3)
+Pb2 Pb2+ 0.0300(6) 0.0314(4) 0.0077(3) 0.0057(4) 0.0051(3) 0.0005(6)
+Sn3 Sn2+ 0.0300(6) 0.0314(4) 0.0077(3) 0.0057(4) 0.0051(3) 0.0005(6)
+S1 S2- 0.0207(18) 0.0236(13) 0.061(3) 0.0028(12) 0.0043(15) 0.0025(14)
+S2 S2- 0.058(3) 0.074(3) 0.033(2) -0.028(2) 0.0047(19) -0.005(2)
+#End of TTdata_182862-ICSD

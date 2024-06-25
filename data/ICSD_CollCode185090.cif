@@ -1,0 +1,79 @@
+
+#(C) 2024 by FIZ Karlsruhe - Leibniz Institute for Information Infrastructure.  All rights reserved.
+data_185090-ICSD
+_database_code_ICSD 185090
+_audit_creation_date 2013-02-01
+_chemical_name_common 'Copper stannide (6/5)'
+_chemical_formula_structural 'Cu6 Sn5'
+_chemical_formula_sum 'Cu6 Sn5'
+_chemical_name_structure_type Cu5Sn5
+_exptl_crystal_density_diffrn 8.21
+_diffrn_ambient_temperature 253.
+_citation_title
+
+;
+Effect of Ni on phase stability and thermal expansion Of Cu6-x Nix Sn5 (X= 0,
+0.5, 1, 1.5, 2)
+;
+_publ_section_comment 'Cell and Type only determined'
+loop_
+_citation_id
+_citation_journal_full
+_citation_year
+_citation_journal_volume
+_citation_page_first
+_citation_page_last
+_citation_journal_id_ASTM
+primary Intermetallics 2012 26 78 85 IERME5
+loop_
+_citation_author_citation_id
+_citation_author_name
+primary 'Nogita, K.'
+primary 'Mu, D.'
+primary 'McDonald, S.D.'
+primary 'Read, J.'
+primary 'Wu, Y.Q.'
+_cell_length_a 11.04575(25)
+_cell_length_b 7.30962(30)
+_cell_length_c 9.88855(24)
+_cell_angle_alpha 90.
+_cell_angle_beta 98.8537
+_cell_angle_gamma 90.
+_cell_volume 788.89
+_cell_formula_units_Z 4
+_space_group_name_H-M_alt 'C 1 2/c 1'
+_space_group_IT_number 15
+loop_
+_space_group_symop_id
+_space_group_symop_operation_xyz
+1 'x, -y, z+1/2'
+2 '-x, -y, -z'
+3 '-x, y, -z+1/2'
+4 'x, y, z'
+5 'x+1/2, -y+1/2, z+1/2'
+6 '-x+1/2, -y+1/2, -z'
+7 '-x+1/2, y+1/2, -z+1/2'
+8 'x+1/2, y+1/2, z'
+loop_
+_atom_type_symbol
+_atom_type_oxidation_number
+Sn0+ 0
+Cu0+ 0
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_symmetry_multiplicity
+_atom_site_Wyckoff_symbol
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_B_iso_or_equiv
+_atom_site_occupancy
+Sn1 Sn0+ 8 f 0.391 0.162 0.529 . 1.
+Sn2 Sn0+ 8 f 0.285 0.655 0.358 . 1.
+Sn3 Sn0+ 4 e 0 0.799 0.25 . 1.
+Cu1 Cu0+ 8 f 0.101 0.473 0.202 . 1.
+Cu2 Cu0+ 8 f 0.306 0.504 0.61 . 1.
+Cu3 Cu0+ 4 a 0 0 0 . 1.
+Cu4 Cu0+ 4 e 0 0.16 0.25 . 1.
+#End of TTdata_185090-ICSD

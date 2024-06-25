@@ -1,0 +1,77 @@
+
+#(C) 2024 by FIZ Karlsruhe - Leibniz Institute for Information Infrastructure.  All rights reserved.
+data_117476-ICSD
+_database_code_ICSD 117476
+_audit_creation_date 2023-08-01
+_chemical_name_common 'Terbium trioxoaluminate'
+_chemical_formula_structural 'Tb Al O3'
+_chemical_formula_sum 'Al1 O3 Tb1'
+_chemical_name_structure_type Perovskite#GdFeO3
+_exptl_crystal_density_diffrn 7.55
+_diffrn_ambient_temperature 300.
+_citation_title
+
+;
+Extinction in mixed magnetic and nuclear reflections. A study of the magnetic
+structure of TbAlO$_3$ using neutron polarimetry and integrated intensity
+measurements
+;
+loop_
+_citation_id
+_citation_journal_full
+_citation_year
+_citation_journal_volume
+_citation_page_first
+_citation_page_last
+_citation_journal_id_ASTM
+primary 'Acta Crystallographica, Section A: Foundations of Crystallography' 1992
+48 236 243 ACACEQ
+loop_
+_citation_author_citation_id
+_citation_author_name
+primary 'Brown, P.J.'
+primary 'Nunez, V.'
+primary 'Tasset, F.'
+primary 'Forsyth,  J.B.'
+_cell_length_a 5.229
+_cell_length_b 5.308
+_cell_length_c 7.415
+_cell_angle_alpha 90.
+_cell_angle_beta 90.
+_cell_angle_gamma 90.
+_cell_volume 205.81
+_cell_formula_units_Z 4
+_space_group_name_H-M_alt 'P b n m'
+_space_group_IT_number 62
+loop_
+_space_group_symop_id
+_space_group_symop_operation_xyz
+1 '-x+1/2, y+1/2, z'
+2 'x, y, -z+1/2'
+3 'x+1/2, -y+1/2, z+1/2'
+4 '-x, -y, -z'
+5 'x+1/2, -y+1/2, -z'
+6 '-x, -y, z+1/2'
+7 '-x+1/2, y+1/2, -z+1/2'
+8 'x, y, z'
+loop_
+_atom_type_symbol
+_atom_type_oxidation_number
+Tb3+ 3
+Al3+ 3
+O2- -2
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_symmetry_multiplicity
+_atom_site_Wyckoff_symbol
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_B_iso_or_equiv
+_atom_site_occupancy
+Tb1 Tb3+ 4 c -0.0096(4) 0.0429(3) 0.25 0.62(9) 1.
+Al1 Al3+ 4 b 0.5 0 0 0.11(13) 1.
+O1 O2- 4 c 0.0768(6) 0.4832(4) 0.25 0.23(9) 1.
+O2 O2- 8 d -0.2892(3) 0.2888(2) 0.0427 0.16(9) 1.
+#End of TTdata_117476-ICSD
