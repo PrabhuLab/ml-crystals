@@ -1,6 +1,6 @@
 # Hello, world!
 #
-# This is an example function named 'hello' 
+# This is an example function named 'hello'
 # which prints 'Hello, world!'.
 #
 # You can learn more about package authoring with RStudio at:
@@ -13,6 +13,16 @@
 #   Check Package:             'Cmd + Shift + E'
 #   Test Package:              'Cmd + Shift + T'
 
-hello <- function() {
-  print("Hello, world!")
+#' Hello World Function
+#' @param x A character string
+#' @return The output from \code{\link{print}}
+#' @export
+#'
+#' @examples
+#' hello("world")
+#' \dontrun{
+#' hello("Don")
+#' }
+hello <- function(x) {
+  print(paste0("Hello, ", x, "!"))
 }

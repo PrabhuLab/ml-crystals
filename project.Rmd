@@ -1,17 +1,9 @@
 ---
-title: "Project Plan"
+title: "Project"
 author: "Don Ngo"
 date: "`r Sys.Date()`"
 output: pdf_document
 ---
-
-#Packages (to be adjusted)
-
-```{r}
-library(data.table)
-library(readtext)
-library(stringr)
-```
 
 # General Objectives
 
@@ -21,117 +13,105 @@ library(stringr)
 -   Build functions.
 -   Build a package.
 
-# Specific Objectives and Tasks
-
-## Task 1: Create a Private GitHub Repository
-
-**Action:** Set up a private repository on GitHub.\
-**Requirement:** Each code segment added should be accompanied by an explanation.
-
-## Task 2: Bind CIF Files into One Table
-
-**Steps:**
-
-1.  **Download CIF files from the provided Google Drive link.**
-
-2.  **Set the working directory:**
+# Set the working directory
 
 ```{r}
 setwd("~/repos/ml-crystals/")
 ```
 
-3.  **List CIF files**
+# List CIF files
 
 ```{r}
 cif_list <- Sys.glob(paths = "data/*.cif")
 cif_tab <- lapply(cif_list, readLines , warn =  FALSE)
 ```
 
-## Task 3 and 4: Extracting Data
+# Packages (to be adjusted)
 
 ```{r}
-# Extracting the chemical formula
+library(data.table)
+library(stringr)
+```
+
+# Bind CIF Files into One Table
+
+```{r}
+# List CIF files
+cif_list <- Sys.glob(paths = "data/*.cif")
+cif_tab <- lapply(cif_list, fread, sep = "\n", header = FALSE)
+```
+
+# Extracting Data
+
+```{r}
+# Function to extract a specific value based on a pattern from CIF content
+extract_value <- function(cif_content, pattern, remove_pattern = TRUE) {
+  # Find lines that match the given pattern
+  lines <- cif_content[V1 %like% pattern]
+  if (nrow(lines) > 0) {
+    value <- lines$V1
+    if (remove_pattern) {
+      value <- gsub(pattern, "", value)
+    }
+    # Clean the value by removing quotes and trimming whitespace
+    value <- gsub("'", "", value)
+    value <- trimws(value)
+    return(value)
+  } else {
+    return(NA)
+  }
+}
+
+extract_ICSD_code <- function (cif_content) {
+  extract_value(cif_content, "_database_code_ICSD")
+}
+
+# Specific extraction functions for different properties
 extract_chemical_formula <- function(cif_content) {
-  formula_lines <- grep("_chemical_formula_sum", cif_content, value = TRUE)
-  if (length(formula_lines) > 0) {
-    chemical_formula <- gsub("_chemical_formula_sum", "", formula_lines)
-    chemical_formula <- gsub("'", "", chemical_formula)
-    chemical_formula <- trimws(chemical_formula)
-    return(chemical_formula)
-  } else {
-    return(NA)
-  }
+  extract_value(cif_content, "_chemical_formula_sum")
 }
-# Extracting the structure type
+
 extract_structure_type <- function(cif_content) {
-  structure_lines <- grep("_chemical_name_structure_type", cif_content, value = TRUE)
-  if (length(structure_lines) > 0) {
-    structure_type <- gsub("_chemical_name_structure_type", "", structure_lines)
-    structure_type <- gsub("'", "", structure_type)
-    structure_type <- trimws(structure_type)
-    return(structure_type)
-  } else {
-    return(NA)
-  }
+  extract_value(cif_content, "_chemical_name_structure_type")
 }
-# Extracting the space group
+
 extract_space_group_name <- function(cif_content) {
-  space_group_lines <- grep("_space_group_name_H-M_alt", cif_content, value = TRUE)
-  if (length(space_group_lines) > 0) {
-    space_group <- gsub("_space_group_name_H-M_alt", "", space_group_lines)
-    space_group <- gsub("'", "", space_group)
-    space_group <- trimws(space_group)
-    return(space_group)
-  } else {
-    return(NA)
-  }
+  extract_value(cif_content, "_space_group_name_H-M_alt")
 }
 
 extract_space_group_number <- function(cif_content) {
-  space_group_number_lines <- grep("_space_group_IT_number", cif_content, value = TRUE)
-  if (length(space_group_number_lines) > 0) {
-    space_group_number <- gsub("_space_group_IT_number", "", space_group_number_lines)
-    space_group_number <- trimws(space_group_number)
-    return(space_group_number)
-  } else {
-    return(NA)
-  }
+  extract_value(cif_content, "_space_group_IT_number")
 }
 
-# Function to extract unit cell length and associated errors
+# Function to extract unit cell metrics
 extract_unit_cell_metrics <- function(cif_content) {
-  extract_value_with_error <- function(line) {
-    if (grepl("\\(", line)) {
-      value <- sub("\\(.*\\)", "", line)
-      error <- sub(".*\\((.*)\\).*", "\\1", line)
-      return(list(value = as.numeric(value), error = as.numeric(error)))
-    } else {
-      return(list(value = as.numeric(line), error = NA))
-    }
-  }
-
-  a_line <- grep("_cell_length_a", cif_content, value = TRUE)
-  b_line <- grep("_cell_length_b", cif_content, value = TRUE)
-  c_line <- grep("_cell_length_c", cif_content, value = TRUE)
-
-  a <- extract_value_with_error(gsub("_cell_length_a", "", a_line))
-  b <- extract_value_with_error(gsub("_cell_length_b", "", b_line))
-  c <- extract_value_with_error(gsub("_cell_length_c", "", c_line))
-
-  unit_cell_metrics <- data.frame(
-    parameter = c("a", "b", "c"),
-    value = c(a$value, b$value, c$value),
-    error = c(a$error, b$error, c$error)
+  cell_parameters <- c(
+    "_cell_length_a",
+    "_cell_length_b",
+    "_cell_length_c",
+    "_cell_angle_alpha",
+    "_cell_angle_beta",
+    "_cell_angle_gamma"
   )
-
+  
+  # Extract and clean values for each cell parameter
+  values <- sapply(cell_parameters, function(param) {
+    line <- cif_content[V1 %like% param]$V1
+    if (length(line) > 0) {
+      value <- gsub(".*\\s+([0-9\\.]+).*", "\\1", line)
+      return(as.numeric(value))
+    } else {
+      return(NA)
+    }
+  })
+  
+  # Create a data table with the extracted values
+  unit_cell_metrics <- as.data.table(t(values))
+  setnames(unit_cell_metrics, cell_parameters)
+  
   return(unit_cell_metrics)
 }
 
-```
-
-## Task 5: extracting atomic coordinates and symmetry operations and applying symmetry operations to the atomic coordinates
-
-``` {r}
 # Extracting atomic coordinates
 extract_atomic_coordinates <- function(cif_content) {
   # Initialize lists to store atom properties
@@ -144,8 +124,8 @@ extract_atomic_coordinates <- function(cif_content) {
   z_errors <- vector()
 
   # Find the start and end of the atom section
-  atom_start <- grep("_atom_site_occupancy", cif_content)
-  atom_end <- grep("^loop_|^#End", cif_content[atom_start:length(cif_content)]) + atom_start - 1
+  atom_start <- grep("_atom_site_occupancy", cif_content$V1)
+  atom_end <- grep("^loop_|^#End", cif_content$V1[atom_start:length(cif_content$V1)]) + atom_start - 1
 
   # If atom_end has multiple matches, take the first match after atom_start
   if(length(atom_end) > 1) {
@@ -153,7 +133,7 @@ extract_atomic_coordinates <- function(cif_content) {
   }
 
   # Iterate over each line containing atomic coordinates
-  for (line in cif_content[(atom_start + 1):(atom_end - 1)]) {
+  for (line in cif_content$V1[(atom_start + 1):(atom_end - 1)]) {
     # Extract atom properties from the line
     properties <- strsplit(line, "\\s+")[[1]]
 
@@ -177,241 +157,172 @@ extract_atomic_coordinates <- function(cif_content) {
     z_errors <- c(z_errors, z_error)
   }
 
-  # Create a data frame to store the atomic coordinates
-  atomic_coordinates <- data.frame(
+  # Create a data table to store the atomic coordinates
+  atomic_coordinates <- data.table(
     Label = labels,
-    x_a = fractional_x,
-    y_b = fractional_y,
-    z_c = fractional_z,
-    x_error = x_errors,
-    y_error = y_errors,
-    z_error = z_errors
+    x_a = as.numeric(fractional_x),
+    y_b = as.numeric(fractional_y),
+    z_c = as.numeric(fractional_z),
+    x_error = as.numeric(x_errors),
+    y_error = as.numeric(y_errors),
+    z_error = as.numeric(z_errors)
   )
   return(atomic_coordinates)
 }
 
-# Extracting symmetry operations
+# Function to extract symmetry operations from CIF content
 extract_symmetry_operations <- function(cif_content) {
-  operation_x <- vector()
-  operation_y <- vector()
-  operation_z <- vector()
-  
-  symmetry_start <- grep("_space_group_symop_operation_xyz", cif_content)
-  symmetry_end <- grep("^loop_", cif_content[symmetry_start:length(cif_content)]) + symmetry_start - 1
-  
+  # Find the start and end of the symmetry operations section
+  symmetry_start <- grep("_space_group_symop_operation_xyz", cif_content$V1)
+  symmetry_end <- grep("^loop_", cif_content$V1[symmetry_start:length(cif_content$V1)]) + symmetry_start - 1
+
   if (length(symmetry_end) > 1) {
     symmetry_end <- symmetry_end[1]
   }
 
-  for (line in cif_content[(symmetry_start + 1):(symmetry_end - 1)]) {
-    # Remove leading numbers and quotes
-    clean_line <- gsub("^[0-9]+\\s+'|'", "", line)
-    operations <- strsplit(clean_line, ",\\s*")[[1]]
-    operation_x <- c(operation_x, operations[1])
-    operation_y <- c(operation_y, operations[2])
-    operation_z <- c(operation_z, operations[3])
-  }
+  # Extract lines containing symmetry operations
+  symmetry_lines <- cif_content$V1[(symmetry_start + 1):(symmetry_end - 1)]
+  # Split each line into components
+  symmetry_operations <- str_split_fixed(symmetry_lines, ",\\s*", n = 3)
 
-  symmetry_operations <- data.frame(
-    x = operation_x,
-    y = operation_y,
-    z = operation_z
+  # Create a data table with the extracted symmetry operations
+  symmetry_operations <- data.table(
+    x = gsub("^[0-9]+\\s+'|'", "", symmetry_operations[, 1]),
+    y = gsub("^[0-9]+\\s+'|'", "", symmetry_operations[, 2]),
+    z = gsub("^[0-9]+\\s+'|'", "", symmetry_operations[, 3])
   )
+
   return(symmetry_operations)
 }
 
-# Applying symmetry operations to atomic coordinates
+# Function to apply symmetry operations to atomic coordinates
 apply_symmetry_operations <- function(atomic_coordinates, symmetry_operations) {
+  # Helper function to apply a single operation
   apply_operation <- function(operation, x, y, z) {
-    # Replace x, y, z with their numeric values in the operation
     operation <- gsub("x", sprintf("(%f)", x), operation)
     operation <- gsub("y", sprintf("(%f)", y), operation)
     operation <- gsub("z", sprintf("(%f)", z), operation)
-    # Evaluate the modified expression
     eval(parse(text = operation))
   }
 
-  apply_all_operations <- function(coord_row) {
-    x <- as.numeric(coord_row['x_a'])
-    y <- as.numeric(coord_row['y_b'])
-    z <- as.numeric(coord_row['z_c'])
+  # Expand coordinates by applying each symmetry operation
+  expand_coordinates <- function(row) {
+    x <- row$x_a
+    y <- row$y_b
+    z <- row$z_c
+    new_coords <- rbindlist(lapply(1:nrow(symmetry_operations), function(i) {
+      new_x <- apply_operation(symmetry_operations[i, x], x, y, z)
+      new_y <- apply_operation(symmetry_operations[i, y], x, y, z)
+      new_z <- apply_operation(symmetry_operations[i, z], x, y, z)
 
-    new_coords <- do.call(rbind, lapply(1:nrow(symmetry_operations), function(i) {
-      new_x <- apply_operation(symmetry_operations[i, 'x'], x, y, z)
-      new_y <- apply_operation(symmetry_operations[i, 'y'], x, y, z)
-      new_z <- apply_operation(symmetry_operations[i, 'z'], x, y, z)
-
-      # Ensure values are between 0 and 1
-      new_x <- ifelse(new_x > 1, new_x - 1, ifelse(new_x < 0, new_x + 1, new_x))
-      new_y <- ifelse(new_y > 1, new_y - 1, ifelse(new_y < 0, new_y + 1, new_y))
-      new_z <- ifelse(new_z > 1, new_z - 1, ifelse(new_z < 0, new_z + 1, new_z))
-
-      return(data.frame(
-        Label = coord_row['Label'],
-        x_a = new_x,
-        y_b = new_y,
-        z_c = new_z
-      ))
+      data.table(
+        Label = paste(row$Label, i, sep = "_"), # Apply unique label
+        x_a = ifelse(new_x > 1, new_x - 1, ifelse(new_x < 0, new_x + 1, new_x)),
+        y_b = ifelse(new_y > 1, new_y - 1, ifelse(new_y < 0, new_y + 1, new_y)),
+        z_c = ifelse(new_z > 1, new_z - 1, ifelse(new_z < 0, new_z + 1, new_z))
+      )
     }))
-    
     return(new_coords)
   }
 
-  transformed_coords <- do.call(rbind, lapply(1:nrow(atomic_coordinates), function(i) {
-    apply_all_operations(atomic_coordinates[i, ])
+  # Apply symmetry operations to all atomic coordinates
+  transformed_coords <- rbindlist(lapply(1:nrow(atomic_coordinates), function(i) {
+    expand_coordinates(atomic_coordinates[i])
   }))
-  
+
   return(transformed_coords)
 }
-```
 
-## Task 6: Calculating distances between atoms
 
-```{r}
-# Function to calculate distances between all pairs of atoms
-calculate_distances <- function(transformed_coordinates) {
-  coords <- as.matrix(transformed_coordinates[, c('x_a', 'y_b', 'z_c')])
-  n <- nrow(coords)
+# Function to calculate distances between atoms using real-space metric tensor and vectorization
+calculate_distances <- function(transformed_coords, unit_cell_metrics) {
+  # Extract unit cell parameters
+  a <- unit_cell_metrics$`_cell_length_a`
+  b <- unit_cell_metrics$`_cell_length_b`
+  c <- unit_cell_metrics$`_cell_length_c`
+  alpha <- unit_cell_metrics$`_cell_angle_alpha` * pi / 180  # Convert to radians
+  beta <- unit_cell_metrics$`_cell_angle_beta` * pi / 180    # Convert to radians
+  gamma <- unit_cell_metrics$`_cell_angle_gamma` * pi / 180  # Convert to radians
   
-  # Calculate the distance matrix using matrix operations
-  distance_matrix <- sqrt(rowSums((coords[row(coords), ] - coords[col(coords), ])^2))
-  distance_matrix <- matrix(distance_matrix, n, n)
+  # Calculate the real-space metric tensor components
+  a2 <- a^2
+  b2 <- b^2
+  c2 <- c^2
+  bc_cos_alpha <- b * c * cos(alpha)
+  ca_cos_beta <- c * a * cos(beta)
+  ab_cos_gamma <- a * b * cos(gamma)
   
-  # Create a data frame for the distance matrix
-  distance_df <- as.data.frame(distance_matrix)
-  unique_labels <- make.unique(transformed_coordinates$Label)
-  colnames(distance_df) <- unique_labels
-  rownames(distance_df) <- unique_labels
-  return(distance_df)
+  # Extract coordinates as a matrix
+  coords <- as.matrix(transformed_coords[, .(x_a, y_b, z_c)])
+  labels <- transformed_coords$Label
+  
+  # Calculate pairwise differences in coordinates
+  delta_x <- outer(coords[, 1], coords[, 1], "-")
+  delta_y <- outer(coords[, 2], coords[, 2], "-")
+  delta_z <- outer(coords[, 3], coords[, 3], "-")
+  
+  # Apply periodic boundary conditions
+  delta_x <- delta_x - round(delta_x)
+  delta_y <- delta_y - round(delta_y)
+  delta_z <- delta_z - round(delta_z)
+  
+  # Calculate the squared distance using the metric tensor
+  r2 <- a2 * delta_x^2 + b2 * delta_y^2 + c2 * delta_z^2 +
+        2 * bc_cos_alpha * delta_y * delta_z +
+        2 * ca_cos_beta * delta_z * delta_x +
+        2 * ab_cos_gamma * delta_x * delta_y
+  
+  # Calculate the distances
+  r <- sqrt(r2)
+  
+  # Create a distance matrix with atom labels
+  atom_pairs <- expand.grid(Atom1 = labels, Atom2 = labels)
+  distances <- data.table(
+    Atom1 = atom_pairs$Atom1,
+    Atom2 = atom_pairs$Atom2,
+    Distance = as.vector(r)
+  )
+  
+  # Filter out zero distances (self-distances) and duplicates
+  distances <- distances[Atom1 != Atom2 & !duplicated(t(apply(distances, 1, sort)))]
+
+  return(distances)
 }
 ```
-
-# Extracting from all the .cifs:
-
+# Final Processing
 ```{r}
-# Initialize timing variables
-time_read_all <- 0
-time_extract_formula_all <- 0
-time_extract_structure_all <- 0
-time_extract_space_group_name_all <- 0
-time_extract_space_group_number_all <- 0
-time_extract_unit_cell_all <- 0
-time_extract_atomic_all <- 0
-time_extract_symmetry_all <- 0
-time_apply_symmetry_all <- 0
-time_calculate_distances_all <- 0
+# Initialize an empty data table to store the results
+main_table <- data.table()
 
-# List CIF files
-time_cif_list <- system.time({
-  cif_list <- Sys.glob(paths = "data/*.cif")
-  cif_tab <- lapply(cif_list, readLines, warn = FALSE)
-})
-cat("Time to list CIF files:", time_cif_list["elapsed"], "seconds\n")
+# Iterate over each CIF content
+for (cif in cif_tab) {
+  # Extract various properties and metrics
+  ICSD_code <- extract_ICSD_code(cif)
+  chemical_formula <- extract_chemical_formula(cif)
+  structure_type <- extract_structure_type(cif)
+  space_group_name <- extract_space_group_name(cif)
+  space_group_number <- extract_space_group_number(cif)
+  unit_cell_metrics <- extract_unit_cell_metrics(cif)
+  atomic_coordinates <- extract_atomic_coordinates(cif)
+  symmetry_operations <- extract_symmetry_operations(cif)
+  transformed_coords <- apply_symmetry_operations(atomic_coordinates, symmetry_operations)
+  distances <- calculate_distances(transformed_coords, unit_cell_metrics)
 
-# Extracting from all the .cifs:
-time_extraction <- system.time({
-  # Initialize an empty list to store the results
-  results <- list()
+  # Combine extracted data into the main table
+  main_table <- rbindlist(list(main_table, data.table(
+    ICSD_code = ICSD_code,
+    chemical_formula = chemical_formula,
+    structure_type = structure_type,
+    space_group_name = space_group_name,
+    space_group_number = space_group_number,
+    unit_cell_metrics = list(unit_cell_metrics),
+    atomic_coordinates = list(atomic_coordinates),
+    symmetry_operations = list(symmetry_operations),
+    transformed_coords = list(transformed_coords),
+    distances = list(distances)
+  )), fill = TRUE)
+}
 
-  # Loop through each CIF file
-  for (cif_file in cif_list) {
-    # Read the CIF file
-    time_read <- system.time({
-      cif_content <- readLines(cif_file, warn = FALSE)
-    })
-    time_read_all <- time_read_all + time_read["elapsed"]
-
-    # Extract the compound name from the file name
-    compound_name <- tools::file_path_sans_ext(basename(cif_file))
-
-    # Extract the relevant data
-    time_extract_formula <- system.time({
-      chemical_formula <- extract_chemical_formula(cif_content)
-    })
-    time_extract_formula_all <- time_extract_formula_all + time_extract_formula["elapsed"]
-
-    time_extract_structure <- system.time({
-      structure_type <- extract_structure_type(cif_content)
-    })
-    time_extract_structure_all <- time_extract_structure_all + time_extract_structure["elapsed"]
-
-    time_extract_space_group_name <- system.time({
-      space_group_name <- extract_space_group_name(cif_content)
-    })
-    time_extract_space_group_name_all <- time_extract_space_group_name_all + time_extract_space_group_name["elapsed"]
-
-    time_extract_space_group_number <- system.time({
-      space_group_number <- extract_space_group_number(cif_content)
-    })
-    time_extract_space_group_number_all <- time_extract_space_group_number_all + time_extract_space_group_number["elapsed"]
-
-    time_extract_unit_cell <- system.time({
-      unit_cell_metrics <- extract_unit_cell_metrics(cif_content)
-    })
-    time_extract_unit_cell_all <- time_extract_unit_cell_all + time_extract_unit_cell["elapsed"]
-
-    time_extract_atomic <- system.time({
-      atomic_coordinates <- extract_atomic_coordinates(cif_content)
-    })
-    time_extract_atomic_all <- time_extract_atomic_all + time_extract_atomic["elapsed"]
-
-    time_extract_symmetry <- system.time({
-      symmetry_operations <- extract_symmetry_operations(cif_content)
-    })
-    time_extract_symmetry_all <- time_extract_symmetry_all + time_extract_symmetry["elapsed"]
-
-    # Apply symmetry operations to atomic coordinates
-    time_apply_symmetry <- system.time({
-      transformed_coordinates <- apply_symmetry_operations(atomic_coordinates, symmetry_operations)
-    })
-    time_apply_symmetry_all <- time_apply_symmetry_all + time_apply_symmetry["elapsed"]
-
-    # Calculate distances between atoms
-    time_calculate_distances <- system.time({
-      distance_df <- calculate_distances(transformed_coordinates)
-    })
-    time_calculate_distances_all <- time_calculate_distances_all + time_calculate_distances["elapsed"]
-
-    # Create a data frame for the current CIF file results
-    result <- data.frame(
-      compound_name = compound_name,
-      chemical_formula = chemical_formula,
-      structure_type = structure_type,
-      space_group_name = space_group_name,
-      space_group_number = space_group_number,
-      unit_cell_metrics = I(list(unit_cell_metrics)),
-      atomic_coordinates = I(list(atomic_coordinates)),
-      transformed_coordinates = I(list(transformed_coordinates)),
-      distance_matrix = I(list(distance_df))
-    )
-
-    # Append the result to the results list
-    results <- append(results, list(result))
-  }
-})
-
-cat("Total time for extracting from all CIF files:", time_extraction["elapsed"], "seconds\n")
-
-# Combine all results into a single data frame
-time_combine <- system.time({
-  results_df <- do.call(rbind, results)
-})
-
-cat("Time to combine results into a data frame:", time_combine["elapsed"], "seconds\n")
-
-# Print the accumulated times for each function
-cat("Total time to read CIF files:", time_read_all, "seconds\n")
-cat("Total time to extract chemical formula:", time_extract_formula_all, "seconds\n")
-cat("Total time to extract structure type:", time_extract_structure_all, "seconds\n")
-cat("Total time to extract space group name:", time_extract_space_group_name_all, "seconds\n")
-cat("Total time to extract space group number:", time_extract_space_group_number_all, "seconds\n")
-cat("Total time to extract unit cell metrics:", time_extract_unit_cell_all, "seconds\n")
-cat("Total time to extract atomic coordinates:", time_extract_atomic_all, "seconds\n")
-cat("Total time to extract symmetry operations:", time_extract_symmetry_all, "seconds\n")
-cat("Total time to apply symmetry operations:", time_apply_symmetry_all, "seconds\n")
-cat("Total time to calculate distances:", time_calculate_distances_all, "seconds\n")
-
-# Print the results data frame
-print(results_df)
-
+# Display the final combined data table
+main_table
 ```
