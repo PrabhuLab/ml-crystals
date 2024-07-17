@@ -1,5 +1,5 @@
 ---
-title: "Project"
+title: "Developing a Machine Learning Pipeline for Crystallography Data"
 author: "Don Ngo"
 date: "`r Sys.Date()`"
 output: pdf_document
@@ -13,27 +13,29 @@ output: pdf_document
 -   Build functions.
 -   Build a package.
 
-# Set the working directory
+## Functions
+
+### Set the working directory
 
 ```{r}
 setwd("~/repos/ml-crystals/")
 ```
 
-# List CIF files
+### List CIF files
 
 ```{r}
 cif_list <- Sys.glob(paths = "data/*.cif")
 cif_tab <- lapply(cif_list, readLines , warn =  FALSE)
 ```
 
-# Packages (to be adjusted)
+### Packages (to be adjusted)
 
 ```{r}
 library(data.table)
 library(stringr)
 ```
 
-# Bind CIF Files into One Table
+### Bind CIF Files into One Table
 
 ```{r}
 # List CIF files
@@ -41,7 +43,7 @@ cif_list <- Sys.glob(paths = "data/*.cif")
 cif_tab <- lapply(cif_list, fread, sep = "\n", header = FALSE)
 ```
 
-# Extracting Data
+### Extracting Data
 
 ```{r}
 # Function to extract a specific value based on a pattern from CIF content
@@ -61,12 +63,15 @@ extract_value <- function(cif_content, pattern, remove_pattern = TRUE) {
     return(NA)
   }
 }
+```
 
+### Specific extraction functions for different properties
+
+```{r}
 extract_ICSD_code <- function (cif_content) {
   extract_value(cif_content, "_database_code_ICSD")
 }
 
-# Specific extraction functions for different properties
 extract_chemical_formula <- function(cif_content) {
   extract_value(cif_content, "_chemical_formula_sum")
 }
@@ -82,8 +87,11 @@ extract_space_group_name <- function(cif_content) {
 extract_space_group_number <- function(cif_content) {
   extract_value(cif_content, "_space_group_IT_number")
 }
+```
 
-# Function to extract unit cell metrics
+### Function to extract unit cell metrics
+
+```{r}
 extract_unit_cell_metrics <- function(cif_content) {
   cell_parameters <- c(
     "_cell_length_a",
@@ -111,8 +119,11 @@ extract_unit_cell_metrics <- function(cif_content) {
   
   return(unit_cell_metrics)
 }
+```
 
-# Extracting atomic coordinates
+### Extracting atomic coordinates
+
+```{r}
 extract_atomic_coordinates <- function(cif_content) {
   # Initialize lists to store atom properties
   labels <- vector()
@@ -169,8 +180,11 @@ extract_atomic_coordinates <- function(cif_content) {
   )
   return(atomic_coordinates)
 }
+```
 
-# Function to extract symmetry operations from CIF content
+### Function to extract symmetry operations from CIF content
+
+```{r}
 extract_symmetry_operations <- function(cif_content) {
   # Find the start and end of the symmetry operations section
   symmetry_start <- grep("_space_group_symop_operation_xyz", cif_content$V1)
@@ -194,8 +208,11 @@ extract_symmetry_operations <- function(cif_content) {
 
   return(symmetry_operations)
 }
+```
 
-# Function to apply symmetry operations to atomic coordinates
+### Function to apply symmetry operations to atomic coordinates
+
+```{r}
 apply_symmetry_operations <- function(atomic_coordinates, symmetry_operations) {
   # Helper function to apply a single operation
   apply_operation <- function(operation, x, y, z) {
@@ -229,14 +246,14 @@ apply_symmetry_operations <- function(atomic_coordinates, symmetry_operations) {
   transformed_coords <- rbindlist(lapply(1:nrow(atomic_coordinates), function(i) {
     expand_coordinates(atomic_coordinates[i])
   }))
-  
-  # Remove duplicate coordinates
-  transformed_coords <- unique(transformed_coords, by = c("x_a", "y_b", "z_c"))
 
   return(transformed_coords)
 }
+```
 
-# Function to calculate distances between atoms using real-space metric tensor and vectorization
+### Function to calculate distances between atoms using real-space metric tensor and vectorization
+
+```{r}
 calculate_distances <- function(transformed_coords, unit_cell_metrics) {
   # Extract unit cell parameters
   a <- unit_cell_metrics$`_cell_length_a`
@@ -278,82 +295,93 @@ calculate_distances <- function(transformed_coords, unit_cell_metrics) {
   r <- sqrt(r2)
   
   # Create a distance matrix with atom labels
-  atom_pairs <- expand.grid(Atom1 = labels, Atom2 = labels)
+  atom_pairs <- expand.grid(Atom1 = labels, Atom2 = labels, KEEP.OUT.ATTRS = TRUE)
+
   distances <- data.table(
     Atom1 = atom_pairs$Atom1,
     Atom2 = atom_pairs$Atom2,
     Distance = as.vector(r)
   )
   
-  # Filter out zero distances (self-distances) and distances above 10 Ångström
+  # Filter out self-distances and distances above 10 Angstrom
   distances <- distances[Atom1 != Atom2 & Distance > 0 & Distance < 10]
   
-  # Filter out duplicates
-  distances <- distances[!duplicated(distances)]
-  
+  # Sort each row to ensure Atom1 is always less than or equal to Atom2 and remove duplicates
+  #try text based sorting
+  # sorted_pairs <- t(apply(distances[, .(Atom1, Atom2)], 1, sort))
+  # distances[, `:=`(Atom1 = sorted_pairs[, 1], Atom2 = sorted_pairs[, 2])]
+  # distances <- unique(distances)
+
   return(distances)
 }
+```
 
-# Function to calculate bonds using the Minimum Distance Method
-calculate_bonds_minimum_distance <- function(distances, delta = 0.1) {
-  # Find the minimum distance for each atom
-  min_distances <- distances[, .(min_distance = min(Distance)), by = Atom1]
+### Function to apply Minimum Distance Method
+
+```{r}
+minimum_distance <- function(distances, delta = 0.1) {
+  # Calculate dmin for each Atom1
+  dmin <- distances[, .(dmin = min(Distance)), by = .(Atom1)]
   
-  # Define the cutoff distance
-  min_distances[, d_cut := (1 + delta) * min_distance]
+  # Calculate dcut for each Atom1
+  dmin[, dcut := (1 + delta) * dmin]
   
-  # Determine bonded pairs based on the cutoff distance
-  bonded_pairs <- merge(distances, min_distances, by = "Atom1")
-  bonded_pairs <- bonded_pairs[Distance <= d_cut, .(Atom1, Atom2, Distance)]
+  # Determine bonded pairs based on dcut
+  bonded_pairs <- distances[dmin, on = .(Atom1), allow.cartesian = TRUE][Distance <= dcut, .(Atom1, Atom2, dcut)]
   
-  return(bonded_pairs)
+  return(unique(bonded_pairs))
+  
 }
+```
 
-# Function to calculate bonds using Brunner's Largest Reciprocal Gap Method
-calculate_bonds_brunner <- function(distances, delta = 0.0001) {
-  # Find the reciprocal gaps for each atom
-  distances[, reciprocal_gap := 1/Distance - shift(1/Distance, type = "lead"), by = Atom1]
-  
-  # Determine the largest reciprocal gap
-  max_reciprocal_gap <- distances[, .SD[which.max(reciprocal_gap)], by = Atom1]
-  
-  # Define the cutoff distance
-  max_reciprocal_gap[, d_cut := Distance + delta]
-  
-  # Determine bonded pairs based on the cutoff distance
-  bonded_pairs <- merge(distances, max_reciprocal_gap[, .(Atom1, d_cut)], by = "Atom1")
-  bonded_pairs <- bonded_pairs[Distance <= d_cut, .(Atom1, Atom2, Distance)]
-  
-  return(bonded_pairs)
-}
+### Function to apply Brunner's Largest Reciprocal Gap Method
 
-# Function to calculate bonds using Hoppe's Effective Coordination Numbers Method
-calculate_bonds_econ <- function(distances, tolerance = 0.5) {
-  # Helper function to calculate weighted average bond length iteratively
-  calculate_weighted_average <- function(distances) {
-    davg_prev <- min(distances)
-    repeat {
-      weights <- exp(1 - (distances / davg_prev)^6)
-      davg_new <- sum(distances * weights) / sum(weights)
-      if (abs(davg_new - davg_prev) <= 0.001) break
-      davg_prev <- davg_new
+```{r}
+
+```
+
+### Function to apply Hoppe's Method of Effective Coordination Numbers
+
+```{r}
+hoppe <- function(distances, delta = 0.5) {
+  # Initialize an empty list to store the bonded pairs
+  bonded_pairs <- list()
+
+  # Iterate over each unique Atom1 in the distances table
+  unique_atoms <- unique(distances$Atom1)
+  for (atom in unique_atoms) {
+    # Filter distances for the current Atom1
+    atom_distances <- distances[Atom1 == atom]
+
+    # Step 1: Calculate dmin for the current atom
+    dmin <- min(atom_distances$Distance)
+    
+    # Step 2: Calculate initial davg (0davg)
+    davg <- sum(atom_distances$Distance * exp(1 - (atom_distances$Distance / dmin)^6)) / 
+            sum(exp(1 - (atom_distances$Distance / dmin)^6))
+    
+    # Step 3: Iteratively calculate ndavg until convergence
+    ndavg <- davg
+    while (TRUE) {
+      prev_davg <- davg
+      davg <- sum(atom_distances$Distance * exp(1 - (atom_distances$Distance / prev_davg)^6)) / 
+              sum(exp(1 - (atom_distances$Distance / prev_davg)^6))
+      if (abs(davg - prev_davg) <= 0.001) break
     }
-    return(davg_new)
+    
+    # Step 4: Determine bonded pairs based on the tolerance parameter δ
+    bonded <- atom_distances[exp(1 - (Distance / davg)^6) >= delta]
+    bonded_pairs[[atom]] <- bonded
   }
   
-  # Find the weighted average bond length for each atom
-  avg_distances <- distances[, .(d_avg = calculate_weighted_average(Distance)), by = Atom1]
-  
-  # Determine bonded pairs based on the exponential cutoff
-  distances <- merge(distances, avg_distances, by = "Atom1")
-  distances[, bonded := exp(1 - (Distance / d_avg)^6) >= tolerance]
-  
-  bonded_pairs <- distances[bonded == TRUE, .(Atom1, Atom2, Distance)]
-  
+  # Combine all bonded pairs into a single data.table
+  bonded_pairs <- rbindlist(bonded_pairs, fill = TRUE)
   return(bonded_pairs)
 }
 ```
-# Final Processing
+
+### Final Processing
+
 ```{r}
 # Initialize an empty data table to store the results
 main_table <- data.table()
@@ -371,9 +399,11 @@ for (cif in cif_tab) {
   symmetry_operations <- extract_symmetry_operations(cif)
   transformed_coords <- apply_symmetry_operations(atomic_coordinates, symmetry_operations)
   distances <- calculate_distances(transformed_coords, unit_cell_metrics)
-  minimum_bonds <- calculate_bonds_minimum_distance(distances)
-  brunner_bonds <- calculate_bonds_brunner(distances)
-  econ_bonds <- calculate_bonds_econ(distances)
+
+  # Apply the coordination number prediction algorithms
+  bonded_pairs_minimum_distance <- minimum_distance(distances)
+  # bonded_pairs_brunner <- brunner(distances)
+  bonded_pairs_hoppe <- hoppe(distances)
 
   # Combine extracted data into the main table
   main_table <- rbindlist(list(main_table, data.table(
@@ -387,9 +417,9 @@ for (cif in cif_tab) {
     symmetry_operations = list(symmetry_operations),
     transformed_coords = list(transformed_coords),
     distances = list(distances),
-    minimum_bonds = list(minimum_bonds),
-    brunner_bonds = list(brunner_bonds),
-    econ_bonds = list(econ_bonds)
+    bonded_pairs_minimum_distance = list(bonded_pairs_minimum_distance),
+    # bonded_pairs_brunner = list(bonded_pairs_brunner),
+    bonded_pairs_hoppe = list(bonded_pairs_hoppe)
   )), fill = TRUE)
 }
 
