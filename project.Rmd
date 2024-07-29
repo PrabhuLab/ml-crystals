@@ -171,7 +171,7 @@ extract_atomic_coordinates <- function(cif_content) {
 
   # Create a data table to store the atomic coordinates
   atomic_coordinates <- data.table(
-    Label = labels,
+    Label = as.character(labels),
     x_a = as.numeric(fractional_x),
     y_b = as.numeric(fractional_y),
     z_c = as.numeric(fractional_z),
@@ -230,7 +230,7 @@ apply_symmetry_operations <- function(atomic_coordinates, symmetry_operations) {
     z <- row$z_c
     
     # Define transformations
-    transformations <- expand.grid(tx = c(-1, 0, 1), ty = c(-1, 0, 1), tz = c(-1, 0, 1))
+    transformations <- expand.grid(tx = c(0, 1), ty = c(0, 1), tz = c(0, 1))
     
     new_coords <- rbindlist(lapply(1:nrow(symmetry_operations), function(i) {
       rbindlist(lapply(1:nrow(transformations), function(j) {
@@ -299,22 +299,22 @@ calculate_distances <- function(atomic_coordinates, transformed_coords, unit_cel
   delta_y <- outer(coords_atomic[, 2], coords_transformed[, 2], "-")
   delta_z <- outer(coords_atomic[, 3], coords_transformed[, 3], "-")
 
-  # Debug: Check pairwise differences
-  cat("Pairwise differences (delta_x, delta_y, delta_z):\n")
-  print(head(delta_x))
-  print(head(delta_y))
-  print(head(delta_z))
+  # # Debug: Check pairwise differences
+  # cat("Pairwise differences (delta_x, delta_y, delta_z):\n")
+  # print(head(delta_x))
+  # print(head(delta_y))
+  # print(head(delta_z))
 
   # Apply periodic boundary conditions
   delta_x <- delta_x - round(delta_x)
   delta_y <- delta_y - round(delta_y)
   delta_z <- delta_z - round(delta_z)
 
-  # Debug: Check differences after PBC application
-  cat("After PBC application (delta_x, delta_y, delta_z):\n")
-  print(head(delta_x))
-  print(head(delta_y))
-  print(head(delta_z))
+  # # Debug: Check differences after PBC application
+  # cat("After PBC application (delta_x, delta_y, delta_z):\n")
+  # print(head(delta_x))
+  # print(head(delta_y))
+  # print(head(delta_z))
 
   # Calculate the squared distance using the metric tensor
   r2 <- a2 * delta_x^2 + b2 * delta_y^2 + c2 * delta_z^2 +
@@ -322,9 +322,9 @@ calculate_distances <- function(atomic_coordinates, transformed_coords, unit_cel
         2 * ca_cos_beta * delta_z * delta_x +
         2 * ab_cos_gamma * delta_x * delta_y
 
-  # Debug: Check squared distances
-  cat("Squared distances (r2):\n")
-  print(head(r2))
+  # # Debug: Check squared distances
+  # cat("Squared distances (r2):\n")
+  # print(head(r2))
 
   # Calculate the distances
   r <- sqrt(r2)
@@ -358,7 +358,6 @@ minimum_distance <- function(distances, delta = 0.1) {
   # Determine bonded pairs based on dcut
   bonded_pairs <- distances[dmin, on = .(Atom1), allow.cartesian = TRUE][Distance <= dcut, .(Atom1, Atom2, Distance, dcut, dmin)]
   
-  
   return(bonded_pairs)
   
 }
@@ -367,7 +366,7 @@ minimum_distance <- function(distances, delta = 0.1) {
 ### Function to apply Brunner's Largest Reciprocal Gap Method
 
 ```{r}
-runner_nn_bonds <- function(distances, delta = 0.0001) {
+brunner <- function(distances, delta = 0.0001) {
   # Initialize an empty list to store the bonds
   bonds <- list()
   
@@ -469,7 +468,7 @@ for (cif in cif_tab) {
 
   # Apply the coordination number prediction algorithms
   bonded_pairs_minimum_distance <- minimum_distance(distances)
-  # bonded_pairs_brunner <- brunner(distances)
+  bonded_pairs_brunner <- brunner(distances)
   bonded_pairs_hoppe <- hoppe(distances)
 
   # Combine extracted data into the main table
