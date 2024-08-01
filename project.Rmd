@@ -113,9 +113,6 @@ extract_unit_cell_metrics <- function(cif_content) {
       return(NA)
     }
   })
-  
-  # Double the lengths of the unit cell parameters
-  # values[1:3] <- values[1:3] * 2
 
   # Create a data table with the extracted values
   unit_cell_metrics <- as.data.table(t(values))
@@ -153,7 +150,7 @@ extract_atomic_coordinates <- function(cif_content) {
     properties <- strsplit(line, "\\s+")[[1]]
 
     # Extract and store relevant information
-    labels <- c(labels, properties[1])
+    labels <- c(labels, as.character(properties[1]))
 
     # Extract fractional coordinates and errors separately
     fractional_x_val <- gsub("\\(.*\\)", "", properties[5])
@@ -174,7 +171,7 @@ extract_atomic_coordinates <- function(cif_content) {
 
   # Create a data table to store the atomic coordinates
   atomic_coordinates <- data.table(
-    Label = as.character(labels),
+    Label = labels,
     x_a = as.numeric(fractional_x),
     y_b = as.numeric(fractional_y),
     z_c = as.numeric(fractional_z),
@@ -217,60 +214,6 @@ extract_symmetry_operations <- function(cif_content) {
 ### Function to apply symmetry operations to atomic coordinates
 
 ```{r}
-# apply_symmetry_operations <- function(atomic_coordinates, symmetry_operations) {
-#   # Helper function to apply a single operation
-#   apply_operation <- function(operation, x, y, z) {
-#     operation <- gsub("x", sprintf("(%f)", x), operation)
-#     operation <- gsub("y", sprintf("(%f)", y), operation)
-#     operation <- gsub("z", sprintf("(%f)", z), operation)
-#     eval(parse(text = operation))
-#   }
-# 
-#   # Expand coordinates by applying each symmetry operation and transformations of +1 and -1
-#   expand_coordinates <- function(row) {
-#     x <- row$x_a
-#     y <- row$y_b
-#     z <- row$z_c
-# 
-#     # Define transformations
-#     transformations <- expand.grid(tx = c(-1, 0, 1), ty = c(-1, 0, 1), tz = c(-1, 0, 1))
-# 
-#     new_coords <- rbindlist(lapply(1:nrow(symmetry_operations), function(i) {
-#       rbindlist(lapply(1:nrow(transformations), function(j) {
-#         tx <- transformations[j, "tx"]
-#         ty <- transformations[j, "ty"]
-#         tz <- transformations[j, "tz"]
-# 
-#         new_x <- apply_operation(symmetry_operations[i, x], x + tx, y + ty, z + tz)
-#         new_y <- apply_operation(symmetry_operations[i, y], x + tx, y + ty, z + tz)
-#         new_z <- apply_operation(symmetry_operations[i, z], x + tx, y + ty, z + tz)
-# 
-#         data.table(
-#           Label = paste(row$Label, i, j, sep = "_"), # Apply unique label
-#           x_a = new_x %% 1,  # Apply modulus to keep coordinates within [0,1)
-#           y_b = new_y %% 1,  # Apply modulus to keep coordinates within [0,1)
-#           z_c = new_z %% 1  # Apply modulus to keep coordinates within [0,1)
-#         )
-#       }))
-#     }))
-# 
-#     return(new_coords)
-#   }
-# 
-#   # Apply symmetry operations to all atomic coordinates
-#   transformed_coords <- rbindlist(lapply(1:nrow(atomic_coordinates), function(i) {
-#     expand_coordinates(atomic_coordinates[i])
-#   }))
-# 
-#   # Remove duplicates
-#   unique_coords <- transformed_coords %>%
-#     distinct(x_a, y_b, z_c, .keep_all = TRUE)
-# 
-#   # unique_coords <- unique(unique_coords, by = c("x_a", "y_b", "z_c"))
-# 
-#   return(unique_coords)
-# }
-
 apply_symmetry_operations <- function(atomic_coordinates, symmetry_operations) {
   # Helper function to apply a single operation
   apply_operation <- function(operation, x, y, z) {
@@ -313,10 +256,42 @@ apply_symmetry_operations <- function(atomic_coordinates, symmetry_operations) {
 }
 ```
 
+### Function to expand transformed coordinates in all neighboring unit cells
+```{r}
+expand_transformed_coords <- function(transformed_coords) {
+  # Define the number of unit cells to expand in each direction
+  n_cells <- 1
+
+  # Generate a grid of unit cell indices to expand
+  cell_indices <- as.data.table(expand.grid(
+    x = -n_cells:n_cells,
+    y = -n_cells:n_cells,
+    z = -n_cells:n_cells
+  ))
+
+  # Expand the transformed coordinates
+  expanded_coords <- rbindlist(lapply(1:nrow(cell_indices), function(i) {
+    cell_shift <- cell_indices[i]
+    new_coords <- transformed_coords[, .(
+      Label = paste(Label, paste(cell_shift$x, cell_shift$y, cell_shift$z, sep = "_"), sep = "_"),
+      x_a = x_a + cell_shift$x,
+      y_b = y_b + cell_shift$y,
+      z_c = z_c + cell_shift$z
+    )]
+    return(new_coords)
+  }))
+
+  # Remove duplicates
+  expanded_coords <- expanded_coords %>%
+    distinct(x_a, y_b, z_c, .keep_all = TRUE)
+
+  return(expanded_coords)
+}
+```
 ### Function to calculate distances between atoms using real-space metric tensor and vectorization
 
 ```{r}
-calculate_distances <- function(atomic_coordinates, transformed_coords, unit_cell_metrics) {
+calculate_distances <- function(atomic_coordinates, expanded_coords, unit_cell_metrics) {
   # Extract unit cell parameters
   a <- unit_cell_metrics$`_cell_length_a`
   b <- unit_cell_metrics$`_cell_length_b`
@@ -325,47 +300,16 @@ calculate_distances <- function(atomic_coordinates, transformed_coords, unit_cel
   beta <- unit_cell_metrics$`_cell_angle_beta` * pi / 180    # Convert to radians
   gamma <- unit_cell_metrics$`_cell_angle_gamma` * pi / 180  # Convert to radians
 
-  # Calculate the real-space metric tensor components
-  # a2 <- a^2
-  # b2 <- b^2
-  # c2 <- c^2
-  # bc_cos_alpha <- b * c * cos(alpha)
-  # ca_cos_beta <- c * a * cos(beta)
-  # ab_cos_gamma <- a * b * cos(gamma)
-
   # Extract coordinates as matrices
   coords_atomic <- as.matrix(atomic_coordinates[, .(x_a, y_b, z_c)])
-  coords_transformed <- as.matrix(transformed_coords[, .(x_a, y_b, z_c)])
+  coords_expanded <- as.matrix(expanded_coords[, .(x_a, y_b, z_c)])
   labels_atomic <- atomic_coordinates$Label
-  labels_transformed <- transformed_coords$Label
+  labels_expanded <- expanded_coords$Label
 
   # Calculate pairwise differences in coordinates between atomic and transformed coordinates
-  delta_x <- outer(coords_atomic[, 1], coords_transformed[, 1], "-")
-  delta_y <- outer(coords_atomic[, 2], coords_transformed[, 2], "-")
-  delta_z <- outer(coords_atomic[, 3], coords_transformed[, 3], "-")
-
-  # Debug: Check pairwise differences
-  # cat("Pairwise differences (delta_x, delta_y, delta_z):\n")
-  # print(delta_x)
-  # print(delta_y)
-  # print(delta_z)
-  
-  # # Negative translation
-  # delta_x <- delta_x - round(delta_x)
-  # delta_y <- delta_y - round(delta_y)
-  # delta_z <- delta_z - round(delta_z)
-  # 
-  # 
-  # # Positive translation
-  # delta_x <- delta_x + round(delta_x)
-  # delta_y <- delta_y + round(delta_y)
-  # delta_z <- delta_z + round(delta_z)
-  
-  # Debug: Check differences after PBC application
-  # cat("After PBC application (delta_x, delta_y, delta_z):\n")
-  # print(delta_x)
-  # print(delta_y)
-  # print(delta_z)
+  delta_x <- outer(coords_atomic[, 1], coords_expanded[, 1], "-")
+  delta_y <- outer(coords_atomic[, 2], coords_expanded[, 2], "-")
+  delta_z <- outer(coords_atomic[, 3], coords_expanded[, 3], "-")
 
   # Calculate the squared distance using the metric tensor
   r2 <- ((a^2) * (delta_x^2)) + ((b^2) * (delta_y^2)) + ((c^2) * (delta_z^2)) +
@@ -373,15 +317,11 @@ calculate_distances <- function(atomic_coordinates, transformed_coords, unit_cel
         (2 * c * a * cos(beta) * delta_z * delta_x) +
         (2 * a * b * cos(gamma) * delta_x * delta_y)
 
-  # # Debug: Check squared distances
-  # cat("Squared distances (r2):\n")
-  # print(head(r2))
-
   # Calculate the distances
   r <- sqrt(r2)
 
   # Create a distance matrix with atom labels
-  atom_pairs <- expand.grid(Atom1 = labels_atomic, Atom2 = labels_transformed, KEEP.OUT.ATTRS = TRUE)
+  atom_pairs <- expand.grid(Atom1 = labels_atomic, Atom2 = labels_expanded, KEEP.OUT.ATTRS = TRUE)
 
   distances <- data.table(
     Atom1 = atom_pairs$Atom1,
@@ -389,9 +329,10 @@ calculate_distances <- function(atomic_coordinates, transformed_coords, unit_cel
     Distance = as.vector(r)
   )
 
+  distances <- distances[Distance > 0]
   # Filter out distances above 10 Angstrom
-  distances <- distances[Distance > 0.01 & Distance < 10]
-
+  # distances <- distances[Distance > 0.01 & Distance < 10]
+  
   return(distances)
 }
 ```
@@ -410,10 +351,10 @@ minimum_distance <- function(distances, delta = 0.1) {
   bonded_pairs <- distances[dmin, on = .(Atom1), allow.cartesian = TRUE][Distance <= dcut, .(Atom1, Atom2, Distance, dcut, dmin)]
   
   # Remove duplicates
-  unique_bonds <- bonded_pairs %>%
-    distinct(Distance, .keep_all = TRUE)
+  # unique_bonds <- bonded_pairs %>%
+  #   distinct(Distance, .keep_all = TRUE)
   
-  return(unique_bonds)
+  return(bonded_pairs)
   
 }
 ```
@@ -519,7 +460,8 @@ for (cif in cif_tab) {
   atomic_coordinates <- extract_atomic_coordinates(cif)
   symmetry_operations <- extract_symmetry_operations(cif)
   transformed_coords <- apply_symmetry_operations(atomic_coordinates, symmetry_operations)
-  distances <- calculate_distances(atomic_coordinates, transformed_coords, unit_cell_metrics)
+  expanded_coords <- expand_transformed_coords(transformed_coords)
+  distances <- calculate_distances(atomic_coordinates, expanded_coords, unit_cell_metrics)
 
   # Apply the coordination number prediction algorithms
   bonded_pairs_minimum_distance <- minimum_distance(distances)
@@ -537,6 +479,7 @@ for (cif in cif_tab) {
     atomic_coordinates = list(atomic_coordinates),
     symmetry_operations = list(symmetry_operations),
     transformed_coords = list(transformed_coords),
+    expanded_coords = list(expanded_coords),
     distances = list(distances),
     bonded_pairs_minimum_distance = list(bonded_pairs_minimum_distance),
     bonded_pairs_brunner = list(bonded_pairs_brunner),
