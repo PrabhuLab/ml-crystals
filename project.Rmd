@@ -69,8 +69,8 @@ extract_value <- function(cif_content, pattern, remove_pattern = TRUE) {
 ### Specific extraction functions for different properties
 
 ```{r}
-extract_ICSD_code <- function (cif_content) {
-  extract_value(cif_content, "_database_code_ICSD")
+extract_database_code <- function (cif_content) {
+  extract_value(cif_content, "_database_code_")
 }
 
 extract_chemical_formula <- function(cif_content) {
@@ -451,7 +451,7 @@ main_table <- data.table()
 # Iterate over each CIF content
 for (cif in cif_tab) {
   # Extract various properties and metrics
-  ICSD_code <- extract_ICSD_code(cif)
+  database_code <- extract_database_code(cif)
   chemical_formula <- extract_chemical_formula(cif)
   structure_type <- extract_structure_type(cif)
   space_group_name <- extract_space_group_name(cif)
@@ -470,7 +470,7 @@ for (cif in cif_tab) {
 
   # Combine extracted data into the main table
   main_table <- rbindlist(list(main_table, data.table(
-    ICSD_code = ICSD_code,
+    database_code = database_code,
     chemical_formula = chemical_formula,
     structure_type = structure_type,
     space_group_name = space_group_name,
