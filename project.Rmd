@@ -18,7 +18,7 @@ output: pdf_document
 ### Set the working directory
 
 ```{r}
-setwd("~/repos/ml-crystals/")
+setwd("C:/repos/ml-crystals")
 ```
 
 ### List CIF files
@@ -135,12 +135,21 @@ extract_atomic_coordinates <- function(cif_content) {
   y_errors <- vector()
   z_errors <- vector()
 
+  # Helper function to calculate the scaled error
+  scale_error <- function(value, error) {
+    if (is.na(error)) return(NA)
+    # Count the number of decimal places in the value
+    decimal_places <- nchar(strsplit(as.character(value), "\\.")[[1]][2])
+    scaled_error <- as.numeric(paste0("0.", strrep("0", decimal_places - nchar(error)), error))
+    return(scaled_error)
+  }
+
   # Find the start and end of the atom section
   atom_start <- grep("_atom_site_occupancy", cif_content$V1)
   atom_end <- grep("^loop_|^#End", cif_content$V1[atom_start:length(cif_content$V1)]) + atom_start - 1
 
   # If atom_end has multiple matches, take the first match after atom_start
-  if(length(atom_end) > 1) {
+  if (length(atom_end) > 1) {
     atom_end <- atom_end[1]
   }
 
@@ -161,12 +170,14 @@ extract_atomic_coordinates <- function(cif_content) {
     y_error <- ifelse(grepl("\\(", properties[6]), gsub(".*\\((.*)\\).*", "\\1", properties[6]), NA)
     z_error <- ifelse(grepl("\\(", properties[7]), gsub(".*\\((.*)\\).*", "\\1", properties[7]), NA)
 
+    # Adjust the errors to match the precision of the coordinates
     fractional_x <- c(fractional_x, fractional_x_val)
     fractional_y <- c(fractional_y, fractional_y_val)
     fractional_z <- c(fractional_z, fractional_z_val)
-    x_errors <- c(x_errors, x_error)
-    y_errors <- c(y_errors, y_error)
-    z_errors <- c(z_errors, z_error)
+    
+    x_errors <- c(x_errors, scale_error(fractional_x_val, x_error))
+    y_errors <- c(y_errors, scale_error(fractional_y_val, y_error))
+    z_errors <- c(z_errors, scale_error(fractional_z_val, z_error))
   }
 
   # Create a data table to store the atomic coordinates
@@ -179,6 +190,7 @@ extract_atomic_coordinates <- function(cif_content) {
     y_error = as.numeric(y_errors),
     z_error = as.numeric(z_errors)
   )
+  
   return(atomic_coordinates)
 }
 ```
@@ -315,11 +327,21 @@ calculate_distances <- function(atomic_coordinates, expanded_coords, unit_cell_m
   delta_y <- outer(coords_atomic[, 2], coords_expanded[, 2], "-")
   delta_z <- outer(coords_atomic[, 3], coords_expanded[, 3], "-")
 
+  # Cosine terms for angles
+  cos_alpha <- cos(alpha)
+  cos_beta <- cos(beta)
+  cos_gamma <- cos(gamma)
+  
+  # Set near-zero cosine values to exactly 0
+  if (abs(cos_alpha) < 1e-10) cos_alpha <- 0
+  if (abs(cos_beta) < 1e-10) cos_beta <- 0
+  if (abs(cos_gamma) < 1e-10) cos_gamma <- 0
+
   # Calculate the squared distance using the metric tensor
   r2 <- ((a^2) * (delta_x^2)) + ((b^2) * (delta_y^2)) + ((c^2) * (delta_z^2)) +
-        (2 * b * c * cos(alpha) * delta_y * delta_z) +
-        (2 * c * a * cos(beta) * delta_z * delta_x) +
-        (2 * a * b * cos(gamma) * delta_x * delta_y)
+        (2 * b * c * cos_alpha * delta_y * delta_z) +
+        (2 * c * a * cos_beta * delta_z * delta_x) +
+        (2 * a * b * cos_gamma * delta_x * delta_y)
 
   # Calculate the distances
   r <- sqrt(r2)
@@ -330,15 +352,23 @@ calculate_distances <- function(atomic_coordinates, expanded_coords, unit_cell_m
   distances <- data.table(
     Atom1 = atom_pairs$Atom1,
     Atom2 = atom_pairs$Atom2,
-    Distance = as.vector(r)
+    Distance = as.vector(r),
+    Alpha = as.vector(alpha),
+    DeltaX = as.vector(delta_x),
+    DeltaY = as.vector(delta_y),
+    DeltaZ = as.vector(delta_z),
+    CosAlpha = as.vector(cos_alpha),
+    CosBeta = as.vector(cos_beta),
+    CosGamma = as.vector(cos_gamma)
   )
 
   distances <- distances[Distance > 0]
-  # Filter out distances above 10 Angstrom
+  # Filter out distances above 10 Angstrom if necessary
   # distances <- distances[Distance > 0.01 & Distance < 10]
-  
+
   return(distances)
 }
+
 ```
 
 ### Function to apply Minimum Distance Method
@@ -449,82 +479,82 @@ hoppe <- function(distances, delta = 0.5, tolerance = 0.001) {
 ### Calculate Bond Angles
 
 ``` {r}
-# Function to calculate bond angles with debugging statements
-calculate_angles <- function(bonded_pairs, distances) {
-  # Convert relevant columns to character to avoid factor level issues
-  bonded_pairs[, Atom1 := as.character(Atom1)]
-  bonded_pairs[, Atom2 := as.character(Atom2)]
-  
-  distances[, Atom1 := as.character(Atom1)]
-  distances[, Atom2 := as.character(Atom2)]
-  
-  # Print unique atoms for debugging
-  print("Unique Atoms in Bonded Pairs:")
-  print(unique(c(bonded_pairs$Atom1, bonded_pairs$Atom2)))
-  
-  print("Unique Atoms in Distances:")
-  print(unique(c(distances$Atom1, distances$Atom2)))
-  
-  # Merge bonded pairs with distances to get the distances for each bond
-  bond_distances <- merge(bonded_pairs, distances, by = c("Atom1", "Atom2"), all.x = TRUE)
-  
-  print("Bond Distances:")
-  print(bond_distances)
-  
-  # Prepare an empty data.table to store angles
-  angles <- data.table(Atom1 = character(), Atom2 = character(), Atom3 = character(), Angle = numeric())
-  
-  # Loop through each unique central atom
-  unique_atoms <- unique(bonded_pairs$Atom1)
-  
-  print("Unique Atoms:")
-  print(unique_atoms)
-  
-  for (atom in unique_atoms) {
-    # Filter bonds where the atom is the central atom
-    central_bonds <- bond_distances[Atom1 == atom]
-    
-    print(paste("Central Atom:", atom))
-    print("Central Bonds:")
-    print(central_bonds)
-    
-    # Loop through all pairs of bonds involving the central atom
-    for (i in 1:(nrow(central_bonds) - 1)) {
-      for (j in (i + 1):nrow(central_bonds)) {
-        # Bond 1
-        atom2 <- central_bonds$Atom2[i]
-        distance1 <- central_bonds$Distance[i]
-        
-        # Bond 2
-        atom3 <- central_bonds$Atom2[j]
-        distance2 <- central_bonds$Distance[j]
-        
-        # Bond 3 (distance between atom2 and atom3)
-        print(paste("Looking for distance between:", atom2, "and", atom3))
-        bond_2_3 <- distances[Atom1 == atom2 & Atom2 == atom3 | Atom1 == atom3 & Atom2 == atom2]
-        
-        print("Bond 2-3:")
-        print(bond_2_3)
-        
-        if (nrow(bond_2_3) > 0) {
-          distance3 <- bond_2_3$Distance[1] # There should be only one distance in this case
-          
-          # Calculate the angle using cosine rule
-          cos_gamma <- (distance1^2 + distance2^2 - distance3^2) / (2 * distance1 * distance2)
-          cos_gamma <- pmin(pmax(cos_gamma, -1), 1) # Ensure cos_gamma is within valid range
-          gamma <- acos(cos_gamma) * 180 / pi # Convert to degrees
-          
-          # Store the result
-          angles <- rbind(angles, data.table(Atom1 = atom, Atom2 = atom2, Atom3 = atom3, Angle = gamma))
-          
-          print(paste("Calculated Angle:", gamma))
-        }
-      }
-    }
-  }
-  
-  return(angles)
-}
+# # Function to calculate bond angles with debugging statements
+# calculate_angles <- function(bonded_pairs, distances) {
+#   # Convert relevant columns to character to avoid factor level issues
+#   bonded_pairs[, Atom1 := as.character(Atom1)]
+#   bonded_pairs[, Atom2 := as.character(Atom2)]
+#   
+#   distances[, Atom1 := as.character(Atom1)]
+#   distances[, Atom2 := as.character(Atom2)]
+#   
+#   # Print unique atoms for debugging
+#   print("Unique Atoms in Bonded Pairs:")
+#   print(unique(c(bonded_pairs$Atom1, bonded_pairs$Atom2)))
+#   
+#   print("Unique Atoms in Distances:")
+#   print(unique(c(distances$Atom1, distances$Atom2)))
+#   
+#   # Merge bonded pairs with distances to get the distances for each bond
+#   bond_distances <- merge(bonded_pairs, distances, by = c("Atom1", "Atom2"), all.x = TRUE)
+#   
+#   print("Bond Distances:")
+#   print(bond_distances)
+#   
+#   # Prepare an empty data.table to store angles
+#   angles <- data.table(Atom1 = character(), Atom2 = character(), Atom3 = character(), Angle = numeric())
+#   
+#   # Loop through each unique central atom
+#   unique_atoms <- unique(bonded_pairs$Atom1)
+#   
+#   print("Unique Atoms:")
+#   print(unique_atoms)
+#   
+#   for (atom in unique_atoms) {
+#     # Filter bonds where the atom is the central atom
+#     central_bonds <- bond_distances[Atom1 == atom]
+#     
+#     print(paste("Central Atom:", atom))
+#     print("Central Bonds:")
+#     print(central_bonds)
+#     
+#     # Loop through all pairs of bonds involving the central atom
+#     for (i in 1:(nrow(central_bonds) - 1)) {
+#       for (j in (i + 1):nrow(central_bonds)) {
+#         # Bond 1
+#         atom2 <- central_bonds$Atom2[i]
+#         distance1 <- central_bonds$Distance[i]
+#         
+#         # Bond 2
+#         atom3 <- central_bonds$Atom2[j]
+#         distance2 <- central_bonds$Distance[j]
+#         
+#         # Bond 3 (distance between atom2 and atom3)
+#         print(paste("Looking for distance between:", atom2, "and", atom3))
+#         bond_2_3 <- distances[Atom1 == atom2 & Atom2 == atom3 | Atom1 == atom3 & Atom2 == atom2]
+#         
+#         print("Bond 2-3:")
+#         print(bond_2_3)
+#         
+#         if (nrow(bond_2_3) > 0) {
+#           distance3 <- bond_2_3$Distance[1] # There should be only one distance in this case
+#           
+#           # Calculate the angle using cosine rule
+#           cos_gamma <- (distance1^2 + distance2^2 - distance3^2) / (2 * distance1 * distance2)
+#           cos_gamma <- pmin(pmax(cos_gamma, -1), 1) # Ensure cos_gamma is within valid range
+#           gamma <- acos(cos_gamma) * 180 / pi # Convert to degrees
+#           
+#           # Store the result
+#           angles <- rbind(angles, data.table(Atom1 = atom, Atom2 = atom2, Atom3 = atom3, Angle = gamma))
+#           
+#           print(paste("Calculated Angle:", gamma))
+#         }
+#       }
+#     }
+#   }
+#   
+#   return(angles)
+# }
 ```
 
 ### Final Processing
@@ -554,9 +584,9 @@ for (cif in cif_tab) {
   bonded_pairs_hoppe <- hoppe(distances)
   
   # Calculate bond angles for different bonded pairs
-  angles_minimum_distance <- calculate_angles(bonded_pairs_minimum_distance, distances)
-  angles_brunner <- calculate_angles(bonded_pairs_brunner, distances)
-  angles_hoppe <- calculate_angles(bonded_pairs_hoppe, distances)
+  # angles_minimum_distance <- calculate_angles(bonded_pairs_minimum_distance, distances)
+  # angles_brunner <- calculate_angles(bonded_pairs_brunner, distances)
+  # angles_hoppe <- calculate_angles(bonded_pairs_hoppe, distances)
   
 
   # Combine extracted data into the main table
@@ -574,10 +604,10 @@ for (cif in cif_tab) {
     distances = list(distances),
     bonded_pairs_minimum_distance = list(bonded_pairs_minimum_distance),
     bonded_pairs_brunner = list(bonded_pairs_brunner),
-    bonded_pairs_hoppe = list(bonded_pairs_hoppe),
-    angles_minimum_distance = list(angles_minimum_distance),
-    angles_brunner = list(angles_brunner),
-    angles_hoppe = list(angles_hoppe)
+    bonded_pairs_hoppe = list(bonded_pairs_hoppe)#,
+    # angles_minimum_distance = list(angles_minimum_distance),
+    # angles_brunner = list(angles_brunner),
+    # angles_hoppe = list(angles_hoppe)
   )), fill = TRUE)
 }
 ```
