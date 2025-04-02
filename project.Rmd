@@ -126,7 +126,6 @@ extract_unit_cell_metrics <- function(cif_content) {
 
 ```{r}
 extract_atomic_coordinates <- function(cif_content) {
-  # Initialize lists to store atom properties
   labels <- vector()
   fractional_x <- vector()
   fractional_y <- vector()
@@ -135,35 +134,32 @@ extract_atomic_coordinates <- function(cif_content) {
   y_errors <- vector()
   z_errors <- vector()
 
-  # Helper function to calculate the scaled error
   scale_error <- function(value, error) {
     if (is.na(error)) return(NA)
-    # Count the number of decimal places in the value
     decimal_places <- nchar(strsplit(as.character(value), "\\.")[[1]][2])
     scaled_error <- as.numeric(paste0("0.", strrep("0", decimal_places - nchar(error)), error))
     return(scaled_error)
   }
 
-  # Find the start and end of the atom section
   atom_start <- grep("_atom_site_occupancy", cif_content$V1)
-  atom_end <- grep("^loop_|^#End", cif_content$V1[atom_start:length(cif_content$V1)]) + atom_start - 1
+  if (length(atom_start) == 0) return(NULL)
 
-  # If atom_end has multiple matches, take the first match after atom_start
-  if (length(atom_end) > 1) {
-    atom_end <- atom_end[1]
+  section_end_candidates <- c(
+    grep("^loop_", cif_content$V1[(atom_start + 1):nrow(cif_content)]),
+    grep("^\\s*$", cif_content$V1[(atom_start + 1):nrow(cif_content)])  # Detect blank lines
+  )
+  
+  if (length(section_end_candidates) > 0) {
+    atom_end <- min(section_end_candidates) + atom_start  # Get first occurrence
+  } else {
+    atom_end <- nrow(cif_content)  # Default to end of file
   }
 
-  # Iterate over each line containing atomic coordinates
   for (line in cif_content$V1[(atom_start + 1):(atom_end - 1)]) {
-    # Extract atom properties from the line
     properties <- strsplit(line, "\\s+")[[1]]
-  
-    print(properties)
 
-    # Extract and store relevant information
     labels <- c(labels, as.character(properties[1]))
 
-    # Extract fractional coordinates and errors separately
     fractional_x_val <- gsub("\\(.*\\)", "", properties[5])
     fractional_y_val <- gsub("\\(.*\\)", "", properties[6])
     fractional_z_val <- gsub("\\(.*\\)", "", properties[7])
@@ -172,17 +168,15 @@ extract_atomic_coordinates <- function(cif_content) {
     y_error <- ifelse(grepl("\\(", properties[6]), gsub(".*\\((.*)\\).*", "\\1", properties[6]), NA)
     z_error <- ifelse(grepl("\\(", properties[7]), gsub(".*\\((.*)\\).*", "\\1", properties[7]), NA)
 
-    # Adjust the errors to match the precision of the coordinates
     fractional_x <- c(fractional_x, fractional_x_val)
     fractional_y <- c(fractional_y, fractional_y_val)
     fractional_z <- c(fractional_z, fractional_z_val)
-    
+
     x_errors <- c(x_errors, scale_error(fractional_x_val, x_error))
     y_errors <- c(y_errors, scale_error(fractional_y_val, y_error))
     z_errors <- c(z_errors, scale_error(fractional_z_val, z_error))
   }
 
-  # Create a data table to store the atomic coordinates
   atomic_coordinates <- data.table(
     Label = labels,
     x_a = as.numeric(fractional_x),
@@ -192,7 +186,7 @@ extract_atomic_coordinates <- function(cif_content) {
     y_error = as.numeric(y_errors),
     z_error = as.numeric(z_errors)
   )
-  
+
   return(atomic_coordinates)
 }
 ```
@@ -201,24 +195,33 @@ extract_atomic_coordinates <- function(cif_content) {
 
 ```{r}
 extract_symmetry_operations <- function(cif_content) {
-  # Find the start and end of the symmetry operations section
   symmetry_start <- grep("_space_group_symop_operation_xyz", cif_content$V1)
-  symmetry_end <- grep("^loop_", cif_content$V1[symmetry_start:length(cif_content$V1)]) + symmetry_start - 1
+  if (length(symmetry_start) == 0) return(NULL)
 
-  if (length(symmetry_end) > 1) {
-    symmetry_end <- symmetry_end[1]
+  section_end_candidates <- c(
+    grep("^loop_", cif_content$V1[(symmetry_start + 1):nrow(cif_content)]),
+    grep("^\\s*$", cif_content$V1[(symmetry_start + 1):nrow(cif_content)])  # Detect blank lines
+  )
+  
+  if (length(section_end_candidates) > 0) {
+    symmetry_end <- min(section_end_candidates) + symmetry_start
+  } else {
+    symmetry_end <- nrow(cif_content)
   }
 
-  # Extract lines containing symmetry operations
   symmetry_lines <- cif_content$V1[(symmetry_start + 1):(symmetry_end - 1)]
+  
+  # Remove leading numeric labels and potential extra spaces
+  symmetry_lines <- gsub("^[0-9]+\\s+", "", symmetry_lines)
+  
   # Split each line into components
   symmetry_operations <- str_split_fixed(symmetry_lines, ",\\s*", n = 3)
 
   # Create a data table with the extracted symmetry operations
   symmetry_operations <- data.table(
-    x = gsub("^[0-9]+\\s+'|'", "", symmetry_operations[, 1]),
-    y = gsub("^[0-9]+\\s+'|'", "", symmetry_operations[, 2]),
-    z = gsub("^[0-9]+\\s+'|'", "", symmetry_operations[, 3])
+    x = gsub("'", "", symmetry_operations[, 1]),
+    y = gsub("'", "", symmetry_operations[, 2]),
+    z = gsub("'", "", symmetry_operations[, 3])
   )
 
   return(symmetry_operations)
@@ -273,6 +276,7 @@ apply_symmetry_operations <- function(atomic_coordinates, symmetry_operations) {
 ```
 
 ### Function to expand transformed coordinates in all neighboring unit cells
+
 ```{r}
 expand_transformed_coords <- function(transformed_coords) {
   # Define the number of unit cells to expand in each direction
@@ -306,6 +310,7 @@ expand_transformed_coords <- function(transformed_coords) {
   return(expanded_coords)
 }
 ```
+
 ### Function to calculate distances between atoms using real-space metric tensor and vectorization
 
 ```{r}
@@ -321,6 +326,7 @@ calculate_distances <- function(atomic_coordinates, expanded_coords, unit_cell_m
   # Extract coordinates as matrices
   coords_atomic <- as.matrix(atomic_coordinates[, .(x_a, y_b, z_c)])
   coords_expanded <- as.matrix(expanded_coords[, .(x_a, y_b, z_c)])
+  #coords_expanded <- as.matrix(rbind(atomic_coordinates[, .(x_a, y_b, z_c)],                              expanded_coords[, .(x_a, y_b, z_c)]))
   labels_atomic <- atomic_coordinates$Label
   labels_expanded <- expanded_coords$Label
 
@@ -479,58 +485,145 @@ hoppe <- function(distances, delta = 0.5, tolerance = 0.001) {
 
 ### Calculate Bond Angles
 
-``` {r}
-calculate_angles <- function(bonded_pairs, atomic_coordinates, expanded_coords) {
-  library(data.table)
-  
-  # Merge bonded pairs with atomic coordinates to get the positions of Atom1, Atom2, and Atom3
-  bonded_pairs <- merge(bonded_pairs, atomic_coordinates, by.x = "Atom1", by.y = "Label", suffixes = c("", "_Atom1"))
-  bonded_pairs <- merge(bonded_pairs, expanded_coords, by.x = "Atom2", by.y = "Label", suffixes = c("", "_Atom2"))
-  
-  # Create a table to store angles
-  angle_table <- data.table()
-  
-  # Find unique central atoms (Atom1)
-  unique_atoms <- unique(bonded_pairs$Atom1)
-  
-  for (central_atom in unique_atoms) {
-    # Filter bonded pairs involving the central atom
-    pairs <- bonded_pairs[Atom1 == central_atom]
+```{r}
+calculate_angles <- function(bonded_pairs, atomic_coordinates, expanded_coords, unit_cell_metrics) {
+  # Extract unit cell parameters once
+  a <- unit_cell_metrics$`_cell_length_a`
+  b <- unit_cell_metrics$`_cell_length_b`
+  c <- unit_cell_metrics$`_cell_length_c`
+  alpha_rad <- unit_cell_metrics$`_cell_angle_alpha` * pi / 180
+  beta_rad <- unit_cell_metrics$`_cell_angle_beta` * pi / 180
+  gamma_rad <- unit_cell_metrics$`_cell_angle_gamma` * pi / 180
+
+  # Pre-calculate cosines, handling potential near-zero values if necessary
+  cos_alpha <- cos(alpha_rad)
+  cos_beta <- cos(beta_rad)
+  cos_gamma <- cos(gamma_rad)
+  # Set near-zero cosine values to exactly 0 if needed
+  # if (abs(cos_alpha) < 1e-10) cos_alpha <- 0
+  # if (abs(cos_beta) < 1e-10) cos_beta <- 0
+  # if (abs(cos_gamma) < 1e-10) cos_gamma <- 0
+
+  # Combine original and expanded coordinates for easier lookup
+  all_coords <- rbind(
+      atomic_coordinates[, .(Label, x_a, y_b, z_c)],
+      expanded_coords[, .(Label, x_a, y_b, z_c)],
+      fill = TRUE # Use fill=TRUE in case error columns exist in one but not the other
+    )[, .(Label, x_a, y_b, z_c)] # Ensure only necessary columns are kept
+  # Ensure no duplicate labels exist if an original atom overlaps with an expanded one at 0,0,0 shift
+  all_coords <- unique(all_coords, by = "Label") 
+  setkey(all_coords, Label) # Set key for faster lookups
+
+  # Helper function to calculate angle using metric tensor
+  calculate_angle_metric <- function(atom1_label, atom2_label, atom3_label) {
+    # Get fractional coordinates
+    coord1 <- all_coords[atom1_label, .(x_a, y_b, z_c)]
+    coord2 <- all_coords[atom2_label, .(x_a, y_b, z_c)]
+    coord3 <- all_coords[atom3_label, .(x_a, y_b, z_c)]
+
+    # Check if coordinates were found
+    if (anyNA(coord1) || anyNA(coord2) || anyNA(coord3)) {
+       warning(paste("Coordinates not found for one or more atoms in angle:", atom1_label, atom2_label, atom3_label))
+       return(NA_real_)
+    }
     
-    # Generate all unique combinations of bonded neighbors
-    neighbor_combinations <- t(combn(pairs$Atom2, 2))
-    
-    for (combo in 1:nrow(neighbor_combinations)) {
-      neighbor1 <- neighbor_combinations[combo, 1]
-      neighbor2 <- neighbor_combinations[combo, 2]
-      
-      # Get the coordinates for Atom1, Atom2 (neighbor1), and Atom3 (neighbor2)
-      atom1_coords <- pairs[Atom2 == neighbor1, .(x_a, y_b, z_c)]
-      atom2_coords <- pairs[Atom2 == neighbor1, .(x_a_Atom2, y_b_Atom2, z_c_Atom2)]
-      atom3_coords <- pairs[Atom2 == neighbor2, .(x_a_Atom2, y_b_Atom2, z_c_Atom2)]
-      
-      # Compute vectors a⃗ and b⃗
-      a <- as.numeric(atom2_coords - atom1_coords)
-      b <- as.numeric(atom3_coords - atom1_coords)
-      
-      # Compute angle θ using the formula
-      cos_theta <- sum(a * b) / (sqrt(sum(a^2)) * sqrt(sum(b^2)))
-      theta <- acos(cos_theta) * (180 / pi)  # Convert radians to degrees
-      
-      # Add the result to the angle table
-      angle_table <- rbind(
-        angle_table,
-        data.table(
-          Atom1 = central_atom,
-          Neighbor1 = neighbor1,
-          Neighbor2 = neighbor2,
-          Angle = theta
-        )
-      )
+    # Calculate fractional difference vectors v1 = coord2 - coord1, v2 = coord3 - coord1
+    v1_frac <- as.numeric(coord2 - coord1) # (xf1, yf1, zf1)
+    v2_frac <- as.numeric(coord3 - coord1) # (xf2, yf2, zf2)
+
+    xf1 <- v1_frac[1]; yf1 <- v1_frac[2]; zf1 <- v1_frac[3]
+    xf2 <- v2_frac[1]; yf2 <- v2_frac[2]; zf2 <- v2_frac[3]
+
+    # Calculate dot product using metric tensor components
+    dot_product <- (xf1 * xf2 * a^2 +
+                    yf1 * yf2 * b^2 +
+                    zf1 * zf2 * c^2 +
+                    (xf1 * yf2 + yf1 * xf2) * a * b * cos_gamma +
+                    (xf1 * zf2 + zf1 * xf2) * a * c * cos_beta + # Corrected term
+                    (yf1 * zf2 + zf1 * yf2) * b * c * cos_alpha)
+
+    # Calculate squared magnitudes using metric tensor components
+    mag_sq1 <- (xf1^2 * a^2 + yf1^2 * b^2 + zf1^2 * c^2 +
+                2 * xf1 * yf1 * a * b * cos_gamma +
+                2 * xf1 * zf1 * a * c * cos_beta +
+                2 * yf1 * zf1 * b * c * cos_alpha)
+
+    mag_sq2 <- (xf2^2 * a^2 + yf2^2 * b^2 + zf2^2 * c^2 +
+                2 * xf2 * yf2 * a * b * cos_gamma +
+                2 * xf2 * zf2 * a * c * cos_beta +
+                2 * yf2 * zf2 * b * c * cos_alpha)
+
+    # Avoid division by zero or sqrt of negative (due to floating point issues)
+    if (mag_sq1 <= 1e-10 || mag_sq2 <= 1e-10) {
+       warning(paste("Magnitude zero for vector in angle:", atom1_label, atom2_label, atom3_label))
+       return(NA_real_) # Or potentially 0 or 180 depending on context
+    }
+
+    mag1 <- sqrt(mag_sq1)
+    mag2 <- sqrt(mag_sq2)
+
+    # Calculate cosine of the angle
+    cos_theta <- dot_product / (mag1 * mag2)
+
+    # Clamp cos_theta to [-1, 1] due to potential floating-point inaccuracies
+    cos_theta <- min(max(cos_theta, -1.0), 1.0)
+
+    # Calculate angle in degrees
+    angle_deg <- acos(cos_theta) * 180 / pi
+
+    return(angle_deg)
+  }
+
+  # --- Main loop to find angles ---
+  
+  # Initialize a list to store the angles
+  angle_list <- list()
+
+  # Find unique central atoms (Atom1 in the bonded pairs)
+  unique_central_atoms <- unique(bonded_pairs$Atom1)
+
+  # Loop through each central atom
+  for (central_atom in unique_central_atoms) {
+    # Find all atoms bonded to the current central atom
+    bonded_neighbors <- bonded_pairs[Atom1 == central_atom, Atom2]
+
+    # Need at least two neighbors to form an angle
+    if (length(bonded_neighbors) >= 2) {
+      # Generate unique combinations of two neighbors
+      neighbor_combinations <- combn(bonded_neighbors, 2, simplify = FALSE) # Get list of pairs
+
+      # Loop through each combination (triplet: neighbor1, central_atom, neighbor2)
+      for (pair in neighbor_combinations) {
+        atom2 <- pair[1]
+        atom3 <- pair[2]
+
+        # Calculate the bond angle using the metric tensor method
+        angle <- calculate_angle_metric(central_atom, atom2, atom3)
+
+        # Append the result to the list if angle is valid
+        if (!is.na(angle)) {
+          angle_list[[length(angle_list) + 1]] <- data.table(
+            CentralAtom = central_atom,
+            Neighbor1 = atom2,
+            Neighbor2 = atom3,
+            Angle = angle
+          )
+        }
+      }
     }
   }
+
+  # Combine all angle results into a single data table
+  if (length(angle_list) > 0) {
+      angle_results <- rbindlist(angle_list)
+      # Optional: Order results for consistency
+      angle_results <- angle_results[order(CentralAtom, Neighbor1, Neighbor2)]
+  } else {
+      # Return empty table with correct columns if no angles found
+      angle_results <- data.table(CentralAtom=character(), Neighbor1=character(), Neighbor2=character(), Angle=numeric())
+  }
   
-  return(angle_table)
+  return(angle_results)
 }
 ```
 
@@ -556,11 +649,11 @@ for (cif in cif_tab) {
   distances <- calculate_distances(atomic_coordinates, expanded_coords, unit_cell_metrics)
 
   # Apply the coordination number prediction algorithms
-  bonded_pairs_minimum_distance <- minimum_distance(distances)
+  bonded_pairs <- minimum_distance(distances)
 
   # Calculate bond angles for different bonded pairs
-  angles_minimum_distance <- calculate_angles(bonded_pairs_minimum_distance, distances)
-
+  bond_angles <- calculate_angles(bonded_pairs, atomic_coordinates, expanded_coords, unit_cell_metrics)
+  
   # Combine extracted data into the main table
   main_table <- rbindlist(list(main_table, data.table(
     database_code = database_code,
@@ -574,8 +667,8 @@ for (cif in cif_tab) {
     transformed_coords = list(transformed_coords),
     expanded_coords = list(expanded_coords),
     distances = list(distances),
-    bonded_pairs_minimum_distance = list(bonded_pairs_minimum_distance),
-    angles_minimum_distance = list(angles_minimum_distance),
+    bonded_pairs = list(bonded_pairs),
+    bond_angles = list(bond_angles)
   )), fill = TRUE)
 }
 ```
