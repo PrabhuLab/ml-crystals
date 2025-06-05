@@ -1,4 +1,4 @@
-# Define global variables to satisfy R CMD check
+# Define global variables to satisfy R CMD check.
 # These are typically column names used in data.table operations
 # or other symbols that appear as unbound global variables.
 
@@ -8,5 +8,7 @@ utils::globalVariables(c(
   "NeighborCount", "CentralAtom", "Neighbor1", "Neighbor2", "Angle",
   "DeltaX", "DeltaY", "DeltaZ", "CosAlpha", "CosBeta", "CosGamma",
   "_cell_length_a", "_cell_length_b", "_cell_length_c",
-  "_cell_angle_alpha", "_cell_angle_beta", "_cell_angle_gamma"
+  "_cell_angle_alpha", "_cell_angle_beta", "_cell_angle_gamma",
+  "source_file",
+  "cols_to_select"
 ))

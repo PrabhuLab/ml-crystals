@@ -9,7 +9,7 @@
 #' facilitate the preparation of crystallographic data for further analysis,
 #' including machine learning applications in materials science.
 #'
-#' @docType package
+#' _PACKAGE
 #' @name crysmal-package
 #' @aliases crysmal
 #' @import data.table
