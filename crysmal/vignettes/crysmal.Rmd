@@ -1,5 +1,5 @@
 ---
-title: "crysmal"
+title: "crysmal Workflow with a Real-World Example"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{crysmal Workflow}
@@ -18,120 +18,64 @@ options(datatable.print.nrows = 5, datatable.print.topn = 3)
 
 ## Introduction
 
-The `crysmal` package provides tools to extract data from Crystallographic Information Files (CIFs), process atomic coordinates, calculate geometric properties, and analyze bonding. This vignette demonstrates a typical workflow.
+The `crysmal` package provides tools to extract data from Crystallographic Information Files (CIFs), process atomic coordinates, calculate geometric properties, and analyze bonding. This vignette demonstrates a typical workflow using a real-world example, the `ICSD422.cif` file for Strontium Silicide (Sr2Si).
 
 ## Setup
 
-First, load the `crysmal` package.
+First, we load the `crysmal` package and other necessary libraries.
 
 ```{r setup}
 library(crysmal)
 library(data.table) 
 ```
 
-## Preparing CIF Files
+## Locating the Example CIF File
 
-For this demonstration, two minimal, dummy CIF files will be created. In a real scenario, you would point the package to your directory of CIF files.
+The `crysmal` package includes an example CIF file in its `inst/extdata` directory. We can locate this file using `system.file()`. This ensures the vignette can run regardless of where the package is installed.
 
-```{r create_dummy_cifs, eval=TRUE}
-temp_dir <- tempfile("crysmal_vignette_cifs_")
-dir.create(temp_dir)
+```{r locate_file}
+cif_path <- system.file("extdata", "ICSD422.cif", package = "crysmal")
 
-# Helper function for string interpolation
-fill_template <- function(template_lines, params_list) {
-  filled_lines <- template_lines
-  for (name in names(params_list)) {
-    placeholder <- paste0("%(", name, ")s") # Create placeholder like %(name)s
-    filled_lines <- gsub(placeholder, params_list[[name]], filled_lines, fixed = TRUE)
-  }
-  return(filled_lines)
+# Check if the file was found
+if (nchar(cif_path) == 0) {
+  stop("Could not find ICSD422.cif. Make sure it's in the inst/extdata directory.")
 }
 
-# Content for a very simple cubic CIF file.
-cif_content_template <- c(
-  "data_%(name)s",
-  "_database_code_PBC '%(db_code)s'", 
-  "_chemical_formula_sum '%(formula)s'",
-  "_cell_length_a   %(a)s",
-  "_cell_length_b   %(b)s",
-  "_cell_length_c   %(c)s",
-  "_cell_angle_alpha %(alpha)s",
-  "_cell_angle_beta  %(beta)s",
-  "_cell_angle_gamma %(gamma)s",
-  "_space_group_name_H-M_alt 'P 1'",
-  "_space_group_IT_number '1'",
-  "_space_group_symop_operation_xyz",
-  "  'x, y, z'",
-  "loop_",
-  "_atom_site_label",
-  "_atom_site_type_symbol", 
-  "_atom_site_placeholder_tag1", 
-  "_atom_site_placeholder_tag2", 
-  "_atom_site_fract_x",       
-  "_atom_site_fract_y",       
-  "_atom_site_fract_z",       
-  "_atom_site_occupancy",     
-  "%(atom_line1)s",
-  "%(atom_line2)s"
-)
-
-# CIF 1: Simple cubic structure
-cif1_params <- list(
-  name = "dummy1", db_code = "00001", formula = "A B",
-  a = "5.0", b = "5.0", c = "5.0", alpha = "90", beta = "90", gamma = "90",
-  atom_line1 = "A1 A El1 El2 0.0 0.0 0.0 1.0", 
-  atom_line2 = "B1 B El1 El2 0.5 0.5 0.5 1.0"
-)
-cif1_filled <- fill_template(cif_content_template, cif1_params)
-cif1_path <- file.path(temp_dir, "dummy1.cif")
-writeLines(cif1_filled, cif1_path)
-
-# CIF 2: Tetragonal structure
-cif2_params <- list(
-  name = "dummy2", db_code = "00002", formula = "C D2",
-  a = "4.0", b = "4.0", c = "6.0", alpha = "90", beta = "90", gamma = "90",
-  atom_line1 = "C1 C El1 El2 0.0 0.0 0.0 1.0",
-  atom_line2 = "D1 D El1 El2 0.5 0.5 0.25 1.0"
-)
-cif2_filled <- fill_template(cif_content_template, cif2_params)
-cif2_path <- file.path(temp_dir, "dummy2.cif")
-writeLines(cif2_filled, cif2_path)
-
-# You can optionally print the content of a generated CIF to check:
-# message("Content of dummy1.cif:")
-# print(readLines(cif1_path))
-
-list.files(temp_dir)
+print(cif_path)
 ```
 
-## Processing CIF Files
+## Processing the CIF File
 
-The main function for batch processing is `analyze_cif_files`. It can take a folder path or a list of file paths.
+The main function for processing is `analyze_cif_files`. Since we have a single file path, we can pass it directly.
 
-```{r process_folder}
-# Process all CIF files in the temporary directory
+```{r process_file}
+# Process the ICSD422.cif file
 # Using default bonding method "min_dist"
-results_table <- analyze_cif_files(cif_input = temp_dir, pattern = "*.cif")
+results_table <- analyze_cif_files(cif_input = cif_path)
 
+# Let's look at the structure of the result
 dim(results_table)
 names(results_table)
 ```
 
 ## Exploring Results
 
-The `results_table` is a `data.table` where each row corresponds to a processed CIF file. Many columns are "list-columns", meaning they contain other data structures (often `data.table`s themselves).
+The `results_table` is a `data.table` where the single row corresponds to our processed CIF file. Many columns are "list-columns," meaning they contain other data structures (often `data.table`s themselves).
 
-Basic information:
+### Basic Information
+
+Let's start by extracting the basic crystallographic metadata.
 
 ```{r explore_basic}
-print(results_table[, .(source_file, database_code, chemical_formula, space_group_name)])
+print(results_table[, .(source_file, database_code, chemical_formula, structure_type, space_group_name, space_group_number)])
 ```
 
 ### Unit Cell Metrics
 
-The `unit_cell_metrics` column contains a `data.table` for each file's cell parameters.
+The `unit_cell_metrics` column contains a `data.table` with the cell parameters.
 
 ```{r explore_ucm}
+# The result is nested in a list, so we access it with [[1]]
 if (nrow(results_table) > 0 && !is.null(results_table$unit_cell_metrics[[1]])) {
   print(results_table$unit_cell_metrics[[1]])
 }
@@ -139,81 +83,110 @@ if (nrow(results_table) > 0 && !is.null(results_table$unit_cell_metrics[[1]])) {
 
 ### Atomic Coordinates (Input)
 
-The `atomic_coordinates_input` column stores the initially parsed coordinates from the asymmetric unit.
+The `atomic_coordinates_input` column stores the initially parsed coordinates from the asymmetric unit. These are the unique atoms before symmetry operations are applied. Note the presence of error values parsed from the parentheses in the CIF file.
 
 ```{r explore_coords}
 if (nrow(results_table) > 0 && !is.null(results_table$atomic_coordinates_input[[1]])) {
   print(results_table$atomic_coordinates_input[[1]])
 }
 ```
+### Symmetry Operations
+The `symmetry_operations` column contains the symmetry operations applied to the asymmetric unit. This is crucial for generating the full crystal structure.
 
-### Bonded Pairs
-
-The `bonded_pairs_identified` column contains the results of the bonding analysis.
-
-```{r explore_bonds}
-if (nrow(results_table) > 0 && !is.null(results_table$bonded_pairs_identified[[1]])) {
-  print(results_table$bonded_pairs_identified[[1]])
-} else if (nrow(results_table) > 0) {
-  message("No bonds identified for the first file with current parameters.")
+```{r explore_symmetry}
+if (nrow(results_table) > 0 && !is.null(results_table$symmetry_operations[[1]])) {
+  print(results_table$symmetry_operations[[1]])
+} else {
+  message("No symmetry operations found.")
 }
+```
+### Transformed Coordinates
+The `atomic_coordinates_transformed` column contains the coordinates after applying symmetry operations to the asymmetric unit and finding the unique resulting positions. This gives us the full set of atoms in the unit cell.
 
-# Example: bonded pairs for the second file
-if (nrow(results_table) > 1 && !is.null(results_table$bonded_pairs_identified[[2]])) {
-  print(results_table$bonded_pairs_identified[[2]])
-} else if (nrow(results_table) > 1) {
-  message("No bonds identified for the second file with current parameters.")
+```{r explore_transformed_coords}
+if (nrow(results_table) > 0 && !is.null(results_table$atomic_coordinates_transformed[[1]])) {
+  print(results_table$atomic_coordinates_transformed[[1]])
+} else {
+  message("No transformed coordinates available.")
 }
 ```
 
-*Note: The dummy CIFs are very simple. Actual bonding results depend heavily on the structure and chosen algorithm parameters.*
+### Expanded Coordinates
+The `atomic_coordinates_expanded` column contains the coordinates of all atoms in the unit cell and its immediate neighbors. This large set of atoms is the search space for finding bonds.
+
+```{r explore_expanded_coords}
+if (nrow(results_table) > 0 && !is.null(results_table$atomic_coordinates_expanded[[1]])) {
+  print(results_table$atomic_coordinates_expanded[[1]])
+} else {
+  message("No expanded coordinates available.")
+}
+```
+
+### Distance Matrix
+
+```{r explore_distance_matrix}
+
+```
+
+### Bonded Pairs
+
+The `bonded_pairs_identified` column contains the results of the bonding analysis. Using the default "Minimum Distance" method, we find the following bonds for the atoms in the asymmetric unit.
+
+```{r explore_bonds}
+if (nrow(results_table) > 0 && !is.null(results_table$bonded_pairs_identified[[1]])) {
+  # This data.table can be large, so we'll just show the first few rows
+  bonds <- results_table$bonded_pairs_identified[[1]]
+  print(bonds)
+} else {
+  message("No bonds identified with current parameters.")
+}
+```
+The `dmin` column shows the shortest distance found for the `Atom1` atom, and `dcut` is the cutoff distance (`dmin * (1 + delta)`) used to identify its bonded neighbors.
 
 ### Neighbor Counts
 
-Derived from bonded pairs.
+The neighbor counts (or coordination numbers) are derived directly from the bonded pairs.
 
 ```{r explore_neighbor_counts}
 if (nrow(results_table) > 0 && !is.null(results_table$neighbor_counts_calculated[[1]])) {
   print(results_table$neighbor_counts_calculated[[1]])
-} else if (nrow(results_table) > 0) {
-  message("Neighbor counts not available for the first file.")
+} else {
+  message("Neighbor counts not available.")
 }
 ```
 
 ### Bond Angles
 
-Calculated for atoms with at least two neighbors.
+Angles are calculated for any central atom with two or more neighbors.
 
 ```{r explore_bond_angles}
 if (nrow(results_table) > 0 && !is.null(results_table$bond_angles_calculated[[1]]) && nrow(results_table$bond_angles_calculated[[1]]) > 0) {
-  print(results_table$bond_angles_calculated[[1]])
-} else if (nrow(results_table) > 0) {
-  message("No bond angles calculated or available for the first file.")
+  angles <- results_table$bond_angles_calculated[[1]]
+  print(angles)
+} else {
+  message("No bond angles calculated or available.")
 }
 ```
 
 ## Using a Different Bonding Method
 
-You can specify the `bonding_method` and its parameters. For example, to use Brunner's method for the first file's data:
+The `process_single_cif_data` function allows for more direct control. Let's re-process the file using **Hoppe's method**, which uses an iterative approach to determine an average bond distance for calculating bond strengths.
 
-```{r single_file_brunner}
-# Read the first CIF file's content
-cif_content_first_file <- read_cif_files(cif1_path)[[1]]
+```{r single_file_hoppe}
+# First, read the CIF content into a data.table
+cif_content <- read_cif_files(cif_path)[[1]]
 
-# Process it with Brunner's method
-result_brunner <- process_single_cif_data(cif_content_first_file, bonding_method = "brunner")
+# Now, process it with Hoppe's method
+result_hoppe <- process_single_cif_data(cif_content, bonding_method = "hoppe")
 
-if (!is.null(result_brunner$bonded_pairs_identified[[1]])) {
-  print(result_brunner$bonded_pairs_identified[[1]])
+# Let's inspect the bonds identified by Hoppe's method
+if (!is.null(result_hoppe$bonded_pairs_identified[[1]])) {
+  bonds_hoppe <- result_hoppe$bonded_pairs_identified[[1]]
+  print(bonds_hoppe)
 } else {
-  message("No bonds identified using Brunner's method for the first file.")
+  message("No bonds identified using Hoppe's method.")
 }
 ```
-
-## Cleaning Up
-
-```{r cleanup, eval=TRUE}
-unlink(temp_dir, recursive = TRUE)
-```
+Notice the output now includes a `BondStrength` column, which is specific to Hoppe's method. Atoms with a `BondStrength` above the threshold (default 0.5) are considered bonded.
 
 This concludes the basic workflow demonstration. The `crysmal` package offers a range of functions that can be used individually for more tailored analyses if needed. Refer to the function documentation for details on parameters and outputs.

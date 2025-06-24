@@ -4,53 +4,18 @@
 \alias{process_single_cif_data}
 \title{Process a Single CIF File Content}
 \usage{
-process_single_cif_data(
-  cif_content,
-  bonding_method = "min_dist",
-  min_dist_delta = 0.1,
-  brunner_delta = 1e-04,
-  hoppe_bs_threshold = 0.5,
-  hoppe_tolerance = 0.001,
-  expand_n_cells = 1
-)
+process_single_cif_data(cif_content, bonding_method = "min_dist", ...)
 }
 \arguments{
-\item{cif_content}{A data.table representing the content of one CIF file,
-as returned by `fread(filepath, sep="\\n", header=FALSE)`.}
+\item{cif_content}{A data.table representing the content of one CIF file.}
 
-\item{bonding_method}{A character string specifying the bonding algorithm to use.
-Options: "min_dist", "brunner", "hoppe". Default is "min_dist".}
+\item{bonding_method}{A character string specifying the bonding algorithm ("min_dist", "brunner", "hoppe").}
 
-\item{min_dist_delta}{Numeric, delta parameter for `minimum_distance` method.}
-
-\item{brunner_delta}{Numeric, delta parameter for `brunner` method.}
-
-\item{hoppe_bs_threshold}{Numeric, bond strength threshold for `hoppe` method.}
-
-\item{hoppe_tolerance}{Numeric, tolerance for `hoppe` method convergence.}
-
-\item{expand_n_cells}{Integer, number of unit cells to expand for distance calculations.}
+\item{...}{Additional parameters passed to the bonding function.}
 }
 \value{
-A data.table row (or list that can be row-bound) containing all
-        extracted and calculated data for the CIF file. Returns NULL if essential
-        data (e.g. coordinates or cell parameters) is missing.
+A data.table row containing all extracted and calculated data for the CIF file.
 }
 \description{
-Extracts crystallographic information, calculates geometric properties,
-and determines bonding and coordination for a single CIF file's content.
-}
-\examples{
-# dummy_cif_lines <- c(
-#   "data_test", "_database_code_ '00000'", "_chemical_formula_sum 'H2 O1'",
-#   "_cell_length_a   5.0", "_cell_length_b   5.0", "_cell_length_c   5.0",
-#   "_cell_angle_alpha 90.0", "_cell_angle_beta  90.0", "_cell_angle_gamma 90.0",
-#   "_space_group_symop_operation_xyz", "  'x, y, z'",
-#   "loop_", "_atom_site_label", "_atom_site_type_symbol", "_atom_site_foo", "_atom_site_bar",
-#   "_atom_site_fract_x", "_atom_site_fract_y", "_atom_site_fract_z", "_atom_site_occupancy",
-#   "O1 O X X 0.0 0.0 0.0 1.0" # Example line for coord parsing
-# )
-# cif_dt <- data.table(V1 = dummy_cif_lines)
-# result <- process_single_cif_data(cif_dt)
-# print(result)
+Process a Single CIF File Content
 }

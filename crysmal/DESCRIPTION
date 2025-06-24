@@ -22,7 +22,8 @@ Imports:
     dplyr
 Suggests:
     knitr,
-    rmarkdown
+    rmarkdown,
+    testthat (>= 3.0.0)
 VignetteBuilder: knitr
 Depends:
     R (>= 3.5.0)

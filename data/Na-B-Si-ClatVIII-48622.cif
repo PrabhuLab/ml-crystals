@@ -1,0 +1,129 @@
+
+#(C) 2025 by FIZ Karlsruhe - Leibniz Institute for Information Infrastructure.  All rights reserved.
+data_48622-ICSD
+_database_code_ICSD 48622
+_audit_creation_date 2023-02-01
+_chemical_name_common 'Octasodium borosilicide'
+_chemical_formula_structural 'Na8 B4.17 Si41.83'
+_chemical_formula_sum 'B4.17 Na8 Si41.83'
+_exptl_crystal_density_diffrn 2.54
+_diffrn_ambient_temperature 293.
+_citation_title 'A borosilicide with clathrate VIII structure'
+loop_
+_citation_id
+_citation_journal_full
+_citation_year
+_citation_journal_volume
+_citation_page_first
+_citation_page_last
+_citation_journal_id_ASTM
+primary 'Journal of the American Chemical Society' 2022 144 13456 13460 JACSAT
+loop_
+_citation_author_citation_id
+_citation_author_name
+primary 'HÃ¼bner, Julia-Maria'
+primary 'Carrillo-Cabrera, Wilder'
+primary 'Kozelj, Primoz'
+primary 'Prots, Yurii'
+primary 'Baitinger, Michael'
+primary 'Schwarz, Ulrich'
+primary 'Jung, Walter'
+_cell_length_a 9.7187(2)
+_cell_length_b 9.7187(2)
+_cell_length_c 9.7187(2)
+_cell_angle_alpha 90
+_cell_angle_beta 90
+_cell_angle_gamma 90
+_cell_volume 917.96
+_cell_formula_units_Z 1
+_space_group_name_H-M_alt 'I -4 3 m'
+_space_group_IT_number 217
+loop_
+_space_group_symop_id
+_space_group_symop_operation_xyz
+1 '-z, -y, x'
+2 '-y, -x, z'
+3 '-x, -z, y'
+4 '-z, -x, y'
+5 '-y, -z, x'
+6 '-x, -y, z'
+7 '-z, y, -x'
+8 '-y, x, -z'
+9 '-x, z, -y'
+10 '-z, x, -y'
+11 '-y, z, -x'
+12 '-x, y, -z'
+13 'z, -y, -x'
+14 'y, -x, -z'
+15 'x, -z, -y'
+16 'z, -x, -y'
+17 'y, -z, -x'
+18 'x, -y, -z'
+19 'z, y, x'
+20 'y, x, z'
+21 'x, z, y'
+22 'z, x, y'
+23 'y, z, x'
+24 'x, y, z'
+25 '-z+1/2, -y+1/2, x+1/2'
+26 '-y+1/2, -x+1/2, z+1/2'
+27 '-x+1/2, -z+1/2, y+1/2'
+28 '-z+1/2, -x+1/2, y+1/2'
+29 '-y+1/2, -z+1/2, x+1/2'
+30 '-x+1/2, -y+1/2, z+1/2'
+31 '-z+1/2, y+1/2, -x+1/2'
+32 '-y+1/2, x+1/2, -z+1/2'
+33 '-x+1/2, z+1/2, -y+1/2'
+34 '-z+1/2, x+1/2, -y+1/2'
+35 '-y+1/2, z+1/2, -x+1/2'
+36 '-x+1/2, y+1/2, -z+1/2'
+37 'z+1/2, -y+1/2, -x+1/2'
+38 'y+1/2, -x+1/2, -z+1/2'
+39 'x+1/2, -z+1/2, -y+1/2'
+40 'z+1/2, -x+1/2, -y+1/2'
+41 'y+1/2, -z+1/2, -x+1/2'
+42 'x+1/2, -y+1/2, -z+1/2'
+43 'z+1/2, y+1/2, x+1/2'
+44 'y+1/2, x+1/2, z+1/2'
+45 'x+1/2, z+1/2, y+1/2'
+46 'z+1/2, x+1/2, y+1/2'
+47 'y+1/2, z+1/2, x+1/2'
+48 'x+1/2, y+1/2, z+1/2'
+loop_
+_atom_type_symbol
+_atom_type_oxidation_number
+Na0+ 0
+Si0+ 0
+B0+ 0
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_symmetry_multiplicity
+_atom_site_Wyckoff_symbol
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_U_iso_or_equiv
+_atom_site_occupancy
+Na1 Na0+ 8 c 0.1884(2) 0.1884(2) 0.1884(2) 0.0233(7) 1
+Si1 Si0+ 12 d 0.25 0.5 0. 0.0124(3) 1
+Si2 Si0+ 2 a 0. 0. 0. 0.0186(8) 1
+Si3 Si0+ 24 g 0.41475(9) 0.41475(9) 0.15559(13) 0.0153(3) 1
+Si4 Si0+ 8 c 0.36591(19) 0.36591(19) 0.36591(19) 0.0165(10) 0.479(12)
+B1 B0+ 8 c 0.36591(19) 0.36591(19) 0.36591(19) 0.0165(10) 0.521(12)
+loop_
+_atom_site_aniso_label
+_atom_site_aniso_type_symbol
+_atom_site_aniso_U_11
+_atom_site_aniso_U_22
+_atom_site_aniso_U_33
+_atom_site_aniso_U_12
+_atom_site_aniso_U_13
+_atom_site_aniso_U_23
+Na1 Na0+ 0.0233(7) 0.0233(7) 0.0233(7) -0.0047(7) -0.0047(7) -0.0047(7)
+Si1 Si0+ 0.0137(7) 0.0118(4) 0.0118(4) 0. 0. 0.
+Si2 Si0+ 0.0186(8) 0.0186(8) 0.0186(8) 0. 0. 0.
+Si3 Si0+ 0.0121(3) 0.0121(3) 0.0217(6) 0.0016(4) -0.0021(3) -0.0021(3)
+Si4 Si0+ 0.0165(10) 0.0165(10) 0.0165(10) -0.0025(7) -0.0025(7) -0.0025(7)
+B1 B0+ 0.0165(10) 0.0165(10) 0.0165(10) -0.0025(7) -0.0025(7) -0.0025(7)
+#End of TTdata_48622-ICSD

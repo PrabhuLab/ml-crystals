@@ -10,17 +10,8 @@ read_cif_files(cif_file_paths)
 \item{cif_file_paths}{A character vector of paths to CIF files.}
 }
 \value{
-A list of data.tables. Each data.table has one column 'V1' containing lines from a CIF file.
-        Returns an empty list if no files are found or readable.
+A list of data.tables.
 }
 \description{
-Reads multiple CIF files into a list of data.tables.
-Each data.table represents one CIF file with lines as rows.
-}
-\examples{
-# temp_cif_file <- tempfile(fileext = ".cif")
-# writeLines(c("data_test", "_cell_length_a 10"), temp_cif_file)
-# cif_contents <- read_cif_files(temp_cif_file)
-# unlink(temp_cif_file)
-# print(cif_contents)
+Read CIF Files from a List of Paths
 }

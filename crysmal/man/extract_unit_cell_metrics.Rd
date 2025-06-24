@@ -17,7 +17,7 @@ A data.table with unit cell parameters (a, b, c, alpha, beta, gamma),
 Extract Unit Cell Metrics from CIF Content
 }
 \examples{
-# cif_lines <- c("_cell_length_a   10.0", "_cell_length_b   10.0",
+# cif_lines <- c("_cell_length_a   10.0", "_cell_length_b   10.0(1)",
 #                "_cell_length_c   10.0", "_cell_angle_alpha 90.0",
 #                "_cell_angle_beta  90.0", "_cell_angle_gamma 90.0")
 # cif_data <- data.table(V1 = cif_lines)
