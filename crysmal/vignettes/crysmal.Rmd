@@ -1,0 +1,192 @@
+---
+title: "crysmal Workflow with a Real-World Example"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{crysmal Workflow}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+# Ensure data.table prints nicely for vignettes
+options(datatable.print.nrows = 5, datatable.print.topn = 3)
+```
+
+## Introduction
+
+The `crysmal` package provides tools to extract data from Crystallographic Information Files (CIFs), process atomic coordinates, calculate geometric properties, and analyze bonding. This vignette demonstrates a typical workflow using a real-world example, the `ICSD422.cif` file for Strontium Silicide (Sr2Si).
+
+## Setup
+
+First, we load the `crysmal` package and other necessary libraries.
+
+```{r setup}
+library(crysmal)
+library(data.table) 
+```
+
+## Locating the Example CIF File
+
+The `crysmal` package includes an example CIF file in its `inst/extdata` directory. We can locate this file using `system.file()`. This ensures the vignette can run regardless of where the package is installed.
+
+```{r locate_file}
+cif_path <- system.file("extdata", "ICSD422.cif", package = "crysmal")
+
+# Check if the file was found
+if (nchar(cif_path) == 0) {
+  stop("Could not find ICSD422.cif. Make sure it's in the inst/extdata directory.")
+}
+
+print(cif_path)
+```
+
+## Processing the CIF File
+
+The main function for processing is `analyze_cif_files`. Since we have a single file path, we can pass it directly.
+
+```{r process_file}
+# Process the ICSD422.cif file
+# Using default bonding method "min_dist"
+results_table <- analyze_cif_files(cif_input = cif_path)
+
+# Let's look at the structure of the result
+dim(results_table)
+names(results_table)
+```
+
+## Exploring Results
+
+The `results_table` is a `data.table` where the single row corresponds to our processed CIF file. Many columns are "list-columns," meaning they contain other data structures (often `data.table`s themselves).
+
+### Basic Information
+
+Let's start by extracting the basic crystallographic metadata.
+
+```{r explore_basic}
+print(results_table[, .(source_file, database_code, chemical_formula, structure_type, space_group_name, space_group_number)])
+```
+
+### Unit Cell Metrics
+
+The `unit_cell_metrics` column contains a `data.table` with the cell parameters.
+
+```{r explore_ucm}
+# The result is nested in a list, so we access it with [[1]]
+if (nrow(results_table) > 0 && !is.null(results_table$unit_cell_metrics[[1]])) {
+  print(results_table$unit_cell_metrics[[1]])
+}
+```
+
+### Atomic Coordinates (Input)
+
+The `atomic_coordinates_input` column stores the initially parsed coordinates from the asymmetric unit. These are the unique atoms before symmetry operations are applied. Note the presence of error values parsed from the parentheses in the CIF file.
+
+```{r explore_coords}
+if (nrow(results_table) > 0 && !is.null(results_table$atomic_coordinates_input[[1]])) {
+  print(results_table$atomic_coordinates_input[[1]])
+}
+```
+### Symmetry Operations
+The `symmetry_operations` column contains the symmetry operations applied to the asymmetric unit. This is crucial for generating the full crystal structure.
+
+```{r explore_symmetry}
+if (nrow(results_table) > 0 && !is.null(results_table$symmetry_operations[[1]])) {
+  print(results_table$symmetry_operations[[1]])
+} else {
+  message("No symmetry operations found.")
+}
+```
+### Transformed Coordinates
+The `atomic_coordinates_transformed` column contains the coordinates after applying symmetry operations to the asymmetric unit and finding the unique resulting positions. This gives us the full set of atoms in the unit cell.
+
+```{r explore_transformed_coords}
+if (nrow(results_table) > 0 && !is.null(results_table$atomic_coordinates_transformed[[1]])) {
+  print(results_table$atomic_coordinates_transformed[[1]])
+} else {
+  message("No transformed coordinates available.")
+}
+```
+
+### Expanded Coordinates
+The `atomic_coordinates_expanded` column contains the coordinates of all atoms in the unit cell and its immediate neighbors. This large set of atoms is the search space for finding bonds.
+
+```{r explore_expanded_coords}
+if (nrow(results_table) > 0 && !is.null(results_table$atomic_coordinates_expanded[[1]])) {
+  print(results_table$atomic_coordinates_expanded[[1]])
+} else {
+  message("No expanded coordinates available.")
+}
+```
+
+### Distance Matrix
+
+```{r explore_distance_matrix}
+
+```
+
+### Bonded Pairs
+
+The `bonded_pairs_identified` column contains the results of the bonding analysis. Using the default "Minimum Distance" method, we find the following bonds for the atoms in the asymmetric unit.
+
+```{r explore_bonds}
+if (nrow(results_table) > 0 && !is.null(results_table$bonded_pairs_identified[[1]])) {
+  # This data.table can be large, so we'll just show the first few rows
+  bonds <- results_table$bonded_pairs_identified[[1]]
+  print(bonds)
+} else {
+  message("No bonds identified with current parameters.")
+}
+```
+The `dmin` column shows the shortest distance found for the `Atom1` atom, and `dcut` is the cutoff distance (`dmin * (1 + delta)`) used to identify its bonded neighbors.
+
+### Neighbor Counts
+
+The neighbor counts (or coordination numbers) are derived directly from the bonded pairs.
+
+```{r explore_neighbor_counts}
+if (nrow(results_table) > 0 && !is.null(results_table$neighbor_counts_calculated[[1]])) {
+  print(results_table$neighbor_counts_calculated[[1]])
+} else {
+  message("Neighbor counts not available.")
+}
+```
+
+### Bond Angles
+
+Angles are calculated for any central atom with two or more neighbors.
+
+```{r explore_bond_angles}
+if (nrow(results_table) > 0 && !is.null(results_table$bond_angles_calculated[[1]]) && nrow(results_table$bond_angles_calculated[[1]]) > 0) {
+  angles <- results_table$bond_angles_calculated[[1]]
+  print(angles)
+} else {
+  message("No bond angles calculated or available.")
+}
+```
+
+## Using a Different Bonding Method
+
+The `process_single_cif_data` function allows for more direct control. Let's re-process the file using **Hoppe's method**, which uses an iterative approach to determine an average bond distance for calculating bond strengths.
+
+```{r single_file_hoppe}
+# First, read the CIF content into a data.table
+cif_content <- read_cif_files(cif_path)[[1]]
+
+# Now, process it with Hoppe's method
+result_hoppe <- process_single_cif_data(cif_content, bonding_method = "hoppe")
+
+# Let's inspect the bonds identified by Hoppe's method
+if (!is.null(result_hoppe$bonded_pairs_identified[[1]])) {
+  bonds_hoppe <- result_hoppe$bonded_pairs_identified[[1]]
+  print(bonds_hoppe)
+} else {
+  message("No bonds identified using Hoppe's method.")
+}
+```
+Notice the output now includes a `BondStrength` column, which is specific to Hoppe's method. Atoms with a `BondStrength` above the threshold (default 0.5) are considered bonded.
+
+This concludes the basic workflow demonstration. The `crysmal` package offers a range of functions that can be used individually for more tailored analyses if needed. Refer to the function documentation for details on parameters and outputs.
