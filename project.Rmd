@@ -1132,7 +1132,7 @@ for (cif in cif_tab) {
   bonded_pairs <- propagate_distance_error(bonded_pairs,
                                            atomic_coordinates,
                                            unit_cell_metrics)
-  # ADD THIS LINE TO CALCULATE ANGLE ERRORS
+  
   bond_angles <- propagate_angle_error(bond_angles,
                                        atomic_coordinates,
                                        expanded_coords,
