@@ -1,111 +1,89 @@
-#' Read CIF Files from a List of Paths
-#' @param cif_file_paths A character vector of paths to CIF files.
-#' @return A list of data.tables.
+#' @title Read CIF Files into Memory
+#' @description Reads one or more CIF files from disk and loads each into a
+#'   `data.table`.
+#' @param file_paths A character vector of paths to the CIF files.
+#' @return A list of `data.table` objects.
 #' @export
-read_cif_files <- function(cif_file_paths) {
-  if (length(cif_file_paths) == 0) return(list())
-  cif_contents_list <- lapply(cif_file_paths, function(file_path) {
-    tryCatch({
-      fread(file_path, sep = "\n", header = FALSE, strip.white = FALSE, quote="", data.table = TRUE)
-    }, error = function(e) {
-      warning(paste("Failed to read or process CIF file:", file_path, "-", e$message))
-      NULL
-    })
-  })
-  successful_reads <- !sapply(cif_contents_list, is.null)
-  cif_contents_list <- cif_contents_list[successful_reads]
-  names(cif_contents_list) <- basename(cif_file_paths[successful_reads])
-  return(cif_contents_list)
+#' @examples
+#' cif_file <- system.file("extdata", "ICSD422.cif", package = "crysmal")
+#' if (file.exists(cif_file)) {
+#'   cif_data_list <- read_cif_files(cif_file)
+#'   print(cif_data_list[[1]][1:5, ])
+#' }
+read_cif_files <- function(file_paths) {
+  lapply(file_paths, fread, sep = "\n", header = FALSE, strip.white = FALSE)
 }
 
-"%||%" <- function(a, b) if (!is.null(a)) a else b
-
-#' Process a Single CIF File Content
-#' @param cif_content A data.table representing the content of one CIF file.
-#' @param bonding_method A character string specifying the bonding algorithm ("min_dist", "brunner", "hoppe").
-#' @param ... Additional parameters passed to the bonding function.
-#' @return A data.table row containing all extracted and calculated data for the CIF file.
+#' @title Process a Single CIF Data Object
+#' @description This function orchestrates the entire analysis pipeline for a
+#'   single crystal structure.
+#' @param cif_content A `data.table` containing the lines of a single CIF file.
+#' @return A one-row `data.table` with results. Returns `NULL` on failure.
 #' @export
-process_single_cif_data <- function(cif_content, bonding_method = "min_dist", ...) {
-  if (is.null(cif_content) || nrow(cif_content) == 0) return(NULL)
-  db_code <- extract_database_code(cif_content)
-  # --- Extraction from Notebook Logic ---
+#' @examples
+#' cif_file <- system.file("extdata", "ICSD422.cif", package = "crysmal")
+#' if (file.exists(cif_file)) {
+#'   cif_content <- read_cif_files(cif_file)[[1]]
+#'   processed_data <- process_single_cif_data(cif_content)
+#'   str(processed_data, max.level = 1)
+#' }
+process_single_cif_data <- function(cif_content) {
+  database_code <- extract_database_code(cif_content)
+  chemical_formula <- extract_chemical_formula(cif_content)
+  structure_type <- extract_structure_type(cif_content)
+  space_group_name <- extract_space_group_name(cif_content)
+  space_group_number <- extract_space_group_number(cif_content)
   unit_cell_metrics <- extract_unit_cell_metrics(cif_content)
-  if (is.null(unit_cell_metrics) || nrow(unit_cell_metrics) == 0 || any(is.na(unlist(unit_cell_metrics)))) {
-    return(data.table(database_code = db_code, error_message = "Missing unit cell metrics"))
-  }
-  atomic_coords <- extract_atomic_coordinates(cif_content)
-  if (is.null(atomic_coords) || nrow(atomic_coords) == 0) {
-    return(data.table(database_code = db_code, error_message = "Missing atomic coordinates"))
-  }
-  sym_ops <- extract_symmetry_operations(cif_content)
+  atomic_coordinates <- extract_atomic_coordinates(cif_content)
+  symmetry_operations <- extract_symmetry_operations(cif_content)
 
-  # --- Processing ---
-  transformed_coords <- apply_symmetry_operations(atomic_coords, sym_ops)
+  if (is.null(atomic_coordinates) || is.null(symmetry_operations) || is.null(unit_cell_metrics)) {
+    warning("Could not process CIF due to missing essential data (atoms, symmetry, or cell).")
+    return(NULL)
+  }
+
+  transformed_coords <- apply_symmetry_operations(atomic_coordinates, symmetry_operations)
   expanded_coords <- expand_transformed_coords(transformed_coords)
-  distances <- calculate_distances(atomic_coords, expanded_coords, unit_cell_metrics)
-
-  bonding_args <- list(distances = distances, ...)
-  bonded_pairs <- switch(bonding_method,
-                         "min_dist" = do.call(minimum_distance, bonding_args),
-                         "brunner" = do.call(brunner, bonding_args),
-                         "hoppe" = do.call(hoppe, bonding_args),
-                         { warning("Unknown bonding method. Defaulting to 'min_dist'.");
-                           do.call(minimum_distance, bonding_args) })
-
+  distances <- calculate_distances(atomic_coordinates, expanded_coords, unit_cell_metrics)
+  bonded_pairs <- minimum_distance(distances)
+  brunner_pairs <- brunner(distances)
+  hoppe_pairs <- hoppe(distances)
   neighbor_counts <- calculate_neighbor_counts(bonded_pairs)
-  bond_angles <- calculate_angles(bonded_pairs, atomic_coords, expanded_coords, unit_cell_metrics)
+  bond_angles <- calculate_angles(bonded_pairs, atomic_coordinates, expanded_coords, unit_cell_metrics)
+  bonded_pairs <- propagate_distance_error(bonded_pairs, atomic_coordinates, unit_cell_metrics)
+  bond_angles <- propagate_angle_error(bond_angles, atomic_coordinates, expanded_coords, unit_cell_metrics)
 
-  # --- Compile Results with clear and consistent names ---
-  data.table(
-    database_code = db_code,
-    chemical_formula = extract_chemical_formula(cif_content),
-    structure_type = extract_structure_type(cif_content),
-    space_group_name = extract_space_group_name(cif_content),
-    space_group_number = extract_space_group_number(cif_content),
-    unit_cell_metrics = list(unit_cell_metrics),
-    atomic_coordinates_input = list(atomic_coords),      # Original coords
-    symmetry_operations = list(sym_ops),                 # The symops found
-    atomic_coordinates_transformed = list(transformed_coords), # Coords after symm
-    atomic_coordinates_expanded = list(expanded_coords), # Coords after expanding cells
-    distances_calculated = list(distances),
-    bonded_pairs_identified = list(bonded_pairs),
-    neighbor_counts_calculated = list(neighbor_counts),
-    bond_angles_calculated = list(bond_angles),
-    error_message = NA_character_
-  )
+  return(data.table(database_code=database_code, chemical_formula=chemical_formula, structure_type=structure_type,
+                    space_group_name=space_group_name, space_group_number=space_group_number,
+                    unit_cell_metrics=list(unit_cell_metrics), atomic_coordinates=list(atomic_coordinates),
+                    symmetry_operations=list(symmetry_operations), transformed_coords=list(transformed_coords),
+                    expanded_coords=list(expanded_coords), distances=list(distances),
+                    bonded_pairs=list(bonded_pairs), brunner_pairs=list(brunner_pairs),
+                    hoppe_pairs=list(hoppe_pairs), neighbor_counts=list(neighbor_counts),
+                    bond_angles=list(bond_angles)))
 }
 
-#' Analyze Multiple CIF Files
-#' @param cif_input Path to a folder or a vector of file paths.
-#' @param pattern Glob pattern for files if `cif_input` is a folder.
-#' @param bonding_method Bonding algorithm to use.
-#' @param ... Additional parameters passed to `process_single_cif_data`.
-#' @return A data.table where each row summarizes one CIF file.
+#' @title Analyze a Batch of CIF Files
+#' @description A high-level wrapper function that reads, processes, and analyzes
+#'   one or more CIF files.
+#' @param file_paths A character vector of paths to the CIF files to be analyzed.
+#' @return A `data.table` where each row summarizes the analysis of one CIF file.
 #' @export
-analyze_cif_files <- function(cif_input, pattern = "*.cif", bonding_method = "min_dist", ...) {
-  cif_file_paths <- character(0)
-  if (length(cif_input) == 1 && dir.exists(cif_input)) {
-    cif_file_paths <- list.files(path = cif_input, pattern = pattern, full.names = TRUE)
-  } else if (is.character(cif_input) && all(file.exists(cif_input))) {
-    cif_file_paths <- cif_input
-  } else {
-    stop("cif_input must be a valid folder path or a vector of valid file paths.")
-  }
-  if (length(cif_file_paths) == 0) {
-    warning("No CIF files found or specified.")
-    return(data.table())
-  }
-  message(paste("Found", length(cif_file_paths), "CIF files to process."))
-  cif_contents_list <- read_cif_files(cif_file_paths)
-
-  all_results_list <- lapply(names(cif_contents_list), function(file_name) {
-    message(paste("Processing CIF file:", file_name))
-    single_result <- process_single_cif_data(cif_contents_list[[file_name]], bonding_method = bonding_method, ...)
-    if (!is.null(single_result)) single_result[, source_file := file_name]
-    return(single_result)
+#' @examples
+#' cif_file <- system.file("extdata", "ICSD422.cif", package = "crysmal")
+#' if (file.exists(cif_file)) {
+#'   analysis_results <- analyze_cif_files(cif_file)
+#'   print(analysis_results[, .(database_code, chemical_formula)])
+#' }
+analyze_cif_files <- function(file_paths) {
+  cif_contents <- read_cif_files(file_paths)
+  results_list <- lapply(cif_contents, function(cif) {
+    tryCatch({ process_single_cif_data(cif) },
+             error = function(e) {
+               warning(paste("Failed to process a CIF file:", e$message)); return(NULL)
+             })
   })
-
-  main_table <- rbindlist(Filter(Negate(is.null), all_results_list), fill = TRUE)
-  return(main_table)
+  successful_results <- results_list[!sapply(results_list, is.null)]
+  if (length(successful_results) > 0) { return(rbindlist(successful_results, fill = TRUE)) }
+  else { return(data.table()) }
 }

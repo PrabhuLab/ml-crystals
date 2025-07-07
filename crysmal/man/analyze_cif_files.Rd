@@ -2,27 +2,24 @@
 % Please edit documentation in R/process_cif_files.R
 \name{analyze_cif_files}
 \alias{analyze_cif_files}
-\title{Analyze Multiple CIF Files}
+\title{Analyze a Batch of CIF Files}
 \usage{
-analyze_cif_files(
-  cif_input,
-  pattern = "*.cif",
-  bonding_method = "min_dist",
-  ...
-)
+analyze_cif_files(file_paths)
 }
 \arguments{
-\item{cif_input}{Path to a folder or a vector of file paths.}
-
-\item{pattern}{Glob pattern for files if `cif_input` is a folder.}
-
-\item{bonding_method}{Bonding algorithm to use.}
-
-\item{...}{Additional parameters passed to `process_single_cif_data`.}
+\item{file_paths}{A character vector of paths to the CIF files to be analyzed.}
 }
 \value{
-A data.table where each row summarizes one CIF file.
+A `data.table` where each row summarizes the analysis of one CIF file.
 }
 \description{
-Analyze Multiple CIF Files
+A high-level wrapper function that reads, processes, and analyzes
+  one or more CIF files.
+}
+\examples{
+cif_file <- system.file("extdata", "ICSD422.cif", package = "crysmal")
+if (file.exists(cif_file)) {
+  analysis_results <- analyze_cif_files(cif_file)
+  print(analysis_results[, .(database_code, chemical_formula)])
+}
 }

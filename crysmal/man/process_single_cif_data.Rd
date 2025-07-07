@@ -2,20 +2,25 @@
 % Please edit documentation in R/process_cif_files.R
 \name{process_single_cif_data}
 \alias{process_single_cif_data}
-\title{Process a Single CIF File Content}
+\title{Process a Single CIF Data Object}
 \usage{
-process_single_cif_data(cif_content, bonding_method = "min_dist", ...)
+process_single_cif_data(cif_content)
 }
 \arguments{
-\item{cif_content}{A data.table representing the content of one CIF file.}
-
-\item{bonding_method}{A character string specifying the bonding algorithm ("min_dist", "brunner", "hoppe").}
-
-\item{...}{Additional parameters passed to the bonding function.}
+\item{cif_content}{A `data.table` containing the lines of a single CIF file.}
 }
 \value{
-A data.table row containing all extracted and calculated data for the CIF file.
+A one-row `data.table` with results. Returns `NULL` on failure.
 }
 \description{
-Process a Single CIF File Content
+This function orchestrates the entire analysis pipeline for a
+  single crystal structure.
+}
+\examples{
+cif_file <- system.file("extdata", "ICSD422.cif", package = "crysmal")
+if (file.exists(cif_file)) {
+  cif_content <- read_cif_files(cif_file)[[1]]
+  processed_data <- process_single_cif_data(cif_content)
+  str(processed_data, max.level = 1)
+}
 }

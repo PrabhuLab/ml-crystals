@@ -14,12 +14,11 @@ Description: Provides a suite of functions to parse Crystallographic Information
     including machine learning applications in materials science.
 License: GPL-3
 Encoding: UTF-8
-LazyData: true
 RoxygenNote: 7.3.2
 Imports:
     data.table,
-    stringr,
-    dplyr
+    dplyr,
+    stringr
 Suggests:
     knitr,
     rmarkdown,

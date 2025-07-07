@@ -1,5 +1,6 @@
-#' crysmal: Tools to Extract Data From CIF Files for Crystallography
+#' crysmal: Tools to Extract Data from CIF Files for Crystallography
 #'
+#' @description
 #' Provides a suite of functions to parse Crystallographic Information
 #' Files (.cif), extracting essential data such as chemical formulas, unit cell
 #' parameters, atomic coordinates, and symmetry operations. It also includes
@@ -9,11 +10,12 @@
 #' facilitate the preparation of crystallographic data for further analysis,
 #' including machine learning applications in materials science.
 #'
-#' _PACKAGE
-#' @name crysmal-package
-#' @aliases crysmal
-#' @import data.table
-#' @importFrom stringr str_split_fixed str_extract
+#' @keywords internal
+"_PACKAGE"
+#'
+#' @importFrom data.table .N := .SD as.data.table copy data.table fread rbindlist set setkey setnames
 #' @importFrom dplyr distinct
-#' @importFrom utils combn
+#' @importFrom stats na.omit
+#' @importFrom stringr str_match str_split_fixed
+#' @importFrom utils combn globalVariables
 NULL

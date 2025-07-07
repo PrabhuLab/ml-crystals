@@ -2,16 +2,24 @@
 % Please edit documentation in R/process_cif_files.R
 \name{read_cif_files}
 \alias{read_cif_files}
-\title{Read CIF Files from a List of Paths}
+\title{Read CIF Files into Memory}
 \usage{
-read_cif_files(cif_file_paths)
+read_cif_files(file_paths)
 }
 \arguments{
-\item{cif_file_paths}{A character vector of paths to CIF files.}
+\item{file_paths}{A character vector of paths to the CIF files.}
 }
 \value{
-A list of data.tables.
+A list of `data.table` objects.
 }
 \description{
-Read CIF Files from a List of Paths
+Reads one or more CIF files from disk and loads each into a
+  `data.table`.
+}
+\examples{
+cif_file <- system.file("extdata", "ICSD422.cif", package = "crysmal")
+if (file.exists(cif_file)) {
+  cif_data_list <- read_cif_files(cif_file)
+  print(cif_data_list[[1]][1:5, ])
+}
 }
