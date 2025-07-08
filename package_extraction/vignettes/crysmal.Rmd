@@ -18,7 +18,7 @@ knitr::opts_chunk$set(
 
 ## Introduction
 
-This vignette demonstrates the core workflow for using the `crysmal` package. The goal is to extract structural and chemical information from a Crystallographic Information File (.cif), calculate key geometric properties, and compile the results into a structured format suitable for further analysis. We will walk through the process step-by-step, mirroring the logic of the original development notebook but using the final, packaged functions.
+This vignette demonstrates the core workflow for using the `crysmal` package. The goal is to extract structural and chemical information from a Crystallographic Information File (.cif), calculate key geometric properties, and compile the results into a structured format suitable for further analysis. We will walk through the process step-by-step, mirr                     oring the logic of the original development notebook but using the final, packaged functions.
 
 ### Setup: Loading the Package
 
