@@ -1,0 +1,91 @@
+
+#(C) 2024 by FIZ Karlsruhe - Leibniz Institute for Information Infrastructure.  All rights reserved.
+data_118417-ICSD
+_database_code_ICSD 118417
+_audit_creation_date 2023-08-01
+_chemical_name_common 'Lead strontium iron oxide (0.792/0.168/1.040/2.529)'
+_chemical_formula_structural 'Pb0.792 Sr0.168 Fe1.040 O2.529'
+_chemical_formula_sum 'Fe1.04 O2.529 Pb0.792 Sr0.168'
+_exptl_crystal_density_diffrn 7.55
+_diffrn_ambient_temperature 900.
+_citation_title
+
+;
+Effect of lone-electron-pair cations on the orientation of crystallographic
+shear planes in anion-deficient perovskites
+;
+loop_
+_citation_id
+_citation_journal_full
+_citation_year
+_citation_journal_volume
+_citation_page_first
+_citation_page_last
+_citation_journal_id_ASTM
+primary 'Inorganic Chemistry' 2013 52 10009 10020 INOCAJ
+loop_
+_citation_author_citation_id
+_citation_author_name
+primary Batuk, Dmitry
+primary Batuk, Maria
+primary 'Abakumov, Artem M.'
+primary 'Tsirlin, Alexander A.'
+primary McCammon, Catherine
+primary 'Dubrovinsky, Leonid'
+primary 'Hadermann, Joke'
+_cell_length_a 3.95118(9)
+_cell_length_b 3.94838(7)
+_cell_length_c 3.91657(9)
+_cell_angle_alpha 90.
+_cell_angle_beta 93.2695(18)
+_cell_angle_gamma 90.
+_cell_volume 61.
+_cell_formula_units_Z 1
+_space_group_name_H-M_alt 'C 1 m 1'
+_space_group_IT_number 8
+loop_
+_space_group_symop_id
+_space_group_symop_operation_xyz
+1 'x, -y, z'
+2 'x, y, z'
+3 'x+1/2, -y+1/2, z'
+4 'x+1/2, y+1/2, z'
+loop_
+_atom_type_symbol
+_atom_type_oxidation_number
+Fe3+ 3
+Pb2+ 2
+Sr2+ 2
+Pb2+ 2
+O2- -2
+Pb2+ 2
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_symmetry_multiplicity
+_atom_site_Wyckoff_symbol
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_U_iso_or_equiv
+_atom_site_occupancy
+Fe1 Fe3+ 2 a 0 0 0 0.0206(3) 0.51984(7)
+Pb1 Pb2+ 2 a 0 0 0 0.0486(12) 0.22025(13)
+Sr1 Sr2+ 2 a 0 0 0 0.0486(12) 0.08396(5)
+Pb2 Pb2+ 2 a 0 0 0 0.0320(18) 0.08797(11)
+O1 O2- 2 a 0 0.5 0 0.0412(13) 0.51984(7)
+O2 O2- 2 a 0.5 0 0 0.0334(13) 0.35250(13)
+O3 O2- 2 a 0 0 0.5 0.0399(14) 0.39218(7)
+loop_
+_atom_site_aniso_label
+_atom_site_aniso_type_symbol
+_atom_site_aniso_U_11
+_atom_site_aniso_U_22
+_atom_site_aniso_U_33
+_atom_site_aniso_U_12
+_atom_site_aniso_U_13
+_atom_site_aniso_U_23
+O1 O2- 0.060(2) 0.0155(9) 0.048(3) 0 0.0014(14) 0
+O2 O2- 0.0163(15) 0.046(2) 0.038(3) 0 0.0039(17) 0
+O3 O2- 0.043(3) 0.0528(19) 0.0246(18) 0 0.0076(18) 0
+#End of TTdata_118417-ICSD

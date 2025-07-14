@@ -19,6 +19,7 @@ Counts the number of nearest neighbors for each central atom based on
 \seealso{
 Other property calculators: 
 \code{\link{calculate_angles}()},
-\code{\link{calculate_distances}()}
+\code{\link{calculate_distances}()},
+\code{\link{filter_atoms_by_symbol}()}
 }
 \concept{property calculators}

@@ -11,7 +11,13 @@
 #'   print(cif_data_list[[1]][1:5, ])
 #' }
 read_cif_files <- function(file_paths) {
-  lapply(file_paths, fread, sep = "\n", header = FALSE, strip.white = FALSE)
+  lapply(
+    file_paths,
+    fread,
+    sep = "\n",
+    header = FALSE,
+    strip.white = FALSE
+  )
 }
 
 #' @title Process a Single CIF Data Object
@@ -37,7 +43,8 @@ process_single_cif_data <- function(cif_content) {
   atomic_coordinates <- extract_atomic_coordinates(cif_content)
   symmetry_operations <- extract_symmetry_operations(cif_content)
 
-  if (is.null(atomic_coordinates) || is.null(symmetry_operations) || is.null(unit_cell_metrics)) {
+  if (is.null(atomic_coordinates) ||
+      is.null(symmetry_operations) || is.null(unit_cell_metrics)) {
     warning("Could not process CIF due to missing essential data (atoms, symmetry, or cell).")
     return(NULL)
   }
@@ -49,18 +56,36 @@ process_single_cif_data <- function(cif_content) {
   brunner_pairs <- brunner(distances)
   hoppe_pairs <- hoppe(distances)
   neighbor_counts <- calculate_neighbor_counts(bonded_pairs)
-  bond_angles <- calculate_angles(bonded_pairs, atomic_coordinates, expanded_coords, unit_cell_metrics)
+  bond_angles <- calculate_angles(bonded_pairs,
+                                  atomic_coordinates,
+                                  expanded_coords,
+                                  unit_cell_metrics)
   bonded_pairs <- propagate_distance_error(bonded_pairs, atomic_coordinates, unit_cell_metrics)
-  bond_angles <- propagate_angle_error(bond_angles, atomic_coordinates, expanded_coords, unit_cell_metrics)
+  bond_angles <- propagate_angle_error(bond_angles,
+                                       atomic_coordinates,
+                                       expanded_coords,
+                                       unit_cell_metrics)
 
-  return(data.table(database_code=database_code, chemical_formula=chemical_formula, structure_type=structure_type,
-                    space_group_name=space_group_name, space_group_number=space_group_number,
-                    unit_cell_metrics=list(unit_cell_metrics), atomic_coordinates=list(atomic_coordinates),
-                    symmetry_operations=list(symmetry_operations), transformed_coords=list(transformed_coords),
-                    expanded_coords=list(expanded_coords), distances=list(distances),
-                    bonded_pairs=list(bonded_pairs), brunner_pairs=list(brunner_pairs),
-                    hoppe_pairs=list(hoppe_pairs), neighbor_counts=list(neighbor_counts),
-                    bond_angles=list(bond_angles)))
+  return(
+    data.table(
+      database_code = database_code,
+      chemical_formula = chemical_formula,
+      structure_type = structure_type,
+      space_group_name = space_group_name,
+      space_group_number = space_group_number,
+      unit_cell_metrics = list(unit_cell_metrics),
+      atomic_coordinates = list(atomic_coordinates),
+      symmetry_operations = list(symmetry_operations),
+      transformed_coords = list(transformed_coords),
+      expanded_coords = list(expanded_coords),
+      distances = list(distances),
+      bonded_pairs = list(bonded_pairs),
+      brunner_pairs = list(brunner_pairs),
+      hoppe_pairs = list(hoppe_pairs),
+      neighbor_counts = list(neighbor_counts),
+      bond_angles = list(bond_angles)
+    )
+  )
 }
 
 #' @title Analyze a Batch of CIF Files
@@ -78,12 +103,18 @@ process_single_cif_data <- function(cif_content) {
 analyze_cif_files <- function(file_paths) {
   cif_contents <- read_cif_files(file_paths)
   results_list <- lapply(cif_contents, function(cif) {
-    tryCatch({ process_single_cif_data(cif) },
-             error = function(e) {
-               warning(paste("Failed to process a CIF file:", e$message)); return(NULL)
-             })
+    tryCatch({
+      process_single_cif_data(cif)
+    }, error = function(e) {
+      warning(paste("Failed to process a CIF file:", e$message))
+      return(NULL)
+    })
   })
   successful_results <- results_list[!sapply(results_list, is.null)]
-  if (length(successful_results) > 0) { return(rbindlist(successful_results, fill = TRUE)) }
-  else { return(data.table()) }
+  if (length(successful_results) > 0) {
+    return(rbindlist(successful_results, fill = TRUE))
+  }
+  else {
+    return(data.table())
+  }
 }

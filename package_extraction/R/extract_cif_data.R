@@ -94,15 +94,27 @@ extract_space_group_number <- function(cif_content) {
 #'   print(metrics)
 #' }
 extract_unit_cell_metrics <- function(cif_content) {
-  cell_parameters <- c("_cell_length_a", "_cell_length_b", "_cell_length_c",
-                       "_cell_angle_alpha", "_cell_angle_beta", "_cell_angle_gamma")
-  values <- list(); errors <- list()
+  cell_parameters <- c(
+    "_cell_length_a",
+    "_cell_length_b",
+    "_cell_length_c",
+    "_cell_angle_alpha",
+    "_cell_angle_beta",
+    "_cell_angle_gamma"
+  )
+  values <- list()
+  errors <- list()
 
   scale_error <- function(value_str, error_str) {
-    if (is.na(error_str) || error_str == "") return(NA_real_)
+    if (is.na(error_str) || error_str == "")
+      return(NA_real_)
     decimal_pos <- regexpr("\\.", value_str)
-    if (decimal_pos == -1) { as.numeric(error_str) }
-    else { as.numeric(error_str) * 10^-(nchar(value_str) - decimal_pos) }
+    if (decimal_pos == -1) {
+      as.numeric(error_str)
+    }
+    else {
+      as.numeric(error_str) * 10^-(nchar(value_str) - decimal_pos)
+    }
   }
 
   for (param in cell_parameters) {
@@ -110,7 +122,8 @@ extract_unit_cell_metrics <- function(cif_content) {
     if (length(line) > 0) {
       match <- stringr::str_match(line[1], "\\s+([0-9\\.]+)(?:\\(([0-9]+)\\))?")
       if (!is.na(match[1, 1])) {
-        value_str <- match[1, 2]; error_str <- match[1, 3]
+        value_str <- match[1, 2]
+        error_str <- match[1, 3]
         values[[param]] <- as.numeric(value_str)
         errors[[paste0(param, "_error")]] <- scale_error(value_str, error_str)
       } else {
@@ -141,48 +154,105 @@ extract_unit_cell_metrics <- function(cif_content) {
 #'   print(coords)
 #' }
 extract_atomic_coordinates <- function(cif_content) {
+  # --- 1. Find the start of the atom site loop ---
   first_header_line_idx <- grep("^_atom_site_fract_x", cif_content$V1)[1]
   if (is.na(first_header_line_idx)) {
     first_header_line_idx <- grep("^_atom_site_label", cif_content$V1)[1]
-    if (is.na(first_header_line_idx)) return(NULL)
+    if (is.na(first_header_line_idx))
+      return(NULL)
   }
   loop_start_line_idx <- max(grep("^loop_", cif_content$V1[1:first_header_line_idx]))
-  if (is.infinite(loop_start_line_idx)) return(NULL)
+  if (is.infinite(loop_start_line_idx))
+    return(NULL)
+
+  # --- 2. Read the headers and find column indices ---
   line_indices <- (loop_start_line_idx + 1):nrow(cif_content)
-  headers <- character(); first_data_line_idx <- 0
+  headers <- character()
+  first_data_line_idx <- 0
   for (i in line_indices) {
     line <- cif_content$V1[i]
-    if (startsWith(line, "_")) { headers <- c(headers, trimws(line)) }
-    else { first_data_line_idx <- i; break }
+    if (startsWith(line, "_")) {
+      headers <- c(headers, trimws(line))
+    } else {
+      first_data_line_idx <- i
+      break
+    }
   }
-  tags_to_find <- c(label = "_atom_site_label", x = "_atom_site_fract_x", y = "_atom_site_fract_y",
-                    z = "_atom_site_fract_z", occupancy = "_atom_site_occupancy",
-                    wyckoff = "_atom_site_Wyckoff_symbol", multiplicity = "_atom_site_symmetry_multiplicity")
-  col_indices <- sapply(tags_to_find, function(tag) { idx <- which(headers == tag); if (length(idx) == 0) NA else idx })
+  tags_to_find <- c(
+    label = "_atom_site_label",
+    x = "_atom_site_fract_x",
+    y = "_atom_site_fract_y",
+    z = "_atom_site_fract_z",
+    occupancy = "_atom_site_occupancy",
+    wyckoff = "_atom_site_Wyckoff_symbol",
+    multiplicity = "_atom_site_symmetry_multiplicity"
+  )
+  col_indices <- sapply(tags_to_find, function(tag) {
+    idx <- which(headers == tag)
+    if (length(idx) == 0)
+      NA
+    else
+      idx
+  })
   if (anyNA(col_indices[c("label", "x", "y", "z")])) {
-    warning("CIF file is missing essential atom site tags (_label, _fract_x, _y, _z)."); return(NULL)
+    warning("CIF file is missing essential atom site tags (_label, _fract_x, _y, _z).")
+    return(NULL)
   }
+
+  # --- 3. Find the end of the data block ---
   end_candidates <- c(grep("^loop_|^_|^#", cif_content$V1[first_data_line_idx:nrow(cif_content)]),
                       grep("^\\s*$", cif_content$V1[first_data_line_idx:nrow(cif_content)]))
-  last_data_line_idx <- if (length(end_candidates) > 0) { first_data_line_idx + min(end_candidates) - 2 } else { nrow(cif_content) }
-  if (first_data_line_idx > last_data_line_idx) return(NULL)
+  last_data_line_idx <- if (length(end_candidates) > 0) {
+    first_data_line_idx + min(end_candidates) - 2
+  } else {
+    nrow(cif_content)
+  }
+  if (first_data_line_idx > last_data_line_idx)
+    return(NULL)
+
+  # --- 4. Read data with fread ---
   data_lines <- cif_content$V1[first_data_line_idx:last_data_line_idx]
-  atom_data <- fread(text = paste(data_lines, collapse = "\n"), header = FALSE, sep = "auto", quote = "")
+  atom_data <- fread(
+    text = paste(data_lines, collapse = "\n"),
+    header = FALSE,
+    sep = "auto",
+    quote = ""
+  )
+
+  # --- 5. VECTORIZED parsing of coordinates and errors ---
   parse_vector_with_error <- function(coord_vector) {
-    matches <- str_match(coord_vector, "([0-9\\.\\-]+)(?:\\(([0-9]+)\\))?")
-    value_str <- matches[, 2]; error_str <- matches[, 3]
+    matches <- stringr::str_match(coord_vector, "([0-9\\.\\-]+)(?:\\(([0-9]+)\\))?")
+    value_str <- matches[, 2]
+    error_str <- matches[, 3]
     decimal_pos <- regexpr("\\.", value_str)
     decimal_places <- ifelse(decimal_pos == -1, 0, nchar(value_str) - decimal_pos)
     scaled_error <- as.numeric(error_str) * 10^(-decimal_places)
     return(list(value = as.numeric(value_str), error = scaled_error))
   }
+
   x_data <- parse_vector_with_error(atom_data[[col_indices["x"]]])
   y_data <- parse_vector_with_error(atom_data[[col_indices["y"]]])
   z_data <- parse_vector_with_error(atom_data[[col_indices["z"]]])
-  wyckoff_multiplicity <- if (!is.na(col_indices["multiplicity"])) { as.numeric(atom_data[[col_indices["multiplicity"]]]) } else { rep(NA_real_, nrow(atom_data)) }
-  return(data.table(Label = atom_data[[col_indices["label"]]], WychoffMultiplicity = wyckoff_multiplicity,
-                    x_a = x_data$value, y_b = y_data$value, z_c = z_data$value,
-                    x_error = x_data$error, y_error = y_data$error, z_error = z_data$error))
+
+  # --- 6. Assemble the final data table ---
+  wyckoff_multiplicity <- if (!is.na(col_indices["multiplicity"])) {
+    as.numeric(atom_data[[col_indices["multiplicity"]]])
+  } else {
+    rep(NA_real_, nrow(atom_data))
+  }
+
+  atomic_coordinates <- data.table(
+    Label = atom_data[[col_indices["label"]]],
+    WychoffMultiplicity = wyckoff_multiplicity,
+    x_a = x_data$value,
+    y_b = y_data$value,
+    z_c = z_data$value,
+    x_error = x_data$error,
+    y_error = y_data$error,
+    z_error = z_data$error
+  )
+
+  return(atomic_coordinates)
 }
 
 #' @title Extract Symmetry Operations
@@ -199,25 +269,53 @@ extract_atomic_coordinates <- function(cif_content) {
 #'   print(sym_ops)
 #' }
 extract_symmetry_operations <- function(cif_content) {
+  # --- 1. Find the start of the symmetry loop ---
   symop_tag <- "_space_group_symop_operation_xyz"
   first_header_line_idx <- grep(symop_tag, cif_content$V1)[1]
   if (is.na(first_header_line_idx)) {
     symop_tag <- "_symmetry_equiv_pos_as_xyz"
     first_header_line_idx <- grep(symop_tag, cif_content$V1)[1]
-    if (is.na(first_header_line_idx)) return(NULL)
+    if (is.na(first_header_line_idx))
+      return(NULL)
   }
   loop_start_line_idx <- max(grep("^loop_", cif_content$V1[1:first_header_line_idx]))
-  if (is.infinite(loop_start_line_idx)) return(NULL)
+  if (is.infinite(loop_start_line_idx))
+    return(NULL)
+
+  # --- 2. Find the range of data lines ---
   line_indices <- (loop_start_line_idx + 1):nrow(cif_content)
   first_data_line_idx <- 0
-  for (i in line_indices) { if (!startsWith(cif_content$V1[i], "_")) { first_data_line_idx <- i; break } }
-  if (first_data_line_idx == 0) return(NULL)
+  for (i in line_indices) {
+    if (!startsWith(cif_content$V1[i], "_")) {
+      first_data_line_idx <- i
+      break
+    }
+  }
+  if (first_data_line_idx == 0)
+    return(NULL)
+
   end_candidates <- c(grep("^loop_|^_|^#", cif_content$V1[first_data_line_idx:nrow(cif_content)]),
                       grep("^\\s*$", cif_content$V1[first_data_line_idx:nrow(cif_content)]))
-  last_data_line_idx <- if (length(end_candidates) > 0) { first_data_line_idx + min(end_candidates) - 2 } else { nrow(cif_content) }
-  if (first_data_line_idx > last_data_line_idx) return(NULL)
+  last_data_line_idx <- if (length(end_candidates) > 0) {
+    first_data_line_idx + min(end_candidates) - 2
+  } else {
+    nrow(cif_content)
+  }
+  if (first_data_line_idx > last_data_line_idx)
+    return(NULL)
+
+  # --- 3. Extract and parse raw data lines ---
   data_lines <- cif_content$V1[first_data_line_idx:last_data_line_idx]
-  cleaned_lines <- trimws(gsub("^'|^\"|'$|\"$", "", trimws(sub("^[0-9]+\\s+", "", data_lines))))
-  symmetry_matrix <- str_split_fixed(cleaned_lines, ",", n = 3)
-  return(data.table(x = trimws(symmetry_matrix[, 1]), y = trimws(symmetry_matrix[, 2]), z = trimws(symmetry_matrix[, 3])))
+  cleaned_lines <- trimws(gsub("^'|^\"|'$|\"$", "", trimws(sub(
+    "^[0-9]+\\s+", "", data_lines
+  ))))
+  symmetry_matrix <- stringr::str_split_fixed(cleaned_lines, ",", n = 3)
+
+  symmetry_dt <- data.table(
+    x = trimws(symmetry_matrix[, 1]),
+    y = trimws(symmetry_matrix[, 2]),
+    z = trimws(symmetry_matrix[, 3])
+  )
+
+  return(symmetry_dt)
 }

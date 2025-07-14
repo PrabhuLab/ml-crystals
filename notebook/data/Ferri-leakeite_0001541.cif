@@ -1,0 +1,95 @@
+data_global
+_chemical_name_mineral 'Ferri-leakeite'
+loop_
+_publ_author_name
+'Hawthorne F C'
+'Oberti R'
+'Ungaretti L'
+'Grice J D'
+_journal_name_full 'American Mineralogist'
+_journal_volume 77 
+_journal_year 1992
+_journal_page_first 1112
+_journal_page_last 1115
+_publ_section_title
+;
+ Leakeite, NaNa2(Mg2Fe2Li)Si8O22(OH)2, a new alkali amphibole from the
+ Kajlidongri manganese mine, Jhabua district, Madhya Pradesh, India
+;
+_database_code_amcsd 0001541
+_chemical_compound_source 'Kajlidongri manganese mine, Jhabua district, Madhya Pradesh, India'
+_chemical_formula_sum 'O24 Si8 Mg2.17 Fe2 Li.83 Na2.962 Ca.04 H2'
+_cell_length_a 9.822
+_cell_length_b 17.836
+_cell_length_c 5.286
+_cell_angle_alpha 90
+_cell_angle_beta 104.37
+_cell_angle_gamma 90
+_cell_volume 897.056
+_exptl_crystal_density_diffrn      3.149
+_symmetry_space_group_name_H-M 'C 1 2/m 1'
+loop_
+_space_group_symop_operation_xyz
+  'x,y,z'
+  '1/2+x,1/2+y,z'
+  'x,-y,z'
+  '1/2+x,1/2-y,z'
+  '-x,y,-z'
+  '1/2-x,1/2+y,-z'
+  '-x,-y,-z'
+  '1/2-x,1/2-y,-z'
+loop_
+_atom_site_label
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_occupancy
+_atom_site_U_iso_or_equiv
+O1   0.11000   0.09050   0.21540   1.00000 ?
+O2   0.11840   0.16850   0.72840   1.00000 ?
+O3   0.11100   0.00000   0.69850   1.00000 ?
+O4   0.36230   0.25040   0.80270   1.00000 ?
+O5   0.34860   0.12810   0.08500   1.00000 ?
+O6   0.34360   0.11930   0.58540   1.00000 ?
+O7   0.33380   0.00000   0.29830   1.00000 ?
+Si1   0.27800   0.08620   0.29440   1.00000 ?
+Si2   0.28830   0.17120   0.80180   1.00000 ?
+Mg1   0.00000   0.08480   0.50000   0.72000 ?
+Fe1   0.00000   0.08480   0.50000   0.28000 ?
+Mg2   0.00000   0.17960   0.00000   0.28000 ?
+Fe2   0.00000   0.17960   0.00000   0.72000 ?
+Li3   0.00000   0.00000   0.00000   0.83000 ?
+Mg3   0.00000   0.00000   0.00000   0.17000 ?
+Na4   0.00000   0.27630   0.50000   0.98000 ?
+Ca4   0.00000   0.27630   0.50000   0.02000 ?
+NaA   0.00000   0.50000   0.00000   0.85000 ?
+Nam   0.03990   0.50000   0.09300   0.03800 ?
+Na2   0.00000   0.47660   0.00000   0.03800   0.05243
+H   0.18450   0.00000   0.77050   1.00000 ?
+loop_
+_atom_site_aniso_label
+_atom_site_aniso_U_11
+_atom_site_aniso_U_22
+_atom_site_aniso_U_33
+_atom_site_aniso_U_12
+_atom_site_aniso_U_13
+_atom_site_aniso_U_23
+O1 0.00596 0.00967 0.01076 -0.00086 0.00123 -0.00046
+O2 0.00734 0.00967 0.01103 0.00086 0.00148 0.00185
+O3 0.01055 0.00806 0.01474 -0.00344 0.00123 -0.00046
+O4 0.01513 0.00645 0.01275 -0.00258 0.00420 0.00000
+O5 0.00642 0.01289 0.00903 0.00086 0.00148 0.00324
+O6 0.00734 0.01289 0.00784 0.00000 0.00123 -0.00278
+O7 0.00963 0.00483 0.01979 0.00000 0.00173 0.00000
+Si1 0.00596 0.00483 0.00638 0.00000 0.00099 -0.00046
+Si2 0.00504 0.00483 0.00664 -0.00086 0.00123 0.00000
+Mg1 0.00780 0.01128 0.00810 0.00000 0.00296 0.00000
+Fe1 0.00780 0.01128 0.00810 0.00000 0.00296 0.00000
+Mg2 0.00596 0.00483 0.00744 0.00000 0.00148 0.00000
+Fe2 0.00596 0.00483 0.00744 0.00000 0.00148 0.00000
+Li3 0.01055 0.00483 0.00863 0.00000 -0.00049 0.00000
+Mg3 0.01055 0.00483 0.00863 0.00000 -0.00049 0.00000
+Na4 0.01697 0.01128 0.02125 0.00000 0.01111 0.00000
+Ca4 0.01697 0.01128 0.02125 0.00000 0.01111 0.00000
+NaA 0.09218 0.01450 0.10242 0.00000 0.09478 0.00000
+Nam 0.04953 0.02579 0.04477 0.00000 0.03678 0.00000

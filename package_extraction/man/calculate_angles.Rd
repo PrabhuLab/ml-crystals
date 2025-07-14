@@ -30,6 +30,7 @@ Calculates all bond angles centered on each atom, formed by pairs
 \seealso{
 Other property calculators: 
 \code{\link{calculate_distances}()},
-\code{\link{calculate_neighbor_counts}()}
+\code{\link{calculate_neighbor_counts}()},
+\code{\link{filter_atoms_by_symbol}()}
 }
 \concept{property calculators}

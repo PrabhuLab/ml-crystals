@@ -1,0 +1,92 @@
+
+#(C) 2024 by FIZ Karlsruhe - Leibniz Institute for Information Infrastructure.  All rights reserved.
+data_260223-ICSD
+_database_code_ICSD 260223
+_audit_creation_date 2009-08-01
+_chemical_name_common 'Silver germanium erbium sulfide (0.50/1/3/7)'
+_chemical_formula_structural 'Ag0.50 Ge Er3 S7'
+_chemical_formula_sum 'Ag0.5 Er3 Ge1 S7'
+_chemical_name_structure_type La3Mn0.5SiS7
+_exptl_crystal_density_diffrn 5.97
+_diffrn_ambient_temperature 295.
+_citation_title
+
+;
+Ln3 M1 - T X7 - quasi - isostructural compounds: stereochemistry and silver -
+ion motion in the Ln3 Ag1 - Ge S7 (Ln = La - Nd, Sm, Gd - Er and Y;  = 0.11 -
+0.50) compounds
+;
+loop_
+_citation_id
+_citation_journal_full
+_citation_year
+_citation_journal_volume
+_citation_page_first
+_citation_page_last
+_citation_journal_id_ASTM
+primary 'Acta Crystallographica, Section B: Structural Science' 2009 65 126 133
+ASBSDK
+loop_
+_citation_author_citation_id
+_citation_author_name
+primary 'Daszkiewicz, M.'
+primary 'Gulay, L.D.'
+primary 'Lychmanyuk, O.S.'
+_cell_length_a 9.6921(14)
+_cell_length_b 9.6921(14)
+_cell_length_c 5.8308(12)
+_cell_angle_alpha 90.
+_cell_angle_beta 90.
+_cell_angle_gamma 120.
+_cell_volume 474.35
+_cell_formula_units_Z 2
+_space_group_name_H-M_alt 'P 63'
+_space_group_IT_number 173
+loop_
+_space_group_symop_id
+_space_group_symop_operation_xyz
+1 'x-y, x, z+1/2'
+2 'y, -x+y, z+1/2'
+3 '-x, -y, z+1/2'
+4 '-x+y, -x, z'
+5 '-y, x-y, z'
+6 'x, y, z'
+loop_
+_atom_type_symbol
+_atom_type_oxidation_number
+Er3+ 3
+Ag1+ 1
+Ge4+ 4
+S2- -2
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_symmetry_multiplicity
+_atom_site_Wyckoff_symbol
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_U_iso_or_equiv
+_atom_site_occupancy
+Er1 Er3+ 6 c 0.85842(5) 0.64061(5) 0.24518(19) 0.02066(18) 1
+Ag1 Ag1+ 2 a 0. 0. 0.9635(19) 0.076(2) 0.5
+Ge1 Ge4+ 2 b 0.3333 0.6667 0.3216(3) 0.0119(4) 1
+S1 S2- 2 b 0.3333 0.6667 0.9460(7) 0.0134(9) 1
+S2 S2- 6 c 0.8949(3) 0.7418(3) 0.6936(5) 0.0238(7) 1
+S3 S2- 6 c 0.5725(3) 0.4776(3) 0.9825(4) 0.0154(5) 1
+loop_
+_atom_site_aniso_label
+_atom_site_aniso_type_symbol
+_atom_site_aniso_U_11
+_atom_site_aniso_U_22
+_atom_site_aniso_U_33
+_atom_site_aniso_U_12
+_atom_site_aniso_U_13
+_atom_site_aniso_U_23
+Er1 Er3+ 0.0144(2) 0.0150(2) 0.0327(3) 0.00742(17) -0.0022(3) 0.0004(3)
+Ag1 Ag1+ 0.0231(9) 0.0231(9) 0.181(7) 0.0115(5) 0. 0.
+Ge1 Ge4+ 0.0140(6) 0.0140(6) 0.0077(8) 0.0070(3) 0. 0.
+S1 S2- 0.0159(13) 0.0159(13) 0.008(2) 0.0079(6) 0. 0.
+S2 S2- 0.0136(11) 0.0252(13) 0.0340(19) 0.0107(10) -0.0022(10) -0.0143(11)
+S3 S2- 0.0202(12) 0.0155(12) 0.0148(12) 0.0122(10) -0.0006(11) -0.0001(10)
+#End of TTdata_260223-ICSD

@@ -1,0 +1,93 @@
+#------------------------------------------------------------------------------
+#$Date: 2015-01-27 21:58:39 +0200 (Tue, 27 Jan 2015) $
+#$Revision: 130149 $
+#$URL: svn://www.crystallography.net/cod/cif/1/00/03/1000355.cif $
+#------------------------------------------------------------------------------
+#
+# This file is available in the Crystallography Open Database (COD),
+# http://www.crystallography.net/
+#
+# All data on this site have been placed in the public domain by the
+# contributors.
+#
+data_1000355
+loop_
+_publ_author_name
+'Maisonneuve, V'
+'Cajipe, V B'
+'Payen, C'
+_publ_section_title
+;
+Low-temperature neutron powder diffraction study of CuCrP~2~S~6~:
+observation of an ordered, antipolar copper sublattice
+;
+_journal_coden_ASTM              CMATEX
+_journal_name_full               'Chemistry of Materials (1,1989-'
+_journal_page_first              758
+_journal_page_last               760
+_journal_paper_doi               10.1021/cm00030a006
+_journal_volume                  5
+_journal_year                    1993
+_chemical_formula_structural     'Cu Cr (P2 S6)'
+_chemical_formula_sum            'Cr Cu P2 S6'
+_chemical_name_systematic
+;
+Copper(I) chromium hexathio-duo-diphosphate(IV)
+;
+_space_group_IT_number           7
+_symmetry_cell_setting           monoclinic
+_symmetry_Int_Tables_number      7
+_symmetry_space_group_name_Hall  'P -2yc'
+_symmetry_space_group_name_H-M   'P 1 c 1'
+_cell_angle_alpha                90
+_cell_angle_beta                 106.78(7)
+_cell_angle_gamma                90
+_cell_formula_units_Z            4
+_cell_length_a                   5.935(6)
+_cell_length_b                   10.282(2)
+_cell_length_c                   13.368(13)
+_cell_volume                     781.0
+_refine_ls_R_factor_all          0.067
+_cod_database_code               1000355
+loop_
+_symmetry_equiv_pos_as_xyz
+x,y,z
+x,-y,1/2+z
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_symmetry_multiplicity
+_atom_site_Wyckoff_symbol
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_occupancy
+_atom_site_attached_hydrogens
+_atom_site_calc_flag
+Cu1 Cu1+ 2 a 0.071(9) .000(3) 0.355(4) 1. 0 d
+Cu2 Cu1+ 2 a 0.441(9) 0.496(3) 0.148(4) 1. 0 d
+Cr1 Cr3+ 2 a 0. 0.332(5) 0.25 1. 0 d
+Cr2 Cr3+ 2 a 0.527(6) 0.830(5) 0.246(3) 1. 0 d
+P1 P4+ 2 a 0.079(9) 0.337(4) 0.827(4) 1. 0 d
+P2 P4+ 2 a 0.545(9) 0.838(3) 0.817(4) 1. 0 d
+P3 P4+ 2 a 0.954(9) 0.668(3) 0.154(4) 1. 0 d
+P4 P4+ 2 a 0.457(8) 0.837(4) 0.645(4) 1. 0 d
+S1 S2- 2 a 0.725(11) 0.996(4) 0.371(5) 1. 0 d
+S2 S2- 2 a 0.247(8) 0.491(4) 0.368(5) 1. 0 d
+S3 S2- 2 a 0.29(1) 0.011(3) 0.625(6) 1. 0 d
+S4 S2- 2 a 0.802(10) 0.491(3) 0.118(4) 1. 0 d
+S5 S2- 2 a 0.288(13) 0.176(7) 0.867(6) 1. 0 d
+S6 S2- 2 a 0.757(11) 0.682(6) 0.869(5) 1. 0 d
+S7 S2- 2 a 0.739(11) 0.826(5) 0.115(5) 1. 0 d
+S8 S2- 2 a 0.230(15) 0.684(6) 0.626(6) 1. 0 d
+S9 S2- 2 a 0.261(12) 0.183(8) 0.372(5) 1. 0 d
+S10 S2- 2 a 0.768(9) 0.668(6) 0.362(6) 1. 0 d
+S11 S2- 2 a 0.786(8) 0.832(6) 0.627(5) 1. 0 d
+S12 S2- 2 a 0.263(11) 0.688(7) 0.119(6) 1. 0 d
+loop_
+_atom_type_symbol
+_atom_type_oxidation_number
+Cu1+ 1.000
+Cr3+ 3.000
+P4+ 4.000
+S2- -2.000

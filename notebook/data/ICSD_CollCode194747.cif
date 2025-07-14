@@ -1,0 +1,137 @@
+
+#(C) 2024 by FIZ Karlsruhe - Leibniz Institute for Information Infrastructure.  All rights reserved.
+data_194747-ICSD
+_database_code_ICSD 194747
+_audit_creation_date 2015-08-01
+_chemical_name_common 'Carbon nitride amide (24/30/6)'
+_chemical_formula_structural 'C24 N30 (N H2)6'
+_chemical_formula_sum 'C24 H12 N36'
+_exptl_crystal_density_diffrn 4.05
+_citation_title
+
+;
+Structural investigation of graphitic carbon nitride via XRD and neutron
+diffraction
+;
+loop_
+_citation_id
+_citation_journal_full
+_citation_year
+_citation_journal_volume
+_citation_page_first
+_citation_page_last
+_citation_journal_id_ASTM
+primary 'Chemistry of Materials' 2015 27 2612 2618 CMATEX
+loop_
+_citation_author_citation_id
+_citation_author_name
+primary 'Fina, Federica'
+primary 'Callear, Samantha K.'
+primary 'Carins, George M.'
+primary 'Irvine, John T.S.'
+_cell_length_a 16.4
+_cell_length_b 12.4
+_cell_length_c 6.49
+_cell_angle_alpha 90.
+_cell_angle_beta 90.
+_cell_angle_gamma 90.
+_cell_volume 1319.81
+_cell_formula_units_Z 4
+_space_group_name_H-M_alt 'P 21 21 2'
+_space_group_IT_number 18
+loop_
+_space_group_symop_id
+_space_group_symop_operation_xyz
+1 '-x+1/2, y+1/2, -z'
+2 'x+1/2, -y+1/2, -z'
+3 '-x, -y, z'
+4 'x, y, z'
+loop_
+_atom_type_symbol
+_atom_type_oxidation_number
+C4+ 4
+H1+ 1
+N3- -3
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_symmetry_multiplicity
+_atom_site_Wyckoff_symbol
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_B_iso_or_equiv
+_atom_site_occupancy
+C1 C4+ 4 c 0.3448 0.472 0.25 . 1.
+C2 C4+ 4 c 0.6552 0.528 0.25 . 1.
+C3 C4+ 4 c 0.22159 0.798 0.25 . 1.
+C4 C4+ 4 c 0.77841 0.202 0.25 . 1.
+C5 C4+ 4 c 0.26945 0.63 0.25 . 1.
+C6 C4+ 4 c 0.73055 0.37 0.25 . 1.
+C7 C4+ 4 c 0.13605 0.648 0.25 . 1.
+C8 C4+ 4 c 0.86395 0.352 0.25 . 1.
+C9 C4+ 4 c 0.98716 0.683 0.25 . 1.
+C10 C4+ 4 c 0.01284 0.317 0.25 . 1.
+C11 C4+ 4 c 0.07292 0.82 0.25 . 1.
+C12 C4+ 4 c 0.92708 0.18 0.25 . 1.
+C13 C4+ 4 c 0.83442 0.028 0.25 . 1.
+C14 C4+ 4 c 0.16558 0.972 0.25 . 1.
+C15 C4+ 4 c 0.7112 0.702 0.25 . 1.
+C16 C4+ 4 c 0.2888 0.298 0.25 . 1.
+C17 C4+ 4 c 0.75906 0.87 0.25 . 1.
+C18 C4+ 4 c 0.24094 0.13 0.25 . 1.
+C19 C4+ 4 c 0.62567 0.852 0.25 . 1.
+C20 C4+ 4 c 0.37433 0.148 0.25 . 1.
+C21 C4+ 4 c 0.47801 0.817 0.25 . 1.
+C22 C4+ 4 c 0.52199 0.183 0.25 . 1.
+C23 C4+ 4 c 0.56253 0.68 0.25 . 1.
+C24 C4+ 4 c 0.43747 0.32 0.25 . 1.
+H1 H1+ 4 c 0.87494 0.8891 0.25 . 1.
+H2 H1+ 4 c 0.12506 0.1109 0.25 . 1.
+H3 H1+ 4 c 0.38533 0.6109 0.25 . 1.
+H4 H1+ 4 c 0.61467 0.3891 0.25 . 1.
+H5 H1+ 4 c 0.91649 0.5576 0.25 . 1.
+H6 H1+ 4 c 0.08351 0.4424 0.25 . 1.
+H7 H1+ 4 c 0.40734 0.9424 0.25 . 1.
+H8 H1+ 4 c 0.59266 0.0576 0.25 . 1.
+H9 H1+ 4 c 0.35826 0.8217 0.25 . 1.
+H10 H1+ 4 c 0.64174 0.1783 0.25 . 1.
+H11 H1+ 4 c 0.86741 0.6783 0.25 . 1.
+H12 H1+ 4 c 0.13259 0.3217 0.25 . 1.
+N1 N3- 4 c 0.14216 0.762 0.25 . 1.
+N2 N3- 4 c 0.85784 0.238 0.25 . 1.
+N3 N3- 4 c 0.08819 0.935 0.25 . 1.
+N4 N3- 4 c 0.91181 0.065 0.25 . 1.
+N5 N3- 4 c 0.22668 0.904 0.25 . 1.
+N6 N3- 4 c 0.77332 0.096 0.25 . 1.
+N7 N3- 4 c 0.28269 0.733 0.25 . 1.
+N8 N3- 4 c 0.71731 0.267 0.25 . 1.
+N9 N3- 4 c 0.19817 0.588 0.25 . 1.
+N10 N3- 4 c 0.80183 0.412 0.25 . 1.
+N11 N3- 4 c 0.05765 0.608 0.25 . 1.
+N12 N3- 4 c 0.94235 0.392 0.25 . 1.
+N13 N3- 4 c 0.99734 0.788 0.25 . 1.
+N14 N3- 4 c 0.00266 0.212 0.25 . 1.
+N15 N3- 4 c 0.3336 0.568 0.25 . 1.
+N16 N3- 4 c 0.6664 0.432 0.25 . 1.
+N17 N3- 4 c 0.92097 0.638 0.25 . 1.
+N18 N3- 4 c 0.07903 0.362 0.25 . 1.
+N19 N3- 4 c 0.63178 0.738 0.25 . 1.
+N20 N3- 4 c 0.36822 0.262 0.25 . 1.
+N21 N3- 4 c 0.57781 0.565 0.25 . 1.
+N22 N3- 4 c 0.42219 0.435 0.25 . 1.
+N23 N3- 4 c 0.71629 0.596 0.25 . 1.
+N24 N3- 4 c 0.28371 0.404 0.25 . 1.
+N25 N3- 4 c 0.7723 0.767 0.25 . 1.
+N26 N3- 4 c 0.2277 0.233 0.25 . 1.
+N27 N3- 4 c 0.68778 0.912 0.25 . 1.
+N28 N3- 4 c 0.31222 0.088 0.25 . 1.
+N29 N3- 4 c 0.54726 0.892 0.25 . 1.
+N30 N3- 4 c 0.45274 0.108 0.25 . 1.
+N31 N3- 4 c 0.4882 0.712 0.25 . 1.
+N32 N3- 4 c 0.5118 0.288 0.25 . 1.
+N33 N3- 4 c 0.82321 0.932 0.25 . 1.
+N34 N3- 4 c 0.17679 0.068 0.25 . 1.
+N35 N3- 4 c 0.41182 0.862 0.25 . 1.
+N36 N3- 4 c 0.58818 0.138 0.25 . 1.
+#End of TTdata_194747-ICSD

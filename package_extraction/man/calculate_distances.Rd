@@ -38,6 +38,7 @@ if (file.exists(cif_file)) {
 \seealso{
 Other property calculators: 
 \code{\link{calculate_angles}()},
-\code{\link{calculate_neighbor_counts}()}
+\code{\link{calculate_neighbor_counts}()},
+\code{\link{filter_atoms_by_symbol}()}
 }
 \concept{property calculators}

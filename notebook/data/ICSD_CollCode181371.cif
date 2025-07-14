@@ -1,0 +1,68 @@
+
+#(C) 2024 by FIZ Karlsruhe - Leibniz Institute for Information Infrastructure.  All rights reserved.
+data_181371-ICSD
+_database_code_ICSD 181371
+_audit_creation_date 2012-02-01
+_audit_update_record 2015-02-01
+_chemical_name_common
+'(Dicalcium cobalt trioxide) (cobalt dioxide) (0.62/1) - (Co O2) part'
+_chemical_formula_structural 'Co O2'
+_chemical_formula_sum 'Co1 O2'
+_chemical_name_structure_type CoO2
+_exptl_crystal_density_diffrn 2.06
+_citation_title 'Discommensuration of doped (Ca2 Co O3)p Co O2'
+loop_
+_citation_id
+_citation_journal_full
+_citation_year
+_citation_journal_volume
+_citation_page_first
+_citation_page_last
+_citation_journal_id_ASTM
+primary 'Journal of Electronic Materials' 2009 38 1462 1467 JECMA5
+loop_
+_citation_author_citation_id
+_citation_author_name
+primary 'Kajitani, T.'
+primary 'Yubuta, K.'
+primary 'Huang Xiang Yang'
+primary 'Miyazaki, Y.'
+_cell_length_a 4.8339(3)
+_cell_length_b 2.8238(2)
+_cell_length_c 10.8436(7)
+_cell_angle_alpha 90.
+_cell_angle_beta 98.14(1)
+_cell_angle_gamma 90.
+_cell_volume 146.52
+_cell_formula_units_Z 2
+_space_group_name_H-M_alt 'C 1 2/m 1'
+_space_group_IT_number 12
+loop_
+_space_group_symop_id
+_space_group_symop_operation_xyz
+1 '-x, y, -z'
+2 '-x, -y, -z'
+3 'x, -y, z'
+4 'x, y, z'
+5 '-x+1/2, y+1/2, -z'
+6 '-x+1/2, -y+1/2, -z'
+7 'x+1/2, -y+1/2, z'
+8 'x+1/2, y+1/2, z'
+loop_
+_atom_type_symbol
+_atom_type_oxidation_number
+Co4+ 4
+O2- -2
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_symmetry_multiplicity
+_atom_site_Wyckoff_symbol
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_B_iso_or_equiv
+_atom_site_occupancy
+Co1 Co4+ 2 a 0 0 0 0.18(8) 1.
+O1 O2- 4 i 0.365(3) 0 0.094(2) 0.63(33) 1.
+#End of TTdata_181371-ICSD

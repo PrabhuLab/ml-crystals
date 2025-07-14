@@ -3,7 +3,7 @@
 # faster and less repetitive.
 
 # Load the single CIF file content
-cif_path_422 <- system.file("extdata", "ICSD422.cif", package = "crysmal")
+cif_path_422 <- system.file("extdata", "ICSD422.cif", package = "crystract")
 cif_content_422 <- read_cif_files(cif_path_422)[[1]]
 
 # Run the full analysis pipeline to get the final results object
