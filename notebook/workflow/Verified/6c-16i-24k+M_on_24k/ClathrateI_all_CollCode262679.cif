@@ -1,0 +1,143 @@
+
+#(C) 2025 by FIZ Karlsruhe - Leibniz Institute for Information Infrastructure.  All rights reserved.
+data_262679-ICSD
+_database_code_ICSD 262679
+_audit_creation_date 2012-08-01
+_audit_update_record 2013-02-01
+_chemical_name_common 'Barium nickel silicide (8/3.2/42.4)'
+_chemical_formula_structural 'Ba8.0 Ni3.2 Si42.4'
+_chemical_formula_sum 'Ba8 Ni3.2 Si42.4'
+_chemical_name_structure_type K8Si46
+_exptl_crystal_density_diffrn 3.77
+_diffrn_ambient_temperature 295.
+_citation_title
+
+;
+Synthesis, crystal structure, and physical properties of the type-I clathrate
+Ba(8-d) Ni(x[]y) Si(46-x-y)
+;
+loop_
+_citation_id
+_citation_journal_full
+_citation_year
+_citation_journal_volume
+_citation_page_first
+_citation_page_last
+_citation_journal_id_ASTM
+primary 'Inorganic Chemistry' 2012 51 4730 4741 INOCAJ
+loop_
+_citation_author_citation_id
+_citation_author_name
+primary 'Aydemir, U.'
+primary 'Candolfi, C.'
+primary 'Ormeci, A.'
+primary 'Borrmann, H.'
+primary 'Burkhardt, U.'
+primary 'Oztan, Y.'
+primary 'Oeschler, N.'
+primary 'Baitinger, M.'
+primary 'Steglich, F.'
+primary "Grin', Yu. (Hrin', Yu."
+primary ' Grin, Yu.'
+primary ' Hrin, Yu.)'
+_cell_length_a 10.2922(1)
+_cell_length_b 10.2922(1)
+_cell_length_c 10.2922(1)
+_cell_angle_alpha 90
+_cell_angle_beta 90
+_cell_angle_gamma 90
+_cell_volume 1090.25
+_cell_formula_units_Z 1
+_space_group_name_H-M_alt 'P m -3 n'
+_space_group_IT_number 223
+loop_
+_space_group_symop_id
+_space_group_symop_operation_xyz
+1 'z+1/2, -y+1/2, x+1/2'
+2 'y+1/2, -x+1/2, z+1/2'
+3 'x+1/2, -z+1/2, y+1/2'
+4 '-z+1/2, y+1/2, -x+1/2'
+5 '-y+1/2, x+1/2, -z+1/2'
+6 '-x+1/2, z+1/2, -y+1/2'
+7 'z+1/2, y+1/2, -x+1/2'
+8 'y+1/2, x+1/2, -z+1/2'
+9 'x+1/2, z+1/2, -y+1/2'
+10 '-z+1/2, -y+1/2, x+1/2'
+11 '-y+1/2, -x+1/2, z+1/2'
+12 '-x+1/2, -z+1/2, y+1/2'
+13 '-z+1/2, y+1/2, x+1/2'
+14 '-y+1/2, x+1/2, z+1/2'
+15 '-x+1/2, z+1/2, y+1/2'
+16 'z+1/2, -y+1/2, -x+1/2'
+17 'y+1/2, -x+1/2, -z+1/2'
+18 'x+1/2, -z+1/2, -y+1/2'
+19 '-z+1/2, -y+1/2, -x+1/2'
+20 '-y+1/2, -x+1/2, -z+1/2'
+21 '-x+1/2, -z+1/2, -y+1/2'
+22 'z+1/2, y+1/2, x+1/2'
+23 'y+1/2, x+1/2, z+1/2'
+24 'x+1/2, z+1/2, y+1/2'
+25 'z, x, -y'
+26 'y, z, -x'
+27 'x, y, -z'
+28 '-z, -x, y'
+29 '-y, -z, x'
+30 '-x, -y, z'
+31 'z, -x, y'
+32 'y, -z, x'
+33 'x, -y, z'
+34 '-z, x, -y'
+35 '-y, z, -x'
+36 '-x, y, -z'
+37 '-z, x, y'
+38 '-y, z, x'
+39 '-x, y, z'
+40 'z, -x, -y'
+41 'y, -z, -x'
+42 'x, -y, -z'
+43 '-z, -x, -y'
+44 '-y, -z, -x'
+45 '-x, -y, -z'
+46 'z, x, y'
+47 'y, z, x'
+48 'x, y, z'
+loop_
+_atom_type_symbol
+_atom_type_oxidation_number
+Ba0+ 0
+Ni0+ 0
+Si0+ 0
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_symmetry_multiplicity
+_atom_site_Wyckoff_symbol
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_U_iso_or_equiv
+_atom_site_occupancy
+Ba1 Ba0+ 2 a 0 0 0 0.00899(5) 1.
+Ba2 Ba0+ 24 k 0.24105(7) 0.51441(7) 0 0.0151(5) 0.25
+Ni1 Ni0+ 6 c 0.25 0 0.5 0.0073(2) 0.5333
+Si1 Si0+ 6 c 0.25 0 0.5 0.0073(2) 0.404(7)
+Si2 Si0+ 16 i 0.18434(5) 0.18434 0.18434 0.00796(8) 1.
+Si3 Si0+ 24 k 0 0.3067(2) 0.1122(2) 0.0063(4) 0.405(3)
+Si4 Si0+ 24 k 0 0.3151(2) 0.1281(2) 0.0074(3) 0.533
+Si5 Si0+ 24 k 0 0.327(2) 0.132(2) 0.07(2) 0.063(3)
+loop_
+_atom_site_aniso_label
+_atom_site_aniso_type_symbol
+_atom_site_aniso_U_11
+_atom_site_aniso_U_22
+_atom_site_aniso_U_33
+_atom_site_aniso_U_12
+_atom_site_aniso_U_13
+_atom_site_aniso_U_23
+Ba1 Ba0+ 0.00899(9) 0.00899(9) 0.00899(9) 0. 0. 0.
+Ba2 Ba0+ 0.0019(2) 0.0118(10) 0.0315(10) 0.0027(5) 0. 0.
+Ni1 Ni0+ 0.0079(5) 0.0069(3) 0.0069(3) 0. 0. 0.
+Si2 Si0+ 0.0080(1) 0.0080(1) 0.0080(1) -0.0006(2) -0.0006(2) -0.0006(2)
+Si3 Si0+ 0.0082(7) 0.0069(7) 0.0037(7) 0. 0. -0.0025(6)
+Si4 Si0+ 0.0073(5) 0.0066(5) 0.0082(5) 0. 0. -0.0001(4)
+#End of TTdata_262679-ICSD

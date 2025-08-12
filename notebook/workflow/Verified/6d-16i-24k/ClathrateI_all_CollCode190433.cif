@@ -1,0 +1,131 @@
+
+#(C) 2025 by FIZ Karlsruhe - Leibniz Institute for Information Infrastructure.  All rights reserved.
+data_190433-ICSD
+_database_code_ICSD 190433
+_audit_creation_date 2014-08-01
+_chemical_name_common 'Europium barium copper silicide (2/6/4/42)'
+_chemical_formula_structural 'Eu2 Ba6 Cu4 Si42'
+_chemical_formula_sum 'Ba6 Cu4 Eu2 Si42'
+_chemical_name_structure_type K8Si46
+_exptl_crystal_density_diffrn 3.89
+_citation_title 'Thermoelectricity of clathrate I Si and Ge phases'
+loop_
+_citation_id
+_citation_journal_full
+_citation_year
+_citation_journal_volume
+_citation_page_first
+_citation_page_last
+_citation_journal_id_ASTM
+primary 'Journal of Physics: Condensed Matter' 2002 14 7991 8004 JCOMEL
+loop_
+_citation_author_citation_id
+_citation_author_name
+primary 'Mudryk, Ya'
+primary 'Rogl, P.'
+primary 'Paul, C.'
+primary 'Berger, S.'
+primary 'Bauer, E.'
+primary 'Hilscher, G.'
+primary 'Godart, C.'
+primary 'Noel, H.'
+_cell_length_a 10.3068(2)
+_cell_length_b 10.3068(2)
+_cell_length_c 10.3068(2)
+_cell_angle_alpha 90.
+_cell_angle_beta 90.
+_cell_angle_gamma 90.
+_cell_volume 1094.89
+_cell_formula_units_Z 1
+_space_group_name_H-M_alt 'P m -3 n'
+_space_group_IT_number 223
+loop_
+_space_group_symop_id
+_space_group_symop_operation_xyz
+1 'z+1/2, -y+1/2, x+1/2'
+2 'y+1/2, -x+1/2, z+1/2'
+3 'x+1/2, -z+1/2, y+1/2'
+4 '-z+1/2, y+1/2, -x+1/2'
+5 '-y+1/2, x+1/2, -z+1/2'
+6 '-x+1/2, z+1/2, -y+1/2'
+7 'z+1/2, y+1/2, -x+1/2'
+8 'y+1/2, x+1/2, -z+1/2'
+9 'x+1/2, z+1/2, -y+1/2'
+10 '-z+1/2, -y+1/2, x+1/2'
+11 '-y+1/2, -x+1/2, z+1/2'
+12 '-x+1/2, -z+1/2, y+1/2'
+13 '-z+1/2, y+1/2, x+1/2'
+14 '-y+1/2, x+1/2, z+1/2'
+15 '-x+1/2, z+1/2, y+1/2'
+16 'z+1/2, -y+1/2, -x+1/2'
+17 'y+1/2, -x+1/2, -z+1/2'
+18 'x+1/2, -z+1/2, -y+1/2'
+19 '-z+1/2, -y+1/2, -x+1/2'
+20 '-y+1/2, -x+1/2, -z+1/2'
+21 '-x+1/2, -z+1/2, -y+1/2'
+22 'z+1/2, y+1/2, x+1/2'
+23 'y+1/2, x+1/2, z+1/2'
+24 'x+1/2, z+1/2, y+1/2'
+25 'z, x, -y'
+26 'y, z, -x'
+27 'x, y, -z'
+28 '-z, -x, y'
+29 '-y, -z, x'
+30 '-x, -y, z'
+31 'z, -x, y'
+32 'y, -z, x'
+33 'x, -y, z'
+34 '-z, x, -y'
+35 '-y, z, -x'
+36 '-x, y, -z'
+37 '-z, x, y'
+38 '-y, z, x'
+39 '-x, y, z'
+40 'z, -x, -y'
+41 'y, -z, -x'
+42 'x, -y, -z'
+43 '-z, -x, -y'
+44 '-y, -z, -x'
+45 '-x, -y, -z'
+46 'z, x, y'
+47 'y, z, x'
+48 'x, y, z'
+loop_
+_atom_type_symbol
+_atom_type_oxidation_number
+Eu0+ 0
+Ba0+ 0
+Cu0+ 0
+Si0+ 0
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_symmetry_multiplicity
+_atom_site_Wyckoff_symbol
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_B_iso_or_equiv
+_atom_site_occupancy
+Eu1 Eu0+ 2 a 0 0 0 . 1.
+Ba1 Ba0+ 6 c 0.25 0 0.5 . 1.
+Cu1 Cu0+ 6 d 0.25 0.5 0 . 0.667(2)
+Si1 Si0+ 6 d 0.25 0.5 0 . 0.333(2)
+Si2 Si0+ 16 i 0.18398(9) 0.18398(9) 0.18398(9) . 1.
+Si3 Si0+ 24 k 0 0.1193(1) 0.3088(1) . 1.
+loop_
+_atom_site_aniso_label
+_atom_site_aniso_type_symbol
+_atom_site_aniso_U_11
+_atom_site_aniso_U_22
+_atom_site_aniso_U_33
+_atom_site_aniso_U_12
+_atom_site_aniso_U_13
+_atom_site_aniso_U_23
+Eu1 Eu0+ 0.0166(2) 0.0166(2) 0.0166(2) 0. 0. 0.
+Ba1 Ba0+ 0.0331(3) 0.0331(3) 0.0200(1) 0. 0. 0.
+Cu1 Cu0+ 0.0136(6) 0.0136(6) 0.0120(4) 0. 0. 0.
+Si1 Si0+ 0.0136(6) 0.0136(6) 0.0120(4) 0. 0. 0.
+Si2 Si0+ 0.0110(3) 0.0110(3) 0.0110(3) 0. 0. 0.
+Si3 Si0+ 0.0127(3) 0.0125(3) 0.0108(5) 0. 0. 0.
+#End of TTdata_190433-ICSD

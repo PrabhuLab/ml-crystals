@@ -18,7 +18,7 @@ output: pdf_document
 ### Set the working directory
 
 ```{r}
-setwd("C:/repos/ml-crystals")
+setwd("/Users/donngo/repos/ml-crystals")
 ```
 
 ### Packages (to be adjusted)
