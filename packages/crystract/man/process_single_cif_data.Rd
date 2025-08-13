@@ -4,25 +4,42 @@
 \alias{process_single_cif_data}
 \title{Process a Single CIF Data Object}
 \usage{
-process_single_cif_data(cif_content, file_name = "unknown")
+process_single_cif_data(
+  cif_content,
+  file_name = "unknown",
+  perform_extraction = TRUE,
+  perform_calcs_and_transforms = TRUE,
+  bonding_algorithms = c("minimum_distance"),
+  calculate_bond_angles = TRUE,
+  perform_error_propagation = TRUE
+)
 }
 \arguments{
 \item{cif_content}{A \code{data.table} containing the lines of a single CIF file.}
 
 \item{file_name}{The name of the original CIF file.}
+
+\item{perform_extraction}{Logical. If \code{TRUE}, extracts all metadata and basic
+structural data. This is required for all subsequent steps.}
+
+\item{perform_calcs_and_transforms}{Logical. If \code{TRUE}, generates the full
+unit cell, expands it to a supercell, and calculates interatomic distances.}
+
+\item{bonding_algorithms}{A character vector specifying one or more bonding
+algorithms to use. Results are stored in separate columns. The first
+algorithm in the vector is used for subsequent neighbor and angle calculations.
+Options: \code{"minimum_distance"}, \code{"brunner"}, \code{"hoppe"}. Use \code{"none"} to skip.}
+
+\item{calculate_bond_angles}{Logical. If \code{TRUE}, computes bond angles based on
+the primary bonding algorithm.}
+
+\item{perform_error_propagation}{Logical. If \code{TRUE}, calculates uncertainties
+for all computed distances and angles.}
 }
 \value{
 A one-row \code{data.table} with results. Returns \code{NULL} on failure.
 }
 \description{
-This function orchestrates the entire analysis pipeline for a
-single crystal structure.
-}
-\examples{
-cif_file <- system.file("extdata", "ICSD422.cif", package = "crysmal")
-if (file.exists(cif_file)) {
-  cif_content <- read_cif_files(cif_file)[[1]]
-  processed_data <- process_single_cif_data(cif_content, basename(cif_file))
-  str(processed_data, max.level = 1)
-}
+This function orchestrates the analysis pipeline for a
+single crystal structure with user-configurable steps.
 }

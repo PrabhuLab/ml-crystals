@@ -1,8 +1,8 @@
 ---
 title: "crystract"
 output: 
-  rmarkdown::pdf_document: default
   rmarkdown::html_vignette: default
+  rmarkdown::pdf_document: default
 vignette: >
   %\VignetteIndexEntry{crystract}
   %\VignetteEncoding{UTF-8}

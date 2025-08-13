@@ -811,72 +811,6 @@ filter_by_wyckoff_symbol <- function(data_table,
   return(filtered_dt)
 }
 
-#' @title Calculate Weighted Average Network Distance
-#' @description Calculates a weighted average distance from a pre-filtered table.
-#' @param distances A `data.table` of cleaned interatomic distances.
-#' @param atomic_coordinates A `data.table` from `extract_atomic_coordinates`.
-#' @param wyckoff_symbols A character vector of Wyckoff symbols to include.
-#' @return A single numeric value for the weighted average distance.
-#' @family property calculators
-#' @export
-calculate_weighted_average_network_distance <- function(distances,
-                                                        atomic_coordinates,
-                                                        wyckoff_symbols) {
-  required_cols <- c("WyckoffSymbol",
-                     "WyckoffMultiplicity",
-                     "Label",
-                     "Occupancy")
-  if (!all(required_cols %in% names(atomic_coordinates))) {
-    stop(paste(
-      "`atomic_coordinates` must contain:",
-      paste(required_cols, collapse = ", ")
-    ))
-  }
-  if (nrow(distances) == 0)
-    return(NA_real_)
-  site_info <- atomic_coordinates[, .(
-    ParentLabel = Label,
-    FullWyckoff = paste0(WyckoffMultiplicity, WyckoffSymbol),
-    Multiplicity = WyckoffMultiplicity,
-    Occupancy = Occupancy
-  )]
-  dist_with_parents <- copy(distances)
-  dist_with_parents[, `:=`(Parent1 = sub("_.*", "", Atom1),
-                           Parent2 = sub("_.*", "", Atom2))]
-  merged <- merge(
-    dist_with_parents,
-    site_info,
-    by.x = "Parent1",
-    by.y = "ParentLabel",
-    all.x = TRUE
-  )
-  setnames(
-    merged,
-    c("FullWyckoff", "Multiplicity", "Occupancy"),
-    c("Wyckoff1", "Mult1", "Occ1")
-  )
-  merged <- merge(merged,
-                  site_info,
-                  by.x = "Parent2",
-                  by.y = "ParentLabel",
-                  all.x = TRUE)
-  setnames(
-    merged,
-    c("FullWyckoff", "Multiplicity", "Occupancy"),
-    c("Wyckoff2", "Mult2", "Occ2")
-  )
-  filtered <- merged[Wyckoff1 %in% wyckoff_symbols &
-                       Wyckoff2 %in% wyckoff_symbols, ]
-  if (nrow(filtered) == 0)
-    return(NA_real_)
-  filtered[, weight := Mult1 * Occ1 * Mult2 * Occ2]
-  weighted_sum <- sum(filtered$weight * filtered$Distance, na.rm = TRUE)
-  total_weight <- sum(filtered$weight, na.rm = TRUE)
-  if (total_weight == 0)
-    return(NA_real_)
-  return(weighted_sum / total_weight)
-}
-
 #' @title Filter Distances by Element Symbols
 #' @description Removes any distance pair where at least one of the atoms
 #'   corresponds to a specified list of element symbols.
@@ -977,4 +911,88 @@ filter_ghost_distances <- function(distances,
   merged[is.na(Radius2), Radius2 := 0]
   merged[, min_allowed_dist := (Radius1 + Radius2) * tolerance]
   return(list(kept = merged[Distance > min_allowed_dist, names(distances), with = FALSE], removed = merged[Distance <= min_allowed_dist, .(Atom1, Atom2, Distance, min_allowed_dist)]))
+}
+
+#' @title Calculate Weighted Average Network Distance (Site-Centric)
+#' @description Calculates a weighted average distance for a specified atomic network,
+#'   correctly handling disordered crystallographic sites.
+#' @details The function follows a site-centric approach. First, it identifies
+#'   all unique crystallographic sites (e.g., '6c', '16i') within the network.
+#'   For each unique site, it calculates the average interatomic distance to its
+#'   neighbors. The final network average is then computed by taking a weighted
+#'   mean of these per-site averages, where the weight for each site is its
+#'   Wyckoff multiplicity. This method correctly handles cases where a single
+#'   crystallographic site is co-occupied by multiple elements (disorder).
+#'
+#' @param distances A `data.table` of interatomic distances. Must contain `Atom1`
+#'   and `Distance` columns. `Atom1` must contain labels like 'Ga1', 'Ge1', etc.
+#' @param atomic_coordinates A `data.table` from `extract_atomic_coordinates`
+#'   containing Wyckoff, multiplicity, and label information.
+#' @param wyckoff_symbols A character vector of the full Wyckoff symbols
+#'   (e.g., "4c", "24k") that define the atomic network to be analyzed.
+#' @return A single numeric value for the weighted average distance.
+#' @family property calculators
+#' @export
+calculate_weighted_average_network_distance <- function(distances,
+                                                        atomic_coordinates,
+                                                        wyckoff_symbols) {
+  # --- Input Validation ---
+  required_cols <- c("WyckoffSymbol", "WyckoffMultiplicity", "Label")
+  if (!all(required_cols %in% names(atomic_coordinates))) {
+    stop("`atomic_coordinates` missing required columns.")
+  }
+  if (nrow(distances) == 0)
+    return(NA_real_)
+
+  # --- 1. Create a "Site ID" to group atoms on the same site ---
+  # A unique site is defined by its label number (e.g., the '1' in 'Ga1').
+  # This correctly groups 'Ga1' and 'Ge1' as belonging to the same site.
+  coords_with_site <- copy(atomic_coordinates)
+  coords_with_site[, SiteID := sub("^[A-Za-z]+", "", Label)]
+  coords_with_site[, FullWyckoff := paste0(WyckoffMultiplicity, WyckoffSymbol)]
+
+  # --- 2. Filter for atoms belonging to the specified network ---
+  network_sites <- coords_with_site[FullWyckoff %in% wyckoff_symbols]
+  if (nrow(network_sites) == 0)
+    return(NA_real_)
+
+  # Get the list of atom labels ('Ga1', 'Ge1', etc.) that are in the network
+  network_atom_labels <- network_sites$Label
+
+  # Filter the distances table to only include bonds from these atoms
+  network_distances <- distances[Atom1 %in% network_atom_labels]
+  if (nrow(network_distances) == 0)
+    return(NA_real_)
+
+  # --- 3. Map the SiteID to the distances table ---
+  site_lookup <- network_sites[, .(Label, SiteID)]
+  dist_with_sites <- merge(network_distances,
+                           site_lookup,
+                           by.x = "Atom1",
+                           by.y = "Label")
+
+  # --- 4. Calculate average distance PER SITE (the crucial step) ---
+  # This correctly computes (1/n_j * Sum(d_ij)) for each site.
+  # It works because all atoms on the same site have the same neighbors.
+  avg_dist_per_site <- dist_with_sites[, .(avg_d = mean(Distance)), by = .(SiteID)]
+
+  # --- 5. Get the multiplicity for each unique site ---
+  # Multiplicity is a property of the site, so we can just take the first
+  # entry for each SiteID.
+  site_multiplicity <- unique(network_sites[, .(SiteID, Multiplicity = WyckoffMultiplicity)], by = "SiteID")
+
+  # --- 6. Merge average distances with multiplicities ---
+  weighted_data <- merge(avg_dist_per_site, site_multiplicity, by = "SiteID")
+
+  # --- 7. Calculate the final weighted average based on the corrected formula ---
+  # Numerator: Sum of (multiplicity * avg_dist_per_site)
+  numerator <- sum(weighted_data$Multiplicity * weighted_data$avg_d, na.rm = TRUE)
+
+  # Denominator: Sum of (multiplicity)
+  denominator <- sum(weighted_data$Multiplicity, na.rm = TRUE)
+
+  if (denominator == 0)
+    return(NA_real_)
+
+  return(numerator / denominator)
 }

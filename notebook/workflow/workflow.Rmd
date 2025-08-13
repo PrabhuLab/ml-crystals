@@ -1,5 +1,5 @@
 ---
-title: "Interactive Analysis of 695 Clathrate Crystal Structures"
+title: "Optimized Interactive Analysis of 695 Clathrate Crystal Structures"
 author: "Don Ngo, Julia Maria Hubner, Anirudh Prabhu"
 date: "`r Sys.Date()`"
 output:
@@ -8,6 +8,10 @@ output:
     toc_float: true
     theme: journal
     df_print: paged
+  word_document:
+    toc: true
+  pdf_document:
+    toc: true
 ---
 
 ```{r setup, include=FALSE}
@@ -99,44 +103,73 @@ if (length(all_cif_paths) == 0) {
 }
 ```
 
-## 2. Batch Analysis of Crystal Structures
+## 2. Optimized Batch Analysis of Crystal Structures
 
-The core `analyze_cif_files()` function from the `crystract` package is used to parse every CIF file. This function extracts all necessary raw data, including unit cell metrics, atomic coordinates (with occupancy), and calculates a comprehensive list of all interatomic distances.
+To significantly improve performance, we replace the high-level `analyze_cif_files()` wrapper with a targeted, manual pipeline. This custom loop runs *only* the essential functions required for our analysis (extracting coordinates and calculating distances), skipping unnecessary computations like bond angles and error propagation.
 
-```{r run-batch-analysis, echo=TRUE}
+```{r run-batch-analysis-optimized, echo=TRUE}
 # --- Timing Start ---
 timing_analysis <- system.time({
-  analysis_results <- analyze_cif_files(all_cif_paths)
+  
+  # This function runs only the essential calculations for a single file
+  process_single_cif_for_distances <- function(file_path) {
+    cif_content <- read_cif_files(file_path)[[1]]
+    
+    # Extract only what we need
+    metrics <- extract_unit_cell_metrics(cif_content)
+    coords <- extract_atomic_coordinates(cif_content)
+    sym_ops <- extract_symmetry_operations(cif_content)
+    
+    # Stop if essential data is missing
+    if (is.null(coords) || is.null(sym_ops) || is.null(metrics)) {
+      return(NULL)
+    }
+    
+    # Perform only the necessary geometric calculations
+    full_cell <- apply_symmetry_operations(coords, sym_ops)
+    super_cell <- expand_transformed_coords(full_cell)
+    distances <- calculate_distances(coords, super_cell, metrics)
+    
+    # Return a lean data.table with just the required results
+    return(data.table(
+      file_name = basename(file_path),
+      unit_cell_metrics = list(metrics),
+      atomic_coordinates = list(coords),
+      distances = list(distances)
+    ))
+  }
+  
+  # Apply this lean function to all files
+  results_list <- lapply(all_cif_paths, function(path) {
+    tryCatch({
+      process_single_cif_for_distances(path)
+    }, error = function(e) {
+      warning(paste("Failed to process", basename(path), ":", e$message))
+      return(NULL) # Skip files that fail
+    })
+  })
+  
+  analysis_results <- rbindlist(results_list, fill = TRUE)
+  
 }) # --- Timing End ---
 
-cat("Batch analysis complete. The raw results table has",
+cat("Optimized analysis complete. The raw results table has",
     nrow(analysis_results),
     "rows.\n")
-cat("\n--- Core Package Performance (analyze_cif_files) ---\n")
+cat("\n--- Optimized Core Performance ---\n")
 print(timing_analysis)
 ```
 
 ## 3. Advanced Data Processing and Filtering
 
-This section implements the sophisticated filtering pipeline developed in collaboration with Julia. For each file, the script reads its assigned category and applies a specific sequence of filters before calculating the final weighted average network distance.
+This section implements the sophisticated filtering pipeline. For each file, the script reads its assigned category and applies a specific sequence of filters before calculating the final weighted average network distance. This chunk now calculates both weighted and unweighted averages in a single pass for efficiency.
 
 The steps for each file are:
 1.  **Parse Category Rules:** Determine the target Wyckoff sites and whether guest atoms need to be excluded based on the folder name.
-2.  **Filter Guest Atoms (Conditional):** For structures with non-network atoms on framework sites (e.g., `+M_on_24k`), remove all distances involving those specific guest atoms (Na, K, etc.).
-3.  **Filter "Ghost" Distances:** Remove non-physical, short distances that arise from modeling multiple atoms on the same disordered site. This is done by comparing each distance to a threshold based on the sum of the atoms' covalent radii (from J. Emsley, 1998).
-4.  **Calculate Weighted Average Distance:** Using only the cleaned and filtered distances, calculate the final average distance, weighted by site multiplicity and occupancy.
-
-### 3.1. Formula for Weighted Average Network Distance
-
-The weighted average network distance ($d_{\text{weighted}}$) is calculated using a true weighted mean to accurately reflect the contribution of each bond type. The formula is:
-
-$$
-\large d_{\text{weighted}} = \frac{\sum_{(i,j) \in P} w_{ij} \cdot d_{ij}}{\sum_{(i,j) \in P} w_{ij}} \quad \text{where} \quad w_{ij} = (m_i \cdot o_i) \cdot (m_j \cdot o_j)
-$$
-
-Here, $P$ is the set of all valid atom pairs after filtering, $d_{ij}$ is the distance between atoms *i* and *j*, and the weight $w_{ij}$ is the product of their respective site multiplicities ($m$) and occupancies ($o$).
-
-### 3.2. Processing Implementation
+2.  **Filter Guest Atoms (Conditional):** For structures with non-network atoms on framework sites, remove all distances involving those specific guest atoms.
+3.  **Filter "Ghost" Distances:** Remove non-physical, short distances that arise from modeling multiple atoms on the same disordered site.
+4.  **Identify Bonds:** From the cleaned distances, identify the physically bonded atoms using the Minimum Distance Method.
+5.  **Calculate Average Bond Lengths:** Using only the identified bonds, calculate both the weighted and a simple unweighted average bond length.
 
 ```{r process-data, echo=TRUE}
 # --- Timing Start ---
@@ -156,17 +189,15 @@ timing_processing <- system.time({
     
     target_wyckoff_symbols <- strsplit(wyckoff_part, "-")[[1]]
     
-    if (is.null(analysis_results$distances[[i]]) || is.null(analysis_results$atomic_coordinates[[i]])) {
-      return(NULL)
-    }
-    
     distances <- analysis_results$distances[[i]]
     coords <- analysis_results$atomic_coordinates[[i]]
+    if (is.null(distances) || is.null(coords)) return(NULL)
     
     if (exclude_guests) {
       distances <- filter_by_elements(distances, coords, guest_atoms)
     }
     
+    # Step 1: Filter ghost distances
     ghost_filter_result <- filter_ghost_distances(distances, coords, tolerance = 0.4)
     cleaned_distances <- ghost_filter_result$kept
     removed_table <- ghost_filter_result$removed
@@ -176,17 +207,31 @@ timing_processing <- system.time({
       all_removed_ghosts[[length(all_removed_ghosts) + 1]] <<- removed_table
     }
     
-    avg_distance <- calculate_weighted_average_network_distance(
-      cleaned_distances, coords, target_wyckoff_symbols
+    # Step 2: Identify bonded pairs from the cleaned distances
+    bonded_pairs <- minimum_distance(cleaned_distances)
+    
+    # Filter for bonds within the specified network
+    site_info <- coords[, .(Label, FullWyckoff = paste0(WyckoffMultiplicity, WyckoffSymbol))]
+    network_atom_labels <- site_info[FullWyckoff %in% target_wyckoff_symbols, Label]
+    network_bonds <- bonded_pairs[Atom1 %in% network_atom_labels]
+    
+    if (nrow(network_bonds) == 0) return(NULL)
+
+    # Step 3: Calculate both averages using ONLY the network bonds
+    weighted_avg <- calculate_weighted_average_network_distance(
+      network_bonds, coords, target_wyckoff_symbols
     )
-    if (is.na(avg_distance)) return(NULL)
+    unweighted_avg <- mean(network_bonds$Distance, na.rm = TRUE)
+    
+    if (is.na(weighted_avg)) return(NULL)
     
     return(
       data.table(
         file = current_filename,
         category = category,
         lattice_parameter_a = analysis_results$unit_cell_metrics[[i]]$`_cell_length_a`,
-        average_distance = avg_distance
+        weighted_distance = weighted_avg,
+        unweighted_distance = unweighted_avg
       )
     )
   }
@@ -208,7 +253,7 @@ cat(
 
 ## 4. Quality Control: Review of Removed "Ghost" Distances
 
-As requested by Julia, this section provides a summary of all interatomic distances that were automatically filtered out by the "ghost distance" check. This allows for transparent verification of the filtering step, ensuring that the final average distances are computed only from physically plausible bonds.
+This section provides a summary of all interatomic distances that were automatically filtered out. This allows for transparent verification of the filtering step, ensuring that the final average bond lengths are computed only from physically plausible atomic separations.
 
 ```{r show-removed-distances, echo=TRUE}
 if (exists("removed_ghosts_summary") &&
@@ -238,15 +283,15 @@ if (exists("removed_ghosts_summary") &&
 
 ## 5. Final Results and Interpretation
 
-The plot below visualizes the final, cleaned data. Each point represents a single clathrate structure, colored by its structural category.
+The plot below visualizes the final, cleaned data, using the weighted average bond length. Each point represents a single clathrate structure, colored by its structural category.
 
 ```{r generate-plot, echo=TRUE}
-# Generate the final interactive plot, now with colors for categories
+# Generate the final interactive plot using the weighted distance
 p <- ggplot(
   plot_data,
   aes(
     x = lattice_parameter_a,
-    y = average_distance,
+    y = weighted_distance,
     color = category,
     text = file
   )
@@ -261,10 +306,10 @@ p <- ggplot(
     fullrange = TRUE
   ) +
   labs(
-    title = "Average Network Distance vs. Lattice Parameter 'a'",
+    title = "Average Network Bond Length vs. Lattice Parameter 'a'",
     subtitle = "Data points are colored by their structural category",
     x = "Lattice Parameter a (Å)",
-    y = "Average Network Distance (Å)",
+    y = "Average Network Bond Length (Å)",
     color = "Structural Category"
   ) +
   theme_bw(base_size = 14) +
@@ -277,9 +322,77 @@ interactive_plot
 
 ### 5.1. Interpretation
 
-The plot reveals a strong, positive linear correlation between the lattice parameter *a* and the average network distance. This is the expected physical behavior: as the unit cell expands, the average distance between framework atoms increases.
+The plot reveals a strong, positive linear correlation between the lattice parameter *a* and the average network bond length. This is the expected physical behavior. Thanks to the rigorous, category-based filtering pipeline, the outliers initially observed have been successfully resolved, and the data now forms a much cleaner trend line.
 
-Thanks to the rigorous, category-based filtering, the outliers initially observed have been successfully resolved. The data now forms a much cleaner trend line, demonstrating the importance of handling site-occupancy disorder and structural variations correctly. The color-coding by category further allows for subtle comparisons between different framework types, confirming the robustness of the final analysis pipeline.
+### 5.2. Weighted vs. Unweighted Average Comparison
+
+To illustrate the impact of weighting by site multiplicity, this section provides a direct comparison between the *weighted* average bond length and a simple *unweighted* average of the same underlying bonds.
+
+```{r compare-averages-plot, echo=TRUE}
+# --- 1. Reshape the data (already calculated) for plotting ---
+plot_data_melted <- melt(
+  plot_data,
+  id.vars = c("file", "lattice_parameter_a", "category"),
+  measure.vars = c("weighted_distance", "unweighted_distance"),
+  variable.name = "Average_Type",
+  value.name = "Distance"
+)
+
+# --- 2. Generate the comparison plot ---
+p_compare <- ggplot(
+  plot_data_melted,
+  aes(
+    x = lattice_parameter_a,
+    y = Distance,
+    color = Average_Type,
+    text = file
+  )
+) +
+  geom_point(alpha = 0.7, size = 2) +
+  geom_smooth(method = "lm",
+              se = FALSE,
+              aes(linetype = Average_Type)) +
+  labs(
+    title = "Comparison of Weighted vs. Unweighted Average Bond Lengths",
+    subtitle = "Illustrates the effect of weighting by site multiplicity",
+    x = "Lattice Parameter a (Å)",
+    y = "Average Bond Length (Å)",
+    color = "Average Type",
+    linetype = "Average Type"
+  ) +
+  theme_bw(base_size = 14) +
+  theme(legend.position = "bottom",
+        legend.title = element_text(face = "bold"))
+
+# Render as an interactive plot
+ggplotly(p_compare, tooltip = c("x", "y", "color", "text"))
+```
+
+### 5.3. Interactive Data Table
+
+This table provides the final, processed data used in the plots above. It can be searched, sorted, and the data can be exported to CSV or Excel for further external analysis.
+
+```{r show-final-data-table, echo=TRUE}
+datatable(
+  plot_data,
+  caption = "Final Processed Data for Clathrate Structures",
+  rownames = FALSE,
+  filter = 'top',
+  extensions = 'Buttons',
+  options = list(
+    pageLength = 15,
+    dom = 'Bfrtip',
+    buttons = c('copy', 'csv', 'excel')
+  ),
+  colnames = c(
+    "File",
+    "Category",
+    "Lattice 'a' (Å)",
+    "Weighted Dist (Å)",
+    "Unweighted Dist (Å)"
+  )
+)
+```
 
 ## 6. Exporting Final Results
 

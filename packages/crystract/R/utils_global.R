@@ -18,6 +18,7 @@ utils::globalVariables(
     "x_error",
     "y_error",
     "z_error",
+    "Multiplicity",
     "NeighborCount",
     "WyckoffMultiplicity",
     "BondStrength",
@@ -156,6 +157,8 @@ utils::globalVariables(
     "Radius1",
     "Radius2",
     "Symbol",
-    "min_allowed_dist"
+    "min_allowed_dist",
+    "weight_j",
+    "SiteID"
   )
 )

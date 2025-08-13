@@ -2,7 +2,7 @@
 % Please edit documentation in R/calculate_properties.R
 \name{calculate_weighted_average_network_distance}
 \alias{calculate_weighted_average_network_distance}
-\title{Calculate Weighted Average Network Distance}
+\title{Calculate Weighted Average Network Distance (Site-Centric)}
 \usage{
 calculate_weighted_average_network_distance(
   distances,
@@ -11,17 +11,30 @@ calculate_weighted_average_network_distance(
 )
 }
 \arguments{
-\item{distances}{A \code{data.table} of cleaned interatomic distances.}
+\item{distances}{A \code{data.table} of interatomic distances. Must contain \code{Atom1}
+and \code{Distance} columns. \code{Atom1} must contain labels like 'Ga1', 'Ge1', etc.}
 
-\item{atomic_coordinates}{A \code{data.table} from \code{extract_atomic_coordinates}.}
+\item{atomic_coordinates}{A \code{data.table} from \code{extract_atomic_coordinates}
+containing Wyckoff, multiplicity, and label information.}
 
-\item{wyckoff_symbols}{A character vector of Wyckoff symbols to include.}
+\item{wyckoff_symbols}{A character vector of the full Wyckoff symbols
+(e.g., "4c", "24k") that define the atomic network to be analyzed.}
 }
 \value{
 A single numeric value for the weighted average distance.
 }
 \description{
-Calculates a weighted average distance from a pre-filtered table.
+Calculates a weighted average distance for a specified atomic network,
+correctly handling disordered crystallographic sites.
+}
+\details{
+The function follows a site-centric approach. First, it identifies
+all unique crystallographic sites (e.g., '6c', '16i') within the network.
+For each unique site, it calculates the average interatomic distance to its
+neighbors. The final network average is then computed by taking a weighted
+mean of these per-site averages, where the weight for each site is its
+Wyckoff multiplicity. This method correctly handles cases where a single
+crystallographic site is co-occupied by multiple elements (disorder).
 }
 \seealso{
 Other property calculators: 
