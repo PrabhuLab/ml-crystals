@@ -20,7 +20,7 @@ for each central atom and defining a cutoff distance (d_cut) as
 d_cut = (1 + delta) * d_min.
 }
 \examples{
-cif_file <- system.file("extdata", "ICSD422.cif", package = "crysmal")
+cif_file <- system.file("extdata", "ICSD422.cif", package = "crystract")
 if (file.exists(cif_file)) {
   # Setup code
   cif_content <- read_cif_files(cif_file)[[1]]

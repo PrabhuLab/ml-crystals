@@ -22,7 +22,7 @@ expanded set, using the metric tensor for accuracy.
 }
 \examples{
 # Example setup
-cif_file <- system.file("extdata", "ICSD422.cif", package = "crysmal")
+cif_file <- system.file("extdata", "ICSD422.cif", package = "crystract")
 if (file.exists(cif_file)) {
   cif_content <- read_cif_files(cif_file)[[1]]
   atoms <- extract_atomic_coordinates(cif_content)
@@ -39,10 +39,8 @@ if (file.exists(cif_file)) {
 Other property calculators: 
 \code{\link{calculate_angles}()},
 \code{\link{calculate_neighbor_counts}()},
-\code{\link{calculate_weighted_average_network_distance}()},
 \code{\link{filter_atoms_by_symbol}()},
 \code{\link{filter_by_elements}()},
-\code{\link{filter_by_wyckoff_symbol}()},
-\code{\link{filter_ghost_distances}()}
+\code{\link{filter_by_wyckoff_symbol}()}
 }
 \concept{property calculators}

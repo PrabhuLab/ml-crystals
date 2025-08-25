@@ -17,53 +17,37 @@ analyze_cif_files(
 \item{file_paths}{A character vector of paths to the CIF files to be analyzed.}
 
 \item{perform_extraction}{Logical. If \code{TRUE} (default), extracts all metadata
-and base crystallographic data. Required for all other steps.}
+and base crystallographic data.}
 
 \item{perform_calcs_and_transforms}{Logical. If \code{TRUE} (default), generates
 the full unit cell, expands it to a supercell, and calculates distances.}
 
 \item{bonding_algorithms}{A character vector specifying which bonding algorithms
-to apply. The results for each are stored in separate columns (e.g.,
-\code{bonded_pairs_minimum_distance}). The first algorithm listed is considered
-primary and is used for subsequent \code{neighbor_counts} and \code{bond_angles}
-calculations.
-Default: \code{c("minimum_distance")}.
-Options: \code{"minimum_distance"}, \code{"brunner"}, \code{"hoppe"}.
-Use \code{"none"} to skip all bonding analysis.}
+to apply. The first algorithm listed is used for subsequent calculations.
+Default: \code{c("minimum_distance")}. Options: \code{"minimum_distance"}, \code{"brunner"},
+\code{"hoppe"}. Use \code{"none"} to skip bonding analysis.}
 
 \item{calculate_bond_angles}{Logical. If \code{TRUE} (default), calculates bond
 angles based on the primary bonding algorithm.}
 
 \item{perform_error_propagation}{Logical. If \code{TRUE} (default), propagates
-experimental uncertainties to all calculated distances and angles.}
+experimental uncertainties. Any missing uncertainty values in a CIF file
+will be treated as zero during this step.}
 }
 \value{
 A \code{data.table} where each row summarizes the analysis of one CIF file.
+Files with missing essential data will generate warnings and have \code{NULL}
+values in the calculated columns.
 }
 \description{
-A high-level wrapper function that reads, processes, and analyzes
-one or more CIF files, with parameters to control the workflow.
+A high-level wrapper function that reads and analyzes one or more
+CIF files in batch. It calls \code{analyze_single_cif} for each file.
 }
 \examples{
 cif_file <- system.file("extdata", "ICSD422.cif", package = "crysmal")
 if (file.exists(cif_file)) {
-  # Example 1: Run two bonding algorithms, but no error propagation.
-  analysis_results <- analyze_cif_files(
-    cif_file,
-    bonding_algorithms = c("minimum_distance", "hoppe"),
-    perform_error_propagation = FALSE
-  )
-  # The output will have 'bonded_pairs_minimum_distance' and 'bonded_pairs_hoppe' columns.
-  # 'neighbor_counts' and 'bond_angles' will be based on the minimum_distance method.
-  # str(analysis_results, max.level = 1)
-
-  # Example 2: Run only the initial extraction and transformations.
-  analysis_subset <- analyze_cif_files(
-    cif_file,
-    bonding_algorithms = "none",
-    calculate_bond_angles = FALSE,
-    perform_error_propagation = FALSE
-  )
-  # str(analysis_subset, max.level = 1)
+  # This will run the full analysis on all specified files.
+  analysis_results <- analyze_cif_files(cif_file)
+  print(analysis_results[, .(file_name, database_code, chemical_formula)])
 }
 }

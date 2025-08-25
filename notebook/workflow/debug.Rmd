@@ -1,0 +1,396 @@
+---
+title: "In-Depth Step-by-Step Debugging of Weighted Average Distance Calculation"
+author: "Don Ngo"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    theme: journal
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+# This chunk sets up the environment for the analysis.
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = TRUE, # Show messages for debugging
+  warning = TRUE, # Show warnings
+  fig.width = 10,
+  fig.height = 7,
+  fig.align = 'center'
+)
+
+# Load all necessary libraries
+library(crystract)
+library(data.table)
+data(covalent_radii, package = "crystract")
+```
+
+## 1. Objective
+
+This notebook provides a highly detailed, transparent, and step-by-step walkthrough of the `calculate_weighted_average_network_distance` workflow for a single CIF file (`134509.cif`). The goal is to dissect every function and every step of the underlying formula.
+
+To achieve this, I have used specially modified functions with `_debug` suffixes. These functions print verbose output, showing the **input** data, the **transformations** applied to it, the data that is **removed** or filtered out, and the final **output** of each stage. This allows for a direct and clear comparison with manual calculations to ensure the code correctly implements the desired logic.
+
+## 2. Modified Debug Functions
+
+These are the core `crystract` functions, heavily modified to print their internal states and logic. Each function now explicitly describes what it does, what data it removes, and what it passes on to the next step.
+
+```{r debug_functions}
+# We redefine the core functions here to add extensive print statements for debugging.
+
+# --- Debug version of filter_ghost_distances ---
+# GOAL: Remove physically implausible interatomic distances.
+filter_ghost_distances_debug <- function(distances, atomic_coordinates, margin = 0.1, debug = FALSE) {
+  if (debug) {
+    cat("\n--- Entering filter_ghost_distances_debug ---\n")
+    cat("This function filters out distances that are not physically realistic.\n")
+    cat("LOGIC: A plausible distance must be within a 'margin' (", margin * 100, "%) of the sum of the two atoms' covalent radii.\n")
+    cat("\nInput 'distances' table (the data to be filtered):\n")
+    cat("  - Rows:", nrow(distances), "\n")
+    # # # print(head(distances))
+  }
+  
+  # Step 2a: Augment data for calculation
+  element_info <- atomic_coordinates[, .(ParentLabel = Label, Element = sub("[0-9].*", "", Label))]
+  radii_lookup <- copy(covalent_radii)
+  
+  merged <- copy(distances)
+  merged[, `:=`(Parent1 = sub("_.*", "", Atom1), Parent2 = sub("_.*", "", Atom2))]
+  
+  # Merge to get Element and Radius for Atom1
+  merged <- merge(merged, element_info, by.x = "Parent1", by.y = "ParentLabel", all.x = TRUE)
+  setnames(merged, "Element", "Element1")
+  merged <- merge(merged, radii_lookup, by.x = "Element1", by.y = "Symbol", all.x = TRUE)
+  setnames(merged, "Radius", "Radius1")
+  
+  # Merge to get Element and Radius for Atom2
+  merged <- merge(merged, element_info, by.x = "Parent2", by.y = "ParentLabel", all.x = TRUE)
+  setnames(merged, "Element", "Element2")
+  merged <- merge(merged, radii_lookup, by.x = "Element2", by.y = "Symbol", all.x = TRUE)
+  setnames(merged, "Radius", "Radius2")
+  
+  merged[is.na(Radius1), Radius1 := 0][is.na(Radius2), Radius2 := 0]
+  
+  # Step 2b: Calculate the plausible distance range
+  merged[, expected_dist := Radius1 + Radius2]
+  merged[, lower_bound := expected_dist * (1 - margin)]
+  merged[, upper_bound := expected_dist * (1 + margin)]
+  
+  if (debug) {
+    cat("\nStep 2a: Data after merging with element and radii info.\n")
+    cat("We've calculated 'expected_dist' (sum of radii) and the allowed 'lower_bound' and 'upper_bound'.\n")
+    # # print(head(merged[, .(Atom1, Atom2, Distance, Element1, Radius1, Element2, Radius2, expected_dist, lower_bound, upper_bound)]))
+  }
+  
+  # Step 2c: Apply the filter
+  kept_mask <- merged$Distance >= merged$lower_bound & merged$Distance <= merged$upper_bound
+  
+  kept_dt <- merged[kept_mask, names(distances), with = FALSE]
+  # Add a clear reason for why each row was removed. This is crucial for debugging filters.
+  removed_dt <- merged[!kept_mask, .(Atom1, Atom2, Distance, expected_dist, lower_bound, upper_bound, Reason = ifelse(Distance < lower_bound, "Distance is TOO SHORT", "Distance is TOO LONG"))]
+  
+  if (debug) {
+    cat("\nStep 2b: Filtering based on the condition: lower_bound <= Distance <= upper_bound\n")
+    cat("\nResult: Kept", nrow(kept_dt), "rows as plausible distances.\n")
+    cat("Result: Removed", nrow(removed_dt), "rows as 'ghost' distances.\n\n")
+    if (nrow(removed_dt) > 0) {
+      cat("DETAILS OF REMOVED ROWS (This helps verify steps like 'Filter additional distance of 1.8 out'):\n")
+      # print(removed_dt) # Print the whole table to be sure
+    }
+    cat("\nOutput: The 'kept' data table is passed to the next function.\n")
+    cat("--- Exiting filter_ghost_distances_debug ---\n")
+  }
+  
+  return(list(kept = kept_dt, removed = removed_dt))
+}
+
+# --- Debug version of minimum_distance ---
+# GOAL: From plausible distances, identify the actual 'bonded' pairs.
+minimum_distance_debug <- function(distances, delta = 0.1, debug = FALSE) {
+  if (debug) {
+    cat("\n--- Entering minimum_distance_debug ---\n")
+    cat("This function identifies bonded pairs using the 'delta' criterion.\n")
+    cat("LOGIC: For each central atom, find its nearest neighbor distance ('dmin'). Any neighbor within (1 + delta) * dmin is considered bonded.\n")
+    cat("  - delta is", delta, "in this case.\n")
+    cat("\nInput 'distances' table (output from the previous step):\n")
+    cat("  - Rows:", nrow(distances), "\n")
+    # # print(head(distances))
+  }
+  
+  # Step 3a: Find dmin for each central atom (Atom1) and calculate dcut
+  dmin <- distances[, .(dmin = min(Distance)), by = .(Atom1)]
+  dmin[, dcut := (1 + delta) * dmin]
+  
+  if (debug) {
+    cat("\nStep 3a: Calculated dmin (shortest distance) and dcut (bonding cutoff) for each central atom.\n")
+    cat("Any neighbor farther than its central atom's 'dcut' will be considered not bonded.\n")
+    # # print(head(dmin))
+  }
+  
+  # Step 3c: Merge and filter
+  merged_for_filtering <- dmin[distances, on = .(Atom1)]
+  
+  bonded_mask <- merged_for_filtering$Distance <= merged_for_filtering$dcut
+  bonded_pairs <- merged_for_filtering[bonded_mask]
+  # Add the 'dcut' value to the removed table for easy comparison
+  non_bonded_pairs <- merged_for_filtering[!bonded_mask, .(Atom1, Atom2, Distance, dcut, Reason = "Distance > dcut")]
+  
+  if (debug) {
+    cat("\nStep 3b: Identified bonded vs. non-bonded pairs based on the cutoff.\n")
+    cat("\nResult: Kept", nrow(bonded_pairs), "rows as bonded pairs.\n")
+    cat("Result: Removed", nrow(non_bonded_pairs), "rows as non-bonded pairs.\n\n")
+    if(nrow(non_bonded_pairs) > 0) {
+        cat("DETAILS OF REMOVED (non-bonded) rows and the reason:\n")
+        # # print(head(non_bonded_pairs))
+    }
+    cat("\nOutput: The 'bonded_pairs' table is passed to the final function.\n")
+    cat("--- Exiting minimum_distance_debug ---\n")
+  }
+  
+  return(bonded_pairs)
+}
+
+# --- Debug version of calculate_weighted_average_network_distance ---
+# GOAL: Calculate the final weighted average distance for the specified atomic network.
+calculate_weighted_average_network_distance_debug <- function(distances, atomic_coordinates, wyckoff_symbols, debug = FALSE) {
+  if (debug) {
+    cat("\n--- Entering calculate_weighted_average_network_distance_debug ---\n")
+    cat("This function calculates the final weighted average distance based on Wyckoff multiplicity and site occupancy.\n")
+    cat("FORMULA: sum(Multiplicity * Occupancy * avg_d) / sum(Multiplicity * Occupancy)\n")
+    cat("\nInput 'distances' table (the final list of bonds to be averaged):\n")
+    cat("  - Rows:", nrow(distances), "\n")
+    # # print(head(distances))
+    cat("\nInput 'atomic_coordinates' table (contains Wyckoff, Occupancy info):\n")
+    # print(atomic_coordinates)
+    cat("\nParameter: Target Wyckoff Symbols:", paste(wyckoff_symbols, collapse = ", "), "\n")
+  }
+  
+  # Step 4a: Prepare atomic info and filter for the network atoms.
+  atom_info <- copy(atomic_coordinates)
+  atom_info[, FullWyckoff := paste0(WyckoffMultiplicity, WyckoffSymbol)]
+  network_atom_labels <- atom_info[FullWyckoff %in% wyckoff_symbols, Label]
+  network_distances <- distances[sub("_.*", "", Atom1) %in% network_atom_labels]
+  
+  if (debug) {
+    cat("\nStep 4a: Filtering bonds to include only those originating from a central atom in the target network.\n")
+    cat("The labels for atoms in the target network are:", paste(network_atom_labels, collapse=", "), "\n")
+    cat("Bonds after filtering (central atom in network):", nrow(network_distances), "rows.\n")
+  }
+
+  # Step 4b: Account for disordered neighbors.
+  # Add occupancy of the neighbor atom (Atom2) to handle disordered sites correctly.
+  network_distances[, Parent2 := sub("_.*", "", Atom2)]
+  network_distances <- merge(network_distances, atom_info[, .(Label, Occupancy2 = Occupancy)], by.x = "Parent2", by.y = "Label", all.x = TRUE)
+  network_distances[is.na(Occupancy2), Occupancy2 := 1] 
+  
+  if (debug) {
+    cat("\nStep 4b: Merged bond list with neighbor occupancy ('Occupancy2') to handle disorder.\n")
+    cat("This allows weighting distances to a disordered site by the occupancy of each atom at that site.\n")
+    # # print(head(network_distances))
+  }
+
+  # Step 4c: Calculate the sum of distances for each central atom.
+  # THIS IS THE MOST CRITICAL DEBUGGING STEP for comparing with the email.
+  # It calculates the coordination number (n) and the simple sum of bond distances (sum_d) for each atom.
+  # This `sum_d` should match the intermediate values in the email (e.g., 8.9063, 8.2635).
+  atom_dist_summary <- network_distances[, .(
+    sum_d = sum(Distance), # Simple sum of bond lengths
+    n = .N               # Coordination Number
+  ), by = Atom1]
+  
+  # Add ParentLabel for merging
+  atom_dist_summary[, ParentLabel := sub("_.*", "", Atom1)]
+  
+  if (debug) {
+    cat("\nStep 4c: Calculated the sum of bond distances ('sum_d') and coordination number ('n') for each central atom.\n")
+    cat("ACTION: Compare the 'sum_d' column below with the intermediate sums calculated in the email (e.g., 8.9063, 8.2635, 9.584, 9.464).\n")
+    # We only need to see one value for each crystallographically unique site.
+    unique_summary <- unique(atom_dist_summary, by = "ParentLabel")
+    # print(unique_summary)
+  }
+  
+  # Step 4d: Merge this summary with the main atomic info.
+  # We use the ParentLabel from the summary to merge with the Label in atom_info
+  merged_data <- merge(atom_info[Label %in% network_atom_labels], 
+                       unique_summary[, .(ParentLabel, sum_d, n)], 
+                       by.x = "Label", by.y = "ParentLabel", all.x = TRUE)
+  
+  merged_data <- merged_data[!is.na(sum_d)] # Remove atoms that had no bonds
+  
+  # Calculate avg_d, which is just sum_d / n
+  merged_data[, avg_d := sum_d / n]
+
+  if (debug) {
+    cat("\nStep 4d: Merged distance summary with Wyckoff and Occupancy info.\n")
+    cat("This table now contains all components for the final weighted average.\n")
+    # print(merged_data)
+  
+  }
+
+  # Step 4e: Calculate the final weighted average.
+  # The numerator for each site is Multiplicity * Occupancy * sum_d
+  # The denominator is Multiplicity * Occupancy * n (total bonds for that site)
+  merged_data[, term_numerator_total := WyckoffMultiplicity * Occupancy * sum_d]
+  merged_data[, term_denominator_total := WyckoffMultiplicity * Occupancy * n]
+
+  numerator <- sum(merged_data$term_numerator_total)
+  denominator <- sum(merged_data$term_denominator_total)
+
+  if (debug) {
+    cat("\nStep 4e: Final Calculation - Breaking down the formula.\n")
+    cat("The final formula is sum(W*O*sum_d) / sum(W*O*n), where W=Wyckoff, O=Occupancy, n=coordination.\n")
+    # print(merged_data[, .(Label, WyckoffMultiplicity, Occupancy, sum_d, n, term_numerator_total, term_denominator_total)])
+
+    cat("\nSumming the columns to get the final values:\n")
+    cat("Total Numerator = sum(WyckoffMultiplicity * Occupancy * sum_d) =", numerator, "\n")
+    cat("Total Denominator (total number of bonds in the network) = sum(WyckoffMultiplicity * Occupancy * n) =", denominator, "\n")
+  }
+  
+  final_result <- numerator / denominator
+  
+  if (debug) {
+    cat("\nFINAL RESULT = Total Numerator / Total Denominator =", final_result, "\n")
+    cat("--- Exiting calculate_weighted_average_network_distance_debug ---\n")
+  }
+  
+  return(final_result)
+}
+```
+
+## 3. Loading and Preparing Single File Data
+
+We will load only `134509.cif` and perform the initial analysis to get the raw `distances` and `atomic_coordinates` tables. These tables are the initial **input** for our detailed workflow.
+
+```{r load_data}
+# --- Define the single file to debug ---
+cif_file_path <- "~/repos/ml-crystals/notebook/workflow/Verified/6c-16i-24k/ClathrateI_all_CollCode134509.cif" 
+
+# --- Run initial analysis ---
+# This step simulates the start of the process, providing the raw data.
+initial_analysis <- analyze_cif_files(
+  file_paths = cif_file_path,
+  perform_extraction = TRUE,
+  perform_calcs_and_transforms = TRUE,
+  bonding_algorithms = "none",
+  calculate_bond_angles = FALSE,
+  perform_error_propagation = FALSE
+)
+
+# --- Extract the essential data tables ---
+distances_raw <- initial_analysis$distances[[1]]
+coords_raw <- initial_analysis$atomic_coordinates[[1]]
+
+cat("Successfully loaded and processed", basename(cif_file_path), "\n")
+cat("Initial 'distances_raw' table contains all possible interatomic distances within a certain radius.\n")
+cat("  - Rows:", nrow(distances_raw), "\n")
+cat("Initial 'coords_raw' table contains information about each unique atom in the unit cell.\n")
+cat("  - Rows:", nrow(coords_raw), "\n")
+
+# --- Inspect the raw atomic coordinates ---
+cat("\nRaw atomic coordinates for 134509.cif:\n")
+# print(coords_raw)
+```
+
+## 4. Full Debugging Walkthrough
+
+This section simulates the main processing loop, calling our highly verbose `_debug` functions. We will follow the data as it is passed from one function to the next, observing how it is filtered and transformed at each step.
+
+```{r full_debug_walkthrough}
+# --- Define the parameters for this file ---
+target_wyckoff_symbols <- c("6c", "16i", "24k")
+guest_atoms <- c("Na", "K", "Rb", "Cs", "Sr", "Ba", "Eu")
+
+cat("=======================================================================\n")
+cat("===== STARTING DEBUG WALKTHROUGH FOR 134509.cif =====\n")
+cat("=======================================================================\n\n")
+
+# --- Make copies to work with ---
+distances <- copy(distances_raw)
+coords <- copy(coords_raw)
+
+# =============================================================
+# --- Step 1: Filter Guest Atoms ---
+# =============================================================
+cat("--- Step 1: Filtering Guest Atoms (if any) ---\n")
+cat("Input Data: The raw distances table has", nrow(distances), "rows.\n")
+distances_after_guest_filter <- filter_by_elements(distances, coords, guest_atoms)
+
+# --- DEBUG CHECK 1 ---
+# Verify that we still have data after the first filter.
+cat("Output Data: After guest filter, table has", nrow(distances_after_guest_filter), "rows.\n")
+if (nrow(distances_after_guest_filter) == 0) {
+  stop("Execution stopped: All distances were removed after filtering for guest atoms.")
+}
+cat("---------------------------------------------\n\n")
+
+
+# =============================================================
+# --- Step 2: Filter Ghost Distances ---
+# =============================================================
+cat("--- Step 2: Filtering Ghost Distances ---\n")
+cat("Here, we remove distances that are physically implausible based on covalent radii.\n")
+
+ghost_filter_result <- filter_ghost_distances_debug(
+  distances_after_guest_filter, 
+  coords, 
+  margin = 0.1, 
+  debug = TRUE # This ensures the function's internal print statements are triggered
+)
+distances_after_ghost_filter <- ghost_filter_result$kept
+
+# --- DEBUG CHECK 2 ---
+# Verify that we still have data after the ghost filter.
+cat("\nOutput Data: After ghost filter, the 'kept' table has", nrow(distances_after_ghost_filter), "rows.\n")
+if (nrow(distances_after_ghost_filter) == 0) {
+  stop("Execution stopped: All distances were removed by the ghost filter. Check covalent radii and the 'margin' parameter.")
+}
+cat("---------------------------------------------\n\n")
+
+
+# =============================================================
+# --- Step 3: Identify Bonded Pairs ---
+# =============================================================
+cat("--- Step 3: Identifying Bonded Pairs from Cleaned Distances ---\n")
+cat("From the plausible distances, we now identify bonds using the dmin-delta method.\n")
+
+bonded_pairs <- minimum_distance_debug(
+  distances_after_ghost_filter, 
+  delta = 0.1, 
+  debug = TRUE # Trigger internal printing
+)
+
+# --- DEBUG CHECK 3 ---
+# This is a likely place for data to be lost. Verify that bonds were found.
+cat("\nOutput Data: After minimum distance filter, table of 'bonded_pairs' has", nrow(bonded_pairs), "rows.\n")
+if (nrow(bonded_pairs) == 0) {
+  stop("Execution stopped: No bonded pairs were identified. The dmin-delta filter might be too restrictive.")
+}
+cat("---------------------------------------------\n\n")
+
+
+# =============================================================
+# --- Step 4: Calculate Final Weighted Average ---
+# =============================================================
+cat("--- Step 4: Calculating Final Weighted Average from Bonded Pairs ---\n")
+cat("Using the final list of bonds to calculate the weighted average distance for the target network.\n")
+
+# This function will now be called with a guaranteed non-empty `bonded_pairs` data table.
+# Its internal print statements should now appear as expected.
+final_weighted_average <- calculate_weighted_average_network_distance_debug(
+  bonded_pairs,
+  coords,
+  target_wyckoff_symbols,
+  debug = TRUE # Trigger internal printing
+)
+cat("---------------------------------------------\n\n")
+
+
+cat("=======================================================================\n")
+cat("===== DEBUG WALKTHROUGH COMPLETE =====\n")
+cat("=======================================================================\n")
+cat("\nFinal Calculated Weighted Average Distance for 134509.cif:", final_weighted_average, "\n")
+```
+
+

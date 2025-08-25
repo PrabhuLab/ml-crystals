@@ -25,9 +25,7 @@ Other property calculators:
 \code{\link{calculate_angles}()},
 \code{\link{calculate_distances}()},
 \code{\link{calculate_neighbor_counts}()},
-\code{\link{calculate_weighted_average_network_distance}()},
 \code{\link{filter_atoms_by_symbol}()},
-\code{\link{filter_by_wyckoff_symbol}()},
-\code{\link{filter_ghost_distances}()}
+\code{\link{filter_by_wyckoff_symbol}()}
 }
 \concept{property calculators}

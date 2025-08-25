@@ -50,7 +50,7 @@ one of the symbols provided in the \code{wyckoff_symbols} vector.
 }
 }
 \examples{
-cif_file <- system.file("extdata", "ICSD422.cif", package = "crysmal")
+cif_file <- system.file("extdata", "ICSD422.cif", package = "crystract")
 if (file.exists(cif_file)) {
   # 1. Perform a standard analysis to get bond and coordinate tables
   cif_content <- read_cif_files(cif_file)[[1]]
@@ -82,9 +82,7 @@ Other property calculators:
 \code{\link{calculate_angles}()},
 \code{\link{calculate_distances}()},
 \code{\link{calculate_neighbor_counts}()},
-\code{\link{calculate_weighted_average_network_distance}()},
 \code{\link{filter_atoms_by_symbol}()},
-\code{\link{filter_by_elements}()},
-\code{\link{filter_ghost_distances}()}
+\code{\link{filter_by_elements}()}
 }
 \concept{property calculators}

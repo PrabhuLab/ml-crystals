@@ -9,7 +9,7 @@
 #' @export
 #' @examples
 #' # Example setup
-#' cif_file <- system.file("extdata", "ICSD422.cif", package = "crysmal")
+#' cif_file <- system.file("extdata", "ICSD422.cif", package = "crystract")
 #' if (file.exists(cif_file)) {
 #'   cif_content <- read_cif_files(cif_file)[[1]]
 #'   atoms <- extract_atomic_coordinates(cif_content)
@@ -519,7 +519,7 @@ propagate_angle_error <- function(bond_angles,
 #' @family bonding algorithms
 #' @export
 #' @examples
-#' cif_file <- system.file("extdata", "ICSD422.cif", package = "crysmal")
+#' cif_file <- system.file("extdata", "ICSD422.cif", package = "crystract")
 #' if (file.exists(cif_file)) {
 #'   # Setup code
 #'   cif_content <- read_cif_files(cif_file)[[1]]
@@ -738,7 +738,7 @@ filter_atoms_by_symbol <- function(data_table, atom_col = "CentralAtom") {
 #' @family property calculators
 #' @export
 #' @examples
-#' cif_file <- system.file("extdata", "ICSD422.cif", package = "crysmal")
+#' cif_file <- system.file("extdata", "ICSD422.cif", package = "crystract")
 #' if (file.exists(cif_file)) {
 #'   # 1. Perform a standard analysis to get bond and coordinate tables
 #'   cif_content <- read_cif_files(cif_file)[[1]]
@@ -854,145 +854,139 @@ filter_by_elements <- function(distances,
 }
 
 #' @title Filter Ghost Distances Using Atomic Radii
-#' @description Removes non-physical distances and returns both kept and removed data.
-#' @param distances A `data.table` of interatomic distances.
-#' @param atomic_coordinates A `data.table` of atomic coordinates.
-#' @param tolerance A numeric tolerance factor. A distance is kept if it is
-#'   greater than `(radius1 + radius2) * tolerance`. Defaults to 0.4.
-#' @return A list containing two `data.table` objects:
-#'   \item{kept}{A table of the physically plausible distances.}
-#'   \item{removed}{A table of the "ghost" distances that were filtered out.}
-#' @family property calculators
+#' @description Cleans a distance table by removing physically implausible distances.
+#'   It uses a built-in table of covalent radii to establish a plausible bond length
+#'   range for each atom pair. Any calculated distance falling outside this range
+#'   (defined by a `margin`) is considered a "ghost" distance and is removed. This
+#'   is particularly useful for cleaning data from disordered crystal structures.
+#' @param distances A `data.table` of interatomic distances, typically from
+#'   `calculate_distances`. Must contain `Atom1`, `Atom2`, and `Distance`.
+#' @param atomic_coordinates A `data.table` of asymmetric atoms from
+#'   `extract_atomic_coordinates`. Used to link atom labels to element types.
+#' @param margin A numeric value (default 0.1) specifying the tolerance. A
+#'   distance `d` between atoms with radii `r1` and `r2` is kept if
+#'   `(r1+r2)*(1-margin) <= d <= (r1+r2)*(1+margin)`.
+#' @return A list containing two `data.table`s:
+#'   \item{kept}{The distances considered physically plausible.}
+#'   \item{removed}{The "ghost" distances that were filtered out, with columns
+#'   explaining the reason for removal.}
+#' @family post-processing
 #' @export
-filter_ghost_distances <- function(distances,
-                                   atomic_coordinates,
-                                   tolerance = 0.4) {
-  element_info <- atomic_coordinates[, .(ParentLabel = Label,
-                                         Element = sub("[0-9].*", "", Label))]
-  setkey(element_info, ParentLabel)
+#' @examples
+#' # This example assumes you have `distances` and `atomic_coordinates` tables.
+#' # See the vignette for a full workflow.
+filter_ghost_distances <- function(distances, atomic_coordinates, margin = 0.1) {
+  # --- 1. Augment data for calculation ---
+  # Create a lookup for element type from the parent atom label
+  element_info <- atomic_coordinates[, .(ParentLabel = Label, Element = sub("[0-9].*", "", Label))]
+  # Use the package's covalent radii data
   radii_lookup <- copy(covalent_radii)
-  setkey(radii_lookup, Symbol)
-  dist_with_elements <- copy(distances)
-  dist_with_elements[, `:=`(Parent1 = sub("_.*", "", Atom1),
-                            Parent2 = sub("_.*", "", Atom2))]
-  merged <- merge(
-    dist_with_elements,
-    element_info,
-    by.x = "Parent1",
-    by.y = "ParentLabel",
-    all.x = TRUE
-  )
+
+  merged <- copy(distances)
+  # Create Parent labels in the distances table to match element_info
+  merged[, `:=`(Parent1 = sub("_.*", "", Atom1), Parent2 = sub("_.*", "", Atom2))]
+
+  # Merge to get Element and Radius for Atom1
+  merged <- merge(merged, element_info, by.x = "Parent1", by.y = "ParentLabel", all.x = TRUE)
   setnames(merged, "Element", "Element1")
-  merged <- merge(
-    merged,
-    element_info,
-    by.x = "Parent2",
-    by.y = "ParentLabel",
-    all.x = TRUE
-  )
-  setnames(merged, "Element", "Element2")
-  merged <- merge(
-    merged,
-    radii_lookup,
-    by.x = "Element1",
-    by.y = "Symbol",
-    all.x = TRUE
-  )
+  merged <- merge(merged, radii_lookup, by.x = "Element1", by.y = "Symbol", all.x = TRUE)
   setnames(merged, "Radius", "Radius1")
-  merged <- merge(
-    merged,
-    radii_lookup,
-    by.x = "Element2",
-    by.y = "Symbol",
-    all.x = TRUE
-  )
+
+  # Merge to get Element and Radius for Atom2
+  merged <- merge(merged, element_info, by.x = "Parent2", by.y = "ParentLabel", all.x = TRUE)
+  setnames(merged, "Element", "Element2")
+  merged <- merge(merged, radii_lookup, by.x = "Element2", by.y = "Symbol", all.x = TRUE)
   setnames(merged, "Radius", "Radius2")
-  merged[is.na(Radius1), Radius1 := 0]
-  merged[is.na(Radius2), Radius2 := 0]
-  merged[, min_allowed_dist := (Radius1 + Radius2) * tolerance]
-  return(list(kept = merged[Distance > min_allowed_dist, names(distances), with = FALSE], removed = merged[Distance <= min_allowed_dist, .(Atom1, Atom2, Distance, min_allowed_dist)]))
+
+  # Handle cases where radii are not found (e.g., vacancies) by setting them to 0
+  merged[is.na(Radius1), Radius1 := 0][is.na(Radius2), Radius2 := 0]
+
+  # --- 2. Calculate the plausible distance range ---
+  merged[, expected_dist := Radius1 + Radius2]
+  merged[, lower_bound := expected_dist * (1 - margin)]
+  merged[, upper_bound := expected_dist * (1 + margin)]
+
+  # --- 3. Apply the filter ---
+  kept_mask <- merged$Distance >= merged$lower_bound & merged$Distance <= merged$upper_bound
+
+  kept_dt <- merged[kept_mask, names(distances), with = FALSE]
+  # Create a detailed table of removed rows for quality control
+  removed_dt <- merged[!kept_mask, .(
+    Atom1, Atom2, Distance, expected_dist, lower_bound, upper_bound,
+    Reason = ifelse(Distance < lower_bound, "Distance is TOO SHORT", "Distance is TOO LONG")
+  )]
+
+  return(list(kept = kept_dt, removed = removed_dt))
 }
 
-#' @title Calculate Weighted Average Network Distance (Site-Centric)
-#' @description Calculates a weighted average distance for a specified atomic network,
-#'   correctly handling disordered crystallographic sites.
-#' @details The function follows a site-centric approach. First, it identifies
-#'   all unique crystallographic sites (e.g., '6c', '16i') within the network.
-#'   For each unique site, it calculates the average interatomic distance to its
-#'   neighbors. The final network average is then computed by taking a weighted
-#'   mean of these per-site averages, where the weight for each site is its
-#'   Wyckoff multiplicity. This method correctly handles cases where a single
-#'   crystallographic site is co-occupied by multiple elements (disorder).
-#'
-#' @param distances A `data.table` of interatomic distances. Must contain `Atom1`
-#'   and `Distance` columns. `Atom1` must contain labels like 'Ga1', 'Ge1', etc.
-#' @param atomic_coordinates A `data.table` from `extract_atomic_coordinates`
-#'   containing Wyckoff, multiplicity, and label information.
-#' @param wyckoff_symbols A character vector of the full Wyckoff symbols
-#'   (e.g., "4c", "24k") that define the atomic network to be analyzed.
-#' @return A single numeric value for the weighted average distance.
-#' @family property calculators
+#' @title Calculate Weighted Average Network Bond Distance
+#' @description Computes a single, representative bond length for a specified atomic
+#'   network. This function precisely implements the validated logic that accounts
+
+#'   for site multiplicity and occupancy of the central atoms.
+#' @param distances A `data.table` of interatomic distances filtered to include
+#'   **only bonded pairs** (e.g., from `minimum_distance`).
+#' @param atomic_coordinates A `data.table` of asymmetric atoms from
+#'   `extract_atomic_coordinates`.
+#' @param wyckoff_symbols A character vector of Wyckoff symbols defining the
+#'   atomic network (e.g., `c("6c", "16i", "24k")`). Must be the full symbol.
+#' @return A single numeric value representing the weighted average bond distance.
+#' @family post-processing
 #' @export
-calculate_weighted_average_network_distance <- function(distances,
-                                                        atomic_coordinates,
-                                                        wyckoff_symbols) {
-  # --- Input Validation ---
-  required_cols <- c("WyckoffSymbol", "WyckoffMultiplicity", "Label")
-  if (!all(required_cols %in% names(atomic_coordinates))) {
-    stop("`atomic_coordinates` missing required columns.")
+calculate_weighted_average_network_distance <- function(distances, atomic_coordinates, wyckoff_symbols) {
+  # --- 1. Prepare atomic info and identify network atoms ---
+  atom_info <- copy(atomic_coordinates)
+  atom_info[, FullWyckoff := paste0(WyckoffMultiplicity, WyckoffSymbol)]
+  network_atom_labels <- atom_info[FullWyckoff %in% wyckoff_symbols, Label]
+
+  if (length(network_atom_labels) == 0) {
+    return(NA_real_)
   }
-  if (nrow(distances) == 0)
+
+  # --- 2. Filter bonds originating from network atoms ---
+  network_distances <- distances[sub("_.*", "", Atom1) %in% network_atom_labels]
+
+  if (nrow(network_distances) == 0) {
     return(NA_real_)
+  }
 
-  # --- 1. Create a "Site ID" to group atoms on the same site ---
-  # A unique site is defined by its label number (e.g., the '1' in 'Ga1').
-  # This correctly groups 'Ga1' and 'Ge1' as belonging to the same site.
-  coords_with_site <- copy(atomic_coordinates)
-  coords_with_site[, SiteID := sub("^[A-Za-z]+", "", Label)]
-  coords_with_site[, FullWyckoff := paste0(WyckoffMultiplicity, WyckoffSymbol)]
+  # --- START: ADDED SECTION TO MATCH DEBUGGED WORKFLOW ---
+  # This block explicitly merges neighbor occupancy information, which is a
+  # crucial data preparation step from the validated workflow.
+  network_distances[, Parent2 := sub("_.*", "", Atom2)]
+  network_distances <- merge(
+    network_distances,
+    atom_info[, .(Label, Occupancy2 = Occupancy)],
+    by.x = "Parent2", by.y = "Label", all.x = TRUE
+  )
+  network_distances[is.na(Occupancy2), Occupancy2 := 1]
+  # --- END: ADDED SECTION ---
 
-  # --- 2. Filter for atoms belonging to the specified network ---
-  network_sites <- coords_with_site[FullWyckoff %in% wyckoff_symbols]
-  if (nrow(network_sites) == 0)
+  # --- 3. Calculate SIMPLE sum of distances (sum_d) and coordination (n) ---
+  atom_dist_summary <- network_distances[, .(
+    sum_d = sum(Distance), # Simple, unweighted sum of bond lengths
+    n = .N               # Simple, unweighted coordination number
+  ), by = Atom1]
+
+  atom_dist_summary[, ParentLabel := sub("_.*", "", Atom1)]
+
+  # --- 4. Merge summary with main atomic info ---
+  unique_summary <- unique(atom_dist_summary, by = "ParentLabel")
+  merged_data <- merge(atom_info[Label %in% network_atom_labels],
+                       unique_summary[, .(ParentLabel, sum_d, n)],
+                       by.x = "Label", by.y = "ParentLabel", all.x = TRUE)
+
+  merged_data <- merged_data[!is.na(sum_d)]
+  if (nrow(merged_data) == 0) return(NA_real_)
+
+  # --- 5. Calculate the final weighted average ---
+  numerator <- sum(merged_data$WyckoffMultiplicity * merged_data$Occupancy * merged_data$sum_d, na.rm = TRUE)
+  denominator <- sum(merged_data$WyckoffMultiplicity * merged_data$Occupancy * merged_data$n, na.rm = TRUE)
+
+  if (is.na(denominator) || denominator == 0) {
     return(NA_real_)
+  }
 
-  # Get the list of atom labels ('Ga1', 'Ge1', etc.) that are in the network
-  network_atom_labels <- network_sites$Label
-
-  # Filter the distances table to only include bonds from these atoms
-  network_distances <- distances[Atom1 %in% network_atom_labels]
-  if (nrow(network_distances) == 0)
-    return(NA_real_)
-
-  # --- 3. Map the SiteID to the distances table ---
-  site_lookup <- network_sites[, .(Label, SiteID)]
-  dist_with_sites <- merge(network_distances,
-                           site_lookup,
-                           by.x = "Atom1",
-                           by.y = "Label")
-
-  # --- 4. Calculate average distance PER SITE (the crucial step) ---
-  # This correctly computes (1/n_j * Sum(d_ij)) for each site.
-  # It works because all atoms on the same site have the same neighbors.
-  avg_dist_per_site <- dist_with_sites[, .(avg_d = mean(Distance)), by = .(SiteID)]
-
-  # --- 5. Get the multiplicity for each unique site ---
-  # Multiplicity is a property of the site, so we can just take the first
-  # entry for each SiteID.
-  site_multiplicity <- unique(network_sites[, .(SiteID, Multiplicity = WyckoffMultiplicity)], by = "SiteID")
-
-  # --- 6. Merge average distances with multiplicities ---
-  weighted_data <- merge(avg_dist_per_site, site_multiplicity, by = "SiteID")
-
-  # --- 7. Calculate the final weighted average based on the corrected formula ---
-  # Numerator: Sum of (multiplicity * avg_dist_per_site)
-  numerator <- sum(weighted_data$Multiplicity * weighted_data$avg_d, na.rm = TRUE)
-
-  # Denominator: Sum of (multiplicity)
-  denominator <- sum(weighted_data$Multiplicity, na.rm = TRUE)
-
-  if (denominator == 0)
-    return(NA_real_)
-
-  return(numerator / denominator)
+  final_result <- numerator / denominator
+  return(final_result)
 }

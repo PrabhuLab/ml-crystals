@@ -2,7 +2,7 @@
 % Please edit documentation in R/calculate_properties.R
 \name{calculate_weighted_average_network_distance}
 \alias{calculate_weighted_average_network_distance}
-\title{Calculate Weighted Average Network Distance (Site-Centric)}
+\title{Calculate Weighted Average Network Bond Distance}
 \usage{
 calculate_weighted_average_network_distance(
   distances,
@@ -11,39 +11,26 @@ calculate_weighted_average_network_distance(
 )
 }
 \arguments{
-\item{distances}{A \code{data.table} of interatomic distances. Must contain \code{Atom1}
-and \code{Distance} columns. \code{Atom1} must contain labels like 'Ga1', 'Ge1', etc.}
+\item{distances}{A \code{data.table} of interatomic distances filtered to include
+\strong{only bonded pairs} (e.g., from \code{minimum_distance}).}
 
-\item{atomic_coordinates}{A \code{data.table} from \code{extract_atomic_coordinates}
-containing Wyckoff, multiplicity, and label information.}
+\item{atomic_coordinates}{A \code{data.table} of asymmetric atoms from
+\code{extract_atomic_coordinates}.}
 
-\item{wyckoff_symbols}{A character vector of the full Wyckoff symbols
-(e.g., "4c", "24k") that define the atomic network to be analyzed.}
+\item{wyckoff_symbols}{A character vector of Wyckoff symbols defining the
+atomic network (e.g., \code{c("6c", "16i", "24k")}). Must be the full symbol.}
 }
 \value{
-A single numeric value for the weighted average distance.
+A single numeric value representing the weighted average bond distance.
 }
 \description{
-Calculates a weighted average distance for a specified atomic network,
-correctly handling disordered crystallographic sites.
-}
-\details{
-The function follows a site-centric approach. First, it identifies
-all unique crystallographic sites (e.g., '6c', '16i') within the network.
-For each unique site, it calculates the average interatomic distance to its
-neighbors. The final network average is then computed by taking a weighted
-mean of these per-site averages, where the weight for each site is its
-Wyckoff multiplicity. This method correctly handles cases where a single
-crystallographic site is co-occupied by multiple elements (disorder).
+Computes a single, representative bond length for a specified atomic
+network. This function precisely implements the validated logic that accounts
+for site multiplicity and occupancy of the central atoms.
 }
 \seealso{
-Other property calculators: 
-\code{\link{calculate_angles}()},
-\code{\link{calculate_distances}()},
-\code{\link{calculate_neighbor_counts}()},
-\code{\link{filter_atoms_by_symbol}()},
-\code{\link{filter_by_elements}()},
-\code{\link{filter_by_wyckoff_symbol}()},
+Other post-processing: 
+\code{\link{export_analysis_to_csv}()},
 \code{\link{filter_ghost_distances}()}
 }
-\concept{property calculators}
+\concept{post-processing}

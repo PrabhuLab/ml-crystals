@@ -1,0 +1,9 @@
+Label,WyckoffSymbol,WyckoffMultiplicity,Occupancy,OccupancyError,x_a,y_b,z_c,x_error,y_error,z_error
+Ba1,a,2,1,,0,0,0,,,
+Ba2,d,6,1,,0,0.25,0.5,,,
+Ge1,c,6,0.5,,0.25,0,0.5,,,
+In1,c,6,0.5,,0.25,0,0.5,,,
+Ge2,i,16,0.67,,0.185,0.185,0.185,,,
+In2,i,16,0.33,,0.185,0.185,0.185,,,
+Ge3,k,24,0.67,,0,0.308,0.118,,,
+In3,k,24,0.33,,0,0.308,0.118,,,

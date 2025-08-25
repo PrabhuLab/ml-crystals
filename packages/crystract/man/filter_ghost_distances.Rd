@@ -4,32 +4,39 @@
 \alias{filter_ghost_distances}
 \title{Filter Ghost Distances Using Atomic Radii}
 \usage{
-filter_ghost_distances(distances, atomic_coordinates, tolerance = 0.4)
+filter_ghost_distances(distances, atomic_coordinates, margin = 0.1)
 }
 \arguments{
-\item{distances}{A \code{data.table} of interatomic distances.}
+\item{distances}{A \code{data.table} of interatomic distances, typically from
+\code{calculate_distances}. Must contain \code{Atom1}, \code{Atom2}, and \code{Distance}.}
 
-\item{atomic_coordinates}{A \code{data.table} of atomic coordinates.}
+\item{atomic_coordinates}{A \code{data.table} of asymmetric atoms from
+\code{extract_atomic_coordinates}. Used to link atom labels to element types.}
 
-\item{tolerance}{A numeric tolerance factor. A distance is kept if it is
-greater than \code{(radius1 + radius2) * tolerance}. Defaults to 0.4.}
+\item{margin}{A numeric value (default 0.1) specifying the tolerance. A
+distance \code{d} between atoms with radii \code{r1} and \code{r2} is kept if
+\verb{(r1+r2)*(1-margin) <= d <= (r1+r2)*(1+margin)}.}
 }
 \value{
-A list containing two \code{data.table} objects:
-\item{kept}{A table of the physically plausible distances.}
-\item{removed}{A table of the "ghost" distances that were filtered out.}
+A list containing two \code{data.table}s:
+\item{kept}{The distances considered physically plausible.}
+\item{removed}{The "ghost" distances that were filtered out, with columns
+explaining the reason for removal.}
 }
 \description{
-Removes non-physical distances and returns both kept and removed data.
+Cleans a distance table by removing physically implausible distances.
+It uses a built-in table of covalent radii to establish a plausible bond length
+range for each atom pair. Any calculated distance falling outside this range
+(defined by a \code{margin}) is considered a "ghost" distance and is removed. This
+is particularly useful for cleaning data from disordered crystal structures.
+}
+\examples{
+# This example assumes you have `distances` and `atomic_coordinates` tables.
+# See the vignette for a full workflow.
 }
 \seealso{
-Other property calculators: 
-\code{\link{calculate_angles}()},
-\code{\link{calculate_distances}()},
-\code{\link{calculate_neighbor_counts}()},
+Other post-processing: 
 \code{\link{calculate_weighted_average_network_distance}()},
-\code{\link{filter_atoms_by_symbol}()},
-\code{\link{filter_by_elements}()},
-\code{\link{filter_by_wyckoff_symbol}()}
+\code{\link{export_analysis_to_csv}()}
 }
-\concept{property calculators}
+\concept{post-processing}

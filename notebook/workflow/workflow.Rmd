@@ -1,5 +1,5 @@
 ---
-title: "Optimized Interactive Analysis of 695 Clathrate Crystal Structures"
+title: "Final Optimized Interactive Analysis of 704 Clathrate Crystal Structures"
 author: "Don Ngo, Julia Maria Hubner, Anirudh Prabhu"
 date: "`r Sys.Date()`"
 output:
@@ -8,24 +8,16 @@ output:
     toc_float: true
     theme: journal
     df_print: paged
-  word_document:
-    toc: true
-  pdf_document:
-    toc: true
 ---
 
 ```{r setup, include=FALSE}
 # This chunk sets up the environment for the analysis.
 knitr::opts_chunk$set(
-  echo = TRUE,
-  message = FALSE,
-  warning = FALSE,
-  fig.width = 10,
-  fig.height = 7,
-  fig.align = 'center'
+  echo = TRUE, message = FALSE, warning = FALSE,
+  fig.width = 10, fig.height = 7, fig.align = 'center'
 )
 
-# Load all necessary libraries for the analysis and interactive components
+# Load all necessary libraries
 library(crystract)
 library(data.table)
 library(ggplot2)
@@ -33,396 +25,221 @@ library(plotly)
 library(DT)
 library(htmlwidgets)
 library(knitr)
+data(covalent_radii, package = "crystract")
 ```
 
-## 1. Objective and Evolved Methodology
+## 1. Objective and Methodology
 
-The initial goal of this project was to perform an efficient analysis of a large set of clathrate CIF files to explore the relationship between lattice parameters and interatomic distances. However, initial results revealed significant outliers.
-
-This report documents the final, successful workflow, which evolved to handle the complexities of real-world crystallographic data, including site-occupancy disorder and structural variations. The analysis now incorporates a dynamic, category-based filtering pipeline that correctly processes a manually curated dataset of 695 CIF files.
+This report documents the final, robust workflow for analyzing a curated dataset of 704 clathrate CIF files. The goal is to calculate the weighted average network bond distance for each structure and explore its relationship with the lattice parameter 'a'. The methodology incorporates a multi-step filtering pipeline to handle the complexities of real-world crystallographic data, such as site-occupancy disorder and non-physical "ghost" distances.
 
 ### 1.1. Loading Categorized CIF Files
 
-The curated dataset is organized into subdirectories within a main `Verified` folder. Each subdirectory's name defines the specific filtering rules for the files it contains (e.g., `6c-16i-24k` or `6c-16i-24k+M_on_24k`).
-
-The first step is to recursively find all CIF files, accounting for potential inconsistencies in file extensions (e.g., `.cif` vs. `.CIF`), and map each file to its structural category.
+The curated dataset is organized into subdirectories defining the specific filtering rules for the files within (e.g., `6c-16i-24k`). The script recursively finds all CIF files and maps each one to its structural category.
 
 ```{r load-files, echo=TRUE}
-# --- Timing Start ---
-timing_load <- system.time({
-  # Define the root directory containing the categorized folders
-  cif_root_dir <- "/Users/donngo/repos/ml-crystals/notebook/workflow/Verified"
-  
-  if (!dir.exists(cif_root_dir)) {
-    stop(paste(
-      "CRITICAL ERROR: The root directory was not found at:",
-      cif_root_dir
-    ))
-  }
-  
-  category_dirs <- list.dirs(path = cif_root_dir,
-                             full.names = TRUE,
-                             recursive = FALSE)
-  
-  # Create a file map that is robust to file extension case
-  file_map_list <- lapply(category_dirs, function(dir) {
-    full_paths <- list.files(
-      path = dir,
-      pattern = "\\.cif$",
-      full.names = TRUE,
-      ignore.case = TRUE
-    )
-    if (length(full_paths) == 0)
-      return(NULL)
-    
-    data.table(
-      file_path = full_paths,
-      file_name = basename(full_paths),
-      # Base filename for later lookup
-      category = basename(dir)
-    )
-  })
-  
-  file_map <- rbindlist(file_map_list, fill = TRUE)
-  all_cif_paths <- if (nrow(file_map) > 0)
-    file_map$file_path
-  else
-    character(0)
-  
-}) # --- Timing End ---
+cif_root_dir <- "/Users/donngo/repos/ml-crystals/notebook/workflow/Verified"
 
-cat(
-  "Found",
-  length(all_cif_paths),
-  "total CIF files to analyze across",
-  length(category_dirs),
-  "categories.\n"
-)
-if (length(all_cif_paths) == 0) {
-  stop("Execution stopped: No CIF files were found. Please check your 'Verified' folder.")
-}
+if (!dir.exists(cif_root_dir)) stop(paste("CRITICAL ERROR: Root directory not found:", cif_root_dir))
+
+category_dirs <- list.dirs(path = cif_root_dir, full.names = TRUE, recursive = FALSE)
+
+file_map_list <- lapply(category_dirs, function(dir) {
+  full_paths <- list.files(path = dir, pattern = "\\.cif$", full.names = TRUE, ignore.case = TRUE)
+  if (length(full_paths) == 0) return(NULL)
+  data.table(file_path = full_paths, file_name = basename(full_paths), category = basename(dir))
+})
+
+file_map <- rbindlist(file_map_list, fill = TRUE)
+all_cif_paths <- if (nrow(file_map) > 0) file_map$file_path else character(0)
+
+cat("Found", length(all_cif_paths), "total CIF files across", length(category_dirs), "categories.\n")
+if (length(all_cif_paths) == 0) stop("Execution stopped: No CIF files were found.")
 ```
 
 ## 2. Optimized Batch Analysis of Crystal Structures
 
-To significantly improve performance, we replace the high-level `analyze_cif_files()` wrapper with a targeted, manual pipeline. This custom loop runs *only* the essential functions required for our analysis (extracting coordinates and calculating distances), skipping unnecessary computations like bond angles and error propagation.
+We use the main `analyze_cif_files()` function with optimized parameters to extract raw data and calculate all interatomic distances. Subsequent bonding algorithms and non-essential calculations are disabled to improve performance, as these will be handled by our custom pipeline.
 
 ```{r run-batch-analysis-optimized, echo=TRUE}
-# --- Timing Start ---
-timing_analysis <- system.time({
-  
-  # This function runs only the essential calculations for a single file
-  process_single_cif_for_distances <- function(file_path) {
-    cif_content <- read_cif_files(file_path)[[1]]
-    
-    # Extract only what we need
-    metrics <- extract_unit_cell_metrics(cif_content)
-    coords <- extract_atomic_coordinates(cif_content)
-    sym_ops <- extract_symmetry_operations(cif_content)
-    
-    # Stop if essential data is missing
-    if (is.null(coords) || is.null(sym_ops) || is.null(metrics)) {
-      return(NULL)
-    }
-    
-    # Perform only the necessary geometric calculations
-    full_cell <- apply_symmetry_operations(coords, sym_ops)
-    super_cell <- expand_transformed_coords(full_cell)
-    distances <- calculate_distances(coords, super_cell, metrics)
-    
-    # Return a lean data.table with just the required results
-    return(data.table(
-      file_name = basename(file_path),
-      unit_cell_metrics = list(metrics),
-      atomic_coordinates = list(coords),
-      distances = list(distances)
-    ))
-  }
-  
-  # Apply this lean function to all files
-  results_list <- lapply(all_cif_paths, function(path) {
-    tryCatch({
-      process_single_cif_for_distances(path)
-    }, error = function(e) {
-      warning(paste("Failed to process", basename(path), ":", e$message))
-      return(NULL) # Skip files that fail
-    })
-  })
-  
-  analysis_results <- rbindlist(results_list, fill = TRUE)
-  
-}) # --- Timing End ---
-
-cat("Optimized analysis complete. The raw results table has",
-    nrow(analysis_results),
-    "rows.\n")
-cat("\n--- Optimized Core Performance ---\n")
-print(timing_analysis)
+analysis_results <- analyze_cif_files(
+  file_paths = all_cif_paths,
+  perform_extraction = TRUE,
+  perform_calcs_and_transforms = TRUE,
+  bonding_algorithms = "none", # Disable default bonding to use our custom method
+  calculate_bond_angles = FALSE,
+  perform_error_propagation = FALSE
+)
+cat("Optimized analysis complete. Raw results table has", nrow(analysis_results), "rows.\n")
 ```
 
-## 3. Advanced Data Processing and Filtering
+## 3. Data Processing and Calculation Pipeline
 
-This section implements the sophisticated filtering pipeline. For each file, the script reads its assigned category and applies a specific sequence of filters before calculating the final weighted average network distance. This chunk now calculates both weighted and unweighted averages in a single pass for efficiency.
-
-The steps for each file are:
-1.  **Parse Category Rules:** Determine the target Wyckoff sites and whether guest atoms need to be excluded based on the folder name.
-2.  **Filter Guest Atoms (Conditional):** For structures with non-network atoms on framework sites, remove all distances involving those specific guest atoms.
-3.  **Filter "Ghost" Distances:** Remove non-physical, short distances that arise from modeling multiple atoms on the same disordered site.
-4.  **Identify Bonds:** From the cleaned distances, identify the physically bonded atoms using the Minimum Distance Method.
-5.  **Calculate Average Bond Lengths:** Using only the identified bonds, calculate both the weighted and a simple unweighted average bond length.
+This section implements the core filtering and calculation logic. The robust workflow (Guests -> Ghosts -> Bonds -> Average) is applied to each file to ensure accurate and reliable results.
 
 ```{r process-data, echo=TRUE}
 # --- Timing Start ---
 timing_processing <- system.time({
   guest_atoms <- c("Na", "K", "Rb", "Cs", "Sr", "Ba", "Eu")
   all_removed_ghosts <- list()
-
+  
   process_file_results <- function(i) {
     current_filename <- analysis_results$file_name[i]
-    if (is.null(current_filename)) return(NULL)
-    
-    category <- file_map[file_name == current_filename, category]
-    if (length(category) == 0) return(NULL)
-    
-    exclude_guests <- grepl("\\+M_on_", category)
-    wyckoff_part <- gsub("\\+M_on_.*", "", category)
-    
-    target_wyckoff_symbols <- strsplit(wyckoff_part, "-")[[1]]
+    category_info <- file_map[file_name == current_filename]
+    if (is.null(current_filename) ||
+        nrow(category_info) == 0)
+      return(NULL)
     
     distances <- analysis_results$distances[[i]]
     coords <- analysis_results$atomic_coordinates[[i]]
-    if (is.null(distances) || is.null(coords)) return(NULL)
+    if (is.null(distances) ||
+        is.null(coords) || nrow(distances) == 0)
+      return(NULL)
     
-    if (exclude_guests) {
-      distances <- filter_by_elements(distances, coords, guest_atoms)
-    }
+    # --- Step 1: Parse Category Rules and Filter Guests ---
+    category <- category_info$category
+    target_wyckoff_symbols <- strsplit(gsub("\\+M_on_.*", "", category), "-")[[1]]
     
-    # Step 1: Filter ghost distances
-    ghost_filter_result <- filter_ghost_distances(distances, coords, tolerance = 0.4)
+    # Unconditionally filter out guest atoms to analyze the host framework
+    distances <- filter_by_elements(distances, coords, guest_atoms)
+    
+    if (nrow(distances) == 0)
+      return(NULL)
+    
+    # --- Step 2: Filter "Ghost" Distances (Covalent Radii Method) ---
+    ghost_filter_result <- filter_ghost_distances(distances, coords, margin = 0.1)
     cleaned_distances <- ghost_filter_result$kept
-    removed_table <- ghost_filter_result$removed
     
+    # Store removed distances for quality control
+    removed_table <- ghost_filter_result$removed
     if (nrow(removed_table) > 0) {
       removed_table[, file := current_filename]
       all_removed_ghosts[[length(all_removed_ghosts) + 1]] <<- removed_table
     }
+    if (nrow(cleaned_distances) == 0)
+      return(NULL)
     
-    # Step 2: Identify bonded pairs from the cleaned distances
-    bonded_pairs <- minimum_distance(cleaned_distances)
+    # --- Step 3: Identify Bonded Pairs (Minimum Distance Method) ---
+    bonded_pairs <- minimum_distance(cleaned_distances, delta = 0.1)
+    if (nrow(bonded_pairs) == 0)
+      return(NULL)
     
-    # Filter for bonds within the specified network
-    site_info <- coords[, .(Label, FullWyckoff = paste0(WyckoffMultiplicity, WyckoffSymbol))]
-    network_atom_labels <- site_info[FullWyckoff %in% target_wyckoff_symbols, Label]
-    network_bonds <- bonded_pairs[Atom1 %in% network_atom_labels]
-    
-    if (nrow(network_bonds) == 0) return(NULL)
-
-    # Step 3: Calculate both averages using ONLY the network bonds
-    weighted_avg <- calculate_weighted_average_network_distance(
-      network_bonds, coords, target_wyckoff_symbols
-    )
-    unweighted_avg <- mean(network_bonds$Distance, na.rm = TRUE)
-    
-    if (is.na(weighted_avg)) return(NULL)
+    # --- Step 4: Calculate Final Weighted Average ---
+    weighted_avg <- calculate_weighted_average_network_distance(bonded_pairs, coords, target_wyckoff_symbols)
+    if (is.na(weighted_avg))
+      return(NULL)
     
     return(
       data.table(
         file = current_filename,
         category = category,
         lattice_parameter_a = analysis_results$unit_cell_metrics[[i]]$`_cell_length_a`,
-        weighted_distance = weighted_avg,
-        unweighted_distance = unweighted_avg
+        weighted_distance = weighted_avg
       )
     )
   }
   
+  # Execute the processing for all files
   plot_data_list <- lapply(1:nrow(analysis_results), process_file_results)
   plot_data <- rbindlist(plot_data_list, use.names = TRUE, fill = TRUE)
   plot_data <- na.omit(plot_data)
   removed_ghosts_summary <- rbindlist(all_removed_ghosts, fill = TRUE)
-  
 }) # --- Timing End ---
 
 # Final summary output
-cat("Data processed. Final plot table has", nrow(plot_data), "entries.\n")
-cat(
-  nrow(removed_ghosts_summary),
-  "non-physical 'ghost' distances were identified and removed.\n"
-)
+cat("Data processing complete. Final plot table has",
+    nrow(plot_data),
+    "entries.\n")
+if (exists("removed_ghosts_summary") &&
+    nrow(removed_ghosts_summary) > 0) {
+  cat(
+    nrow(removed_ghosts_summary),
+    "non-physical 'ghost' distances were identified and removed across all files.\n"
+  )
+}
 ```
 
 ## 4. Quality Control: Review of Removed "Ghost" Distances
 
-This section provides a summary of all interatomic distances that were automatically filtered out. This allows for transparent verification of the filtering step, ensuring that the final average bond lengths are computed only from physically plausible atomic separations.
+This section summarizes the interatomic distances that were automatically filtered out as non-physical *before* bond identification. A sample of up to 1,000 such distances is shown below, and the complete list is saved to a separate CSV file for full analysis.
 
 ```{r show-removed-distances, echo=TRUE}
-if (exists("removed_ghosts_summary") &&
-    nrow(removed_ghosts_summary) > 0) {
+export_dir <- "interactive_report_files"
+dir.create(export_dir, showWarnings = FALSE)
+
+if (exists("removed_ghosts_summary") && nrow(removed_ghosts_summary) > 0) {
+  full_csv_path <- file.path(export_dir, "removed_ghosts_summary.csv")
+  fwrite(removed_ghosts_summary, full_csv_path)
+  cat(paste("Full list of", nrow(removed_ghosts_summary), "removed distances saved to:", full_csv_path, "\n\n"))
+  
+  sample_size <- min(1000, nrow(removed_ghosts_summary))
+  cat(paste("Displaying a sample of the first", sample_size, "removed distances below:\n"))
+  
   datatable(
-    removed_ghosts_summary,
-    caption = "Summary of Removed Ghost Distances",
-    rownames = FALSE,
-    extensions = 'Buttons',
-    options = list(
-      pageLength = 10,
-      dom = 'Bfrtip',
-      buttons = c('copy', 'csv')
-    ),
-    colnames = c(
-      "Atom 1",
-      "Atom 2",
-      "Removed Distance (Å)",
-      "Minimum Allowed (Å)",
-      "File"
-    )
+    removed_ghosts_summary[1:sample_size, ],
+    caption = paste("Sample of Removed Ghost Distances (", sample_size, " of ", nrow(removed_ghosts_summary), " total)"),
+    rownames = FALSE, extensions = 'Buttons',
+    options = list(pageLength = 10, dom = 'Bfrtip', buttons = c('copy', 'csv')),
+    colnames = c("Atom 1", "Atom 2", "Removed Distance (Å)", "Expected (Å)", "Lower Bound (Å)", "Upper Bound (Å)", "Reason", "File")
   )
 } else {
   cat("No 'ghost' distances were detected during the analysis.")
 }
 ```
 
-## 5. Final Results and Interpretation
+## 5. Final Results
 
-The plot below visualizes the final, cleaned data, using the weighted average bond length. Each point represents a single clathrate structure, colored by its structural category.
+The plot below visualizes the final, cleaned data, showing the relationship between the calculated weighted average network bond length and the lattice parameter 'a'.
 
 ```{r generate-plot, echo=TRUE}
-# Generate the final interactive plot using the weighted distance
-p <- ggplot(
-  plot_data,
-  aes(
-    x = lattice_parameter_a,
-    y = weighted_distance,
-    color = category,
-    text = file
-  )
-) +
-  geom_point(alpha = 0.8, size = 2.5) +
-  geom_smooth(
-    aes(group = 1),
-    method = "lm",
-    se = FALSE,
-    color = "black",
-    linetype = "dotted",
-    fullrange = TRUE
-  ) +
+p <- ggplot(plot_data, aes(x = lattice_parameter_a, y = weighted_distance, color = category, shape = category, text = file)) +
+  geom_point(alpha = 0.65, size = 2.5) +
+  geom_smooth(aes(group = 1), method = "lm", se = FALSE, color = "black", linetype = "dotted", fullrange = TRUE) +
   labs(
     title = "Average Network Bond Length vs. Lattice Parameter 'a'",
-    subtitle = "Data points are colored by their structural category",
+    subtitle = "Data points are colored and shaped by their structural category",
     x = "Lattice Parameter a (Å)",
-    y = "Average Network Bond Length (Å)",
-    color = "Structural Category"
+    y = "Weighted Average Network Bond Length (Å)",
+    color = "Structural Category", shape = "Structural Category"
   ) +
   theme_bw(base_size = 14) +
-  theme(legend.position = "bottom",
-        legend.title = element_text(face = "bold"))
+  theme(legend.position = "bottom", legend.title = element_text(face = "bold"))
 
 interactive_plot <- ggplotly(p, tooltip = c("x", "y", "text", "color"))
 interactive_plot
 ```
 
-### 5.1. Interpretation
+### 5.1. Interactive Data Table
 
-The plot reveals a strong, positive linear correlation between the lattice parameter *a* and the average network bond length. This is the expected physical behavior. Thanks to the rigorous, category-based filtering pipeline, the outliers initially observed have been successfully resolved, and the data now forms a much cleaner trend line.
-
-### 5.2. Weighted vs. Unweighted Average Comparison
-
-To illustrate the impact of weighting by site multiplicity, this section provides a direct comparison between the *weighted* average bond length and a simple *unweighted* average of the same underlying bonds.
-
-```{r compare-averages-plot, echo=TRUE}
-# --- 1. Reshape the data (already calculated) for plotting ---
-plot_data_melted <- melt(
-  plot_data,
-  id.vars = c("file", "lattice_parameter_a", "category"),
-  measure.vars = c("weighted_distance", "unweighted_distance"),
-  variable.name = "Average_Type",
-  value.name = "Distance"
-)
-
-# --- 2. Generate the comparison plot ---
-p_compare <- ggplot(
-  plot_data_melted,
-  aes(
-    x = lattice_parameter_a,
-    y = Distance,
-    color = Average_Type,
-    text = file
-  )
-) +
-  geom_point(alpha = 0.7, size = 2) +
-  geom_smooth(method = "lm",
-              se = FALSE,
-              aes(linetype = Average_Type)) +
-  labs(
-    title = "Comparison of Weighted vs. Unweighted Average Bond Lengths",
-    subtitle = "Illustrates the effect of weighting by site multiplicity",
-    x = "Lattice Parameter a (Å)",
-    y = "Average Bond Length (Å)",
-    color = "Average Type",
-    linetype = "Average Type"
-  ) +
-  theme_bw(base_size = 14) +
-  theme(legend.position = "bottom",
-        legend.title = element_text(face = "bold"))
-
-# Render as an interactive plot
-ggplotly(p_compare, tooltip = c("x", "y", "color", "text"))
-```
-
-### 5.3. Interactive Data Table
-
-This table provides the final, processed data used in the plots above. It can be searched, sorted, and the data can be exported to CSV or Excel for further external analysis.
+This table contains the final data used in the plot above. It can be searched, sorted, and exported.
 
 ```{r show-final-data-table, echo=TRUE}
 datatable(
   plot_data,
   caption = "Final Processed Data for Clathrate Structures",
-  rownames = FALSE,
-  filter = 'top',
-  extensions = 'Buttons',
-  options = list(
-    pageLength = 15,
-    dom = 'Bfrtip',
-    buttons = c('copy', 'csv', 'excel')
-  ),
-  colnames = c(
-    "File",
-    "Category",
-    "Lattice 'a' (Å)",
-    "Weighted Dist (Å)",
-    "Unweighted Dist (Å)"
-  )
+  rownames = FALSE, filter = 'top', extensions = 'Buttons',
+  options = list(pageLength = 15, dom = 'Bfrtip', buttons = c('copy', 'csv', 'excel')),
+  colnames = c("File", "Category", "Lattice 'a' (Å)", "Weighted Dist (Å)")
 )
 ```
 
 ## 6. Exporting Final Results
 
-This final section saves the key results—the interactive plot and the final data table—as standalone HTML files for easy sharing and exploration.
+This final section saves all key results for sharing and archival.
 
 ```{r export-artifacts, echo=TRUE}
-# Create a directory to store the HTML files
-export_dir <- "interactive_report_files"
-dir.create(export_dir, showWarnings = FALSE)
-
-# --- 1. Save the interactive plot ---
 plot_filename <- file.path(export_dir, "interactive_clathrate_plot.html")
 saveWidget(interactive_plot, file = plot_filename, selfcontained = TRUE)
 cat(paste0("Interactive plot saved to '", plot_filename, "'\n"))
 
-# --- 2. Save the final `plot_data` table ---
-# Add the category column to the final data table for export
 final_data_table <- datatable(
-  plot_data,
-  caption = "Final Processed Data for Clathrate Structures",
-  extensions = 'Buttons',
-  options = list(dom = 'Bfrtip', buttons = c('copy', 'csv', 'excel'))
+  plot_data, caption = "Final Processed Data for Clathrate Structures",
+  extensions = 'Buttons', options = list(dom = 'Bfrtip', buttons = c('copy', 'csv', 'excel'))
 )
 plot_table_filename <- file.path(export_dir, "final_clathrate_data.html")
 saveWidget(final_data_table, file = plot_table_filename, selfcontained = TRUE)
-cat(paste0(
-  "Interactive plot data table saved to '",
-  plot_table_filename,
-  "'\n"
-))
+cat(paste0("Interactive plot data table saved to '", plot_table_filename, "'\n"))
 
-cat("...Done. Check the '", export_dir, "' folder.\n")
+detailed_export_path <- file.path(export_dir, "detailed_analysis_csvs")
+export_analysis_to_csv(analysis_results = analysis_results, output_dir = detailed_export_path, overwrite = TRUE)
+cat("...Done. Check the '", export_dir, "' folder for all outputs.\n")
 ```
