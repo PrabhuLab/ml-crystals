@@ -16,7 +16,7 @@ A character string of the database code, or \code{NA} if not found.
 Extracts the database code (e.g., ICSD number) from CIF data.
 }
 \examples{
-cif_file <- system.file("extdata", "ICSD422.cif", package = "crysmal")
+cif_file <- system.file("extdata", "ICSD422.cif", package = "crystract")
 if (file.exists(cif_file)) {
   cif_content <- data.table::fread(cif_file, sep = "\n", header = FALSE)
   extract_database_code(cif_content)

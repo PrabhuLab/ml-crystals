@@ -19,7 +19,7 @@ alpha, beta, gamma) and their associated standard uncertainties from CIF
 content.
 }
 \examples{
-cif_file <- system.file("extdata", "ICSD422.cif", package = "crysmal")
+cif_file <- system.file("extdata", "ICSD422.cif", package = "crystract")
 if (file.exists(cif_file)) {
   cif_content <- data.table::fread(cif_file, sep = "\n", header = FALSE)
   metrics <- extract_unit_cell_metrics(cif_content)

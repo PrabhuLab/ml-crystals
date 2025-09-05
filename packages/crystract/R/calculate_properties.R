@@ -950,7 +950,6 @@ calculate_weighted_average_network_distance <- function(distances, atomic_coordi
     return(NA_real_)
   }
 
-  # --- START: ADDED SECTION TO MATCH DEBUGGED WORKFLOW ---
   # This block explicitly merges neighbor occupancy information, which is a
   # crucial data preparation step from the validated workflow.
   network_distances[, Parent2 := sub("_.*", "", Atom2)]

@@ -1,14 +1,17 @@
 ---
 title: "Using the crystract Package for Crystallographic Analysis"
+author: "Don Ngo"
+date: "`r Sys.Date()`"
 output:
-  rmarkdown::html_vignette: default
+  rmarkdown::html_vignette:
+    toc: true
+    toc_float: true
+  pdf_document:
+    toc: true
 vignette: >
-  %\VignetteIndexEntry{Using the crystract Package}
-  %\VignetteEncoding{UTF-8}
+  %\VignetteIndexEntry{Using the crystract Package for Crystallographic Analysis}
   %\VignetteEngine{knitr::rmarkdown}
-editor_options:
-  markdown:
-    wrap: 72
+  %\VignetteEncoding{UTF-8}
 ---
 
 ```{r, include = FALSE}
@@ -16,7 +19,7 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
-options(width = 80)
+options(width = 75)
 options(datatable.print.width = 80)
 ```
 
@@ -454,7 +457,9 @@ cat("Number of bonds after excluding 'Sr':", nrow(bonds_without_sr), "\n")
 
 ### 2.5 Calculating Weighted Average Network Bond Distance
 
-A common goal is to compute a single summary statistic that represents a structure. The `calculate_weighted_average_network_distance()` function calculates a representative **bond length** for a specified atomic network (defined by a set of Wyckoff sites).
+A common goal is to compute a single summary statistic that represents a structure. 
+
+The `calculate_weighted_average_network_distance()` function calculates a representative **bond length** for a specified atomic network (defined by a set of Wyckoff sites).
 
 This calculation should always be performed on a table of identified **bonds** to ensure the result is physically meaningful.
 
@@ -511,10 +516,35 @@ weighted_avg_bond_dist <- calculate_weighted_average_network_distance(
 cat("Weighted average network bond distance for the '4c' sites:", weighted_avg_bond_dist, "Å\n")
 ```
 
+### 2.6 Exporting Results to CSV Files
+
+After performing a batch analysis, you are left with a `data.table` where many columns are themselves nested `data.table`s. While this is convenient for interactive analysis in R, it is not ideal for sharing or for use with other software.
+
+The `export_analysis_to_csv()` function solves this by unpacking the entire results table into a structured directory of CSV files. It creates a main directory and, within it, sub-directories for each type of data (e.g., `atomic_coordinates`, `bond_angles`, `distances`). Each sub-directory will contain one CSV file per analyzed CIF, named after the original file. A `meta` folder is also created to store a summary CSV of the non-nested metadata.
+
+This makes the results easily accessible and portable.
+
+```{r export-results-to-csv}
+# 1. We use the 'analysis_results' table from the main workflow.
+
+# 2. Define a temporary output directory for this example.
+export_path <- file.path(tempdir(), "crystract_export")
+
+# 3. Export the results. 'overwrite = TRUE' is used to allow re-running the example.
+export_analysis_to_csv(analysis_results, export_path, overwrite = TRUE)
+
+# 4. We can list the created files and folders to see the structure.
+cat("Exported directory structure:\n")
+print(list.files(export_path, recursive = TRUE))
+
+# 5. Clean up the temporary directory after the example.
+unlink(export_path, recursive = TRUE)
+```
+
 ## Conclusion
 
 This vignette has demonstrated the core workflow of the `crystract` package, from the high-level, automated processing of multiple CIF files with `analyze_cif_files` to a detailed, step-by-step breakdown of the underlying calculations. We have seen how the package extracts fundamental data, builds a complete crystal model, calculates key geometric properties like bond distances and angles, and rigorously propagates experimental uncertainties into these final results.
 
-Furthermore, with a powerful suite of post-processing tools such as `filter_atoms_by_symbol`, `filter_by_wyckoff_symbol`, `filter_ghost_distances`, and `calculate_weighted_average_network_distance`, you can easily refine, clean, and analyze the generated datasets to focus on the specific chemical or crystallographic features of interest.
+Furthermore, with a powerful suite of post-processing tools such as `filter_atoms_by_symbol`, `filter_by_wyckoff_symbol`, `filter_ghost_distances`, `calculate_weighted_average_network_distance`, and `export_analysis_to_csv`, you can easily refine, clean, analyze, and share the generated datasets to focus on the specific chemical or crystallographic features of interest.
 
 The goal of `crystract` is to provide a robust and accessible platform for crystallographic data mining in R.

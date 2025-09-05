@@ -10,7 +10,7 @@
 #' @family coordinate processors
 #' @export
 #' @examples
-#' cif_file <- system.file("extdata", "ICSD422.cif", package = "crysmal")
+#' cif_file <- system.file("extdata", "ICSD422.cif", package = "crystract")
 #' if (file.exists(cif_file)) {
 #'   cif_content <- read_cif_files(cif_file)[[1]]
 #'   atoms <- extract_atomic_coordinates(cif_content)

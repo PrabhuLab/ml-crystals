@@ -5,7 +5,7 @@
 #' @return A list of `data.table` objects.
 #' @export
 #' @examples
-#' cif_file <- system.file("extdata", "ICSD422.cif", package = "crysmal")
+#' cif_file <- system.file("extdata", "ICSD422.cif", package = "crystract")
 #' if (file.exists(cif_file)) {
 #'   cif_data_list <- read_cif_files(cif_file)
 #'   print(cif_data_list[[1]][1:5, ])
@@ -43,7 +43,7 @@ read_cif_files <- function(file_paths) {
 #'   is missing, a warning is issued and only partial results are returned.
 #' @export
 #' @examples
-#' cif_file <- system.file("extdata", "ICSD422.cif", package = "crysmal")
+#' cif_file <- system.file("extdata", "ICSD422.cif", package = "crystract")
 #' if (file.exists(cif_file)) {
 #'   cif_content <- read_cif_files(cif_file)[[1]]
 #'   # Using the single-file analyzer directly:
@@ -242,7 +242,7 @@ analyze_single_cif <- function(cif_content,
 #'   values in the calculated columns.
 #' @export
 #' @examples
-#' cif_file <- system.file("extdata", "ICSD422.cif", package = "crysmal")
+#' cif_file <- system.file("extdata", "ICSD422.cif", package = "crystract")
 #' if (file.exists(cif_file)) {
 #'   # This will run the full analysis on all specified files.
 #'   analysis_results <- analyze_cif_files(cif_file)
@@ -333,13 +333,13 @@ analyze_cif_files <- function(file_paths,
 #' # This is a full workflow example.
 #'
 #' # 1. Define path to an example CIF file
-#' cif_file <- system.file("extdata", "ICSD422.cif", package = "crysmal")
+#' cif_file <- system.file("extdata", "ICSD422.cif", package = "crystract")
 #' if (file.exists(cif_file)) {
 #'   # 2. Run the analysis
 #'   analysis_results <- analyze_cif_files(cif_file)
 #'
 #'   # 3. Define a temporary output directory for this example
-#'   export_path <- file.path(tempdir(), "crysmal_export")
+#'   export_path <- file.path(tempdir(), "crystract_export")
 #'
 #'   # 4. Export the results, overwriting if the directory exists
 #'   export_analysis_to_csv(analysis_results, export_path, overwrite = TRUE)

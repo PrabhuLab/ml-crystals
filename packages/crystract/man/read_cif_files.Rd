@@ -17,7 +17,7 @@ Reads one or more CIF files from disk and loads each into a
 \code{data.table}.
 }
 \examples{
-cif_file <- system.file("extdata", "ICSD422.cif", package = "crysmal")
+cif_file <- system.file("extdata", "ICSD422.cif", package = "crystract")
 if (file.exists(cif_file)) {
   cif_data_list <- read_cif_files(cif_file)
   print(cif_data_list[[1]][1:5, ])

@@ -44,7 +44,7 @@ A high-level wrapper function that reads and analyzes one or more
 CIF files in batch. It calls \code{analyze_single_cif} for each file.
 }
 \examples{
-cif_file <- system.file("extdata", "ICSD422.cif", package = "crysmal")
+cif_file <- system.file("extdata", "ICSD422.cif", package = "crystract")
 if (file.exists(cif_file)) {
   # This will run the full analysis on all specified files.
   analysis_results <- analyze_cif_files(cif_file)

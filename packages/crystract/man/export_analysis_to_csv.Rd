@@ -50,13 +50,13 @@ bond angle tables) or all data related to a single original CIF file.
 # This is a full workflow example.
 
 # 1. Define path to an example CIF file
-cif_file <- system.file("extdata", "ICSD422.cif", package = "crysmal")
+cif_file <- system.file("extdata", "ICSD422.cif", package = "crystract")
 if (file.exists(cif_file)) {
   # 2. Run the analysis
   analysis_results <- analyze_cif_files(cif_file)
 
   # 3. Define a temporary output directory for this example
-  export_path <- file.path(tempdir(), "crysmal_export")
+  export_path <- file.path(tempdir(), "crystract_export")
 
   # 4. Export the results, overwriting if the directory exists
   export_analysis_to_csv(analysis_results, export_path, overwrite = TRUE)

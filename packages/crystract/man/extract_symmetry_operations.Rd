@@ -16,7 +16,7 @@ A \code{data.table} with symmetry operations. Returns \code{NULL} if not found.
 Parses the symmetry operation definitions from the CIF content.
 }
 \examples{
-cif_file <- system.file("extdata", "ICSD422.cif", package = "crysmal")
+cif_file <- system.file("extdata", "ICSD422.cif", package = "crystract")
 if (file.exists(cif_file)) {
   cif_content <- data.table::fread(cif_file, sep = "\n", header = FALSE)
   sym_ops <- extract_symmetry_operations(cif_content)

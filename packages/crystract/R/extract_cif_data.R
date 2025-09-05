@@ -32,7 +32,7 @@ extract_value <- function(cif_content, pattern, remove_pattern = TRUE) {
 #' @family extractors
 #' @export
 #' @examples
-#' cif_file <- system.file("extdata", "ICSD422.cif", package = "crysmal")
+#' cif_file <- system.file("extdata", "ICSD422.cif", package = "crystract")
 #' if (file.exists(cif_file)) {
 #'   cif_content <- data.table::fread(cif_file, sep = "\n", header = FALSE)
 #'   extract_database_code(cif_content)
@@ -87,7 +87,7 @@ extract_space_group_number <- function(cif_content) {
 #' @family extractors
 #' @export
 #' @examples
-#' cif_file <- system.file("extdata", "ICSD422.cif", package = "crysmal")
+#' cif_file <- system.file("extdata", "ICSD422.cif", package = "crystract")
 #' if (file.exists(cif_file)) {
 #'   cif_content <- data.table::fread(cif_file, sep = "\n", header = FALSE)
 #'   metrics <- extract_unit_cell_metrics(cif_content)
@@ -273,7 +273,7 @@ extract_atomic_coordinates <- function(cif_content) {
 #' @family extractors
 #' @export
 #' @examples
-#' cif_file <- system.file("extdata", "ICSD422.cif", package = "crysmal")
+#' cif_file <- system.file("extdata", "ICSD422.cif", package = "crystract")
 #' if (file.exists(cif_file)) {
 #'   cif_content <- data.table::fread(cif_file, sep = "\n", header = FALSE)
 #'   sym_ops <- extract_symmetry_operations(cif_content)

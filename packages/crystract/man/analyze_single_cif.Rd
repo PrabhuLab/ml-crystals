@@ -44,7 +44,7 @@ for a single crystal structure's data. It is called by \code{analyze_cif_files}
 for batch processing.
 }
 \examples{
-cif_file <- system.file("extdata", "ICSD422.cif", package = "crysmal")
+cif_file <- system.file("extdata", "ICSD422.cif", package = "crystract")
 if (file.exists(cif_file)) {
   cif_content <- read_cif_files(cif_file)[[1]]
   # Using the single-file analyzer directly:
