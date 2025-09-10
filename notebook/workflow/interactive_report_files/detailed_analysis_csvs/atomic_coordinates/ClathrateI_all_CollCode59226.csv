@@ -1,7 +1,0 @@
-Label,WyckoffSymbol,WyckoffMultiplicity,Occupancy,OccupancyError,x_a,y_b,z_c,x_error,y_error,z_error
-Ge1,c,6,0.55,0.05,0.25,0,0.5,,,
-Ge2,i,16,1,,0.182,0.182,0.182,0.001,0.001,0.001
-Ge3,k,24,1,,0,0.311,0.118,,0.001,0.001
-I1,a,2,1,,0,0,0,,,
-I2,d,6,1,,0.25,0.5,0,,,
-I3,c,6,0.45,0.05,0.25,0,0.5,,,

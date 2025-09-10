@@ -1,7 +1,0 @@
-Label,WyckoffSymbol,WyckoffMultiplicity,Occupancy,OccupancyError,x_a,y_b,z_c,x_error,y_error,z_error
-Eu1,a,2,1,,0,0,0,,,
-Ba1,c,6,1,,0.25,0,0.5,,,
-Al1,d,6,1,,0.25,0.5,0,,,
-Si1,i,16,0.875,0.001,0.18448,0.18448,0.18448,9e-05,9e-05,9e-05
-Al2,i,16,0.125,0.001,0.18448,0.18448,0.18448,9e-05,9e-05,9e-05
-Si2,k,24,1,,0,0.1158,0.3029,,1e-04,1e-04
