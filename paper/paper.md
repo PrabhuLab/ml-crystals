@@ -46,6 +46,7 @@ Within the R ecosystem, the landscape is sparse. The `cry` package provides basi
 
 To our knowledge, no package or software—whether in Python, as GUIs, or within R—provides a single, integrated solution capable of combining the automated batch processing of large collections of CIF files and the systematic propagation of experimental uncertainties, while providing additional features indispensable for the structural analysis of large datasets. Such a research software landscape forces researchers into creating fragmented and inefficient workflows, piecing together disparate tools for structure generation, geometric analysis, and finally statistical modeling.
 
+<<<<<<< HEAD
 +-------------------------------------------------------------+--------------------------------------------------+--------------------------------------------------+--------------------------------------------------------------+--------------------+---------------------------------------------------------+
 | Task                                                        | CIFkit                                           | CBA (CIF Bond analyzer)                          | pymatgen                                                     | cry                | crystract                                               |
 +=============================================================+==================================================+==================================================+==============================================================+====================+=========================================================+
@@ -75,6 +76,22 @@ To our knowledge, no package or software—whether in Python, as GUIs, or within
 | Output to multiple formats                                  | No outputs of extracted data, only figures such  | No outputs of extracted data, only figures such  | No                                                           | No                 | Yes                                                     |
 |                                                             | as histograms or visualizations                  | as histograms or visualizations                  |                                                              |                    |                                                         |
 +-------------------------------------------------------------+--------------------------------------------------+--------------------------------------------------+--------------------------------------------------------------+--------------------+---------------------------------------------------------+
+=======
+| Task | CIFkit | CBA (CIF Bond analyzer) | pymatgen | cry | crystract |
+|----|----|----|----|----|----|
+| Read/parse singular CIF file | Yes | No, uses cifcit for this | Partially, via importers like CifParser | Yes | Yes |
+| Batch / high-throughput processing of many CIFs | Yes | Yes | Yes, but certain tasks require manual scripting | No | Yes |
+| Supercell / unit cell generation / lattice operations | Yes, can generate unit cell and supercell via +/- 1 shifts | Yes, when computing minimum bond lengths for site | Yes, structure operations, transformation, supercell, etc. | No | Yes, can generate unit cell and supercell via +/- 1 shifts |
+| Coordination number determination | Yes | Yes | Yes | No | Yes |
+| Calculation of interatomic distances | Yes | Yes | Yes | No | Yes |
+| Calculation of bond angles | No | No | No | No | Yes |
+| Error propagation | No | No | No | No | Yes |
+| Handling of occupational disorder | Yes | No, uses cifkit | Partial, can read occupancies, but does not use them | No | Yes |
+| Handling of structural disorder | No | No | No | No | Yes, via filtering function |
+| Filtering for specific atoms or crystallographic sites | Yes | Yes | No | No | Yes |
+| Calculation of weighted average accounting for disorder. | No | No | No | No | Yes |
+| Output to multiple formats | No outputs of extracted data, only figures such as histograms or visualizations | No outputs of extracted data, only figures such as histograms or visualizations | No | No | Yes |
+>>>>>>> 27d5a091f5513a4ac2eebfc261f85368d65bf34a
 
 # Crystract
 
