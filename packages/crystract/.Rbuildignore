@@ -5,3 +5,5 @@
 ^LICENSE\.md$
 ^README\.Rmd$
 ^data-raw$
+^README\.html$
+^LICENSES$
