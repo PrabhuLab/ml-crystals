@@ -21,102 +21,87 @@ knitr::opts_chunk$set(
 <!-- [![R-CMD-check](https://github.com/Don-Tat/ml-crystals/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/Don-Tat/ml-crystals/actions/workflows/R-CMD-check.yaml) -->
 <!-- badges: end -->
 
-**crystract: Extracting and Analyzing Crystallographic Data**
-
-The goal of `crystract` is to provide a robust and high-performance toolkit for parsing Crystallographic Information Files (`.cif`). It is designed to extract essential structural and chemical data, perform geometric calculations, and propagate experimental uncertainties, streamlining the preparation of crystallographic data for analysis and machine learning pipelines.
+**crystract** provides a suite of functions to parse Crystallographic Information Files (`.cif`), extracting essential data such as chemical formulas, unit cell parameters, atomic coordinates, and symmetry operations. It also includes tools to calculate interatomic distances, identify bonded pairs using various algorithms (Minimum Distance, Brunner's, Hoppe's), determine nearest neighbor counts, and calculate bond angles. The package is designed to facilitate the preparation of crystallographic data for further analysis, including machine learning applications in materials science.
 
 > **Note on Repository Structure**
 >
-> The `crystract` package is located within the `crystract/` subdirectory of the `Don-Tat/ml-crystals` GitHub repository. This repository also hosts its sister package, `crysmal`. Due to this structure, you must use the `subdir` argument during installation, as shown below.
+> The `crystract` package is located within the `crystract/` subdirectory of the `Prabhulab/ml-crystals` GitHub repository. You must use the `subdir` argument during installation, as shown below.
+
+## Key Features
+
+*   **Efficient CIF Parsing**: Utilizes `data.table` for fast and robust extraction of metadata, unit cell parameters, atomic coordinates, and symmetry operations.
+
+*   **Symmetry and Supercell Generation**: Applies symmetry operations to generate a full unit cell from the asymmetric unit and expands coordinates into a 3x3x3 supercell for neighbor searching.
+
+*   **Geometric Calculations**: Computes interatomic distances using the metric tensor (correct for all crystal systems) and calculates bond angles.
+
+*   **Multiple Bonding Algorithms**: Implements several algorithms to identify bonded atoms, including the `minimum_distance` (default), `brunner`, and `hoppe` methods.
+
+*   **Rigorous Error Propagation**: Calculates and propagates experimental uncertainties from the CIF file into the final calculated bond lengths and angles.
+
+*   **Powerful Post-Processing Tools**: Includes functions to filter results by chemical element, Wyckoff site, or to remove non-physical "ghost" distances caused by site disorder using a customizable atomic radii table.
+
+*   **Batch Processing & Export**: The main `analyze_cif_files()` function is designed to process hundreds of files in a single run, and results can be easily exported to a structured directory of CSV files with `export_analysis_to_csv()`.
+
+## Licensing
+
+`crystract` is offered under a dual-license model to accommodate a variety of use cases:
+
+*   **For Open-Source Projects:** The package is licensed under the **GNU General Public License v3.0 (GPL-3.0)**. If you are developing other open-source software, you are free to use, modify, and distribute `crystract` under the terms of the GPL-3.0.
+
+*   **For Non-Commercial Use:** For academic, research, personal, and other non-commercial purposes, the package is licensed under the **PolyForm Noncommercial License 1.0.0** (specified in the `LICENSE` file).
+
+*   **For Commercial Use:** If you wish to use `crystract` in a commercial product, for commercial services, or for any other commercial purpose, you must obtain a separate commercial license. Please contact the package maintainer to arrange the terms.
 
 ## Installation
 
-Installing `crystract` involves a few steps, as it is currently hosted on GitHub and not on the main R package repository (CRAN). This guide will walk you through the process from start to finish.
+Installing `crystract` involves a few steps, as it is currently hosted on GitHub.
 
 ### Prerequisites: What You Need First
 
-Before installing `crystract`, you need to have the R programming language and a suitable development environment set up on your computer.
+#### 1. R and RStudio
 
-#### 1. R
+*   Install the latest version of **[R](https://cran.r-project.org/)**.
+*   Install the free **[RStudio Desktop IDE](https://posit.co/download/rstudio-desktop/)**.
 
-*   **What it is:** The programming language itself.
-*   **Action:** If you don't have R installed, download and install the latest version from the **[Comprehensive R Archive Network (CRAN)](https://cran.r-project.org/)**.
+#### 2. C++ Compiler
 
-#### 2. RStudio Desktop (Strongly Recommended)
+`crystract` and its dependencies require a C++ compiler to be installed from source.
 
-*   **What it is:** An excellent, free Integrated Development Environment (IDE) that makes using R much easier. It provides a code editor, console, plot viewer, and other tools in one window.
-*   **Action:** Download and install the free RStudio Desktop version from the **[Posit website](https://posit.co/download/rstudio-desktop/)**.
-
-#### 3. C++ Compiler
-
-*   **What it is:** `crystract` and some of its dependencies are written in a mix of R and C++ for performance. To install them from source (which is what happens when you install from GitHub), your computer needs a C++ compiler.
-*   **Action (depends on your operating system):**
-
-    *   **Windows:** You must install **RTools**.
-        1.  Go to the **[RTools download page on CRAN](https://cran.r-project.org/bin/windows/Rtools/)**.
-        2.  Download and run the installer that matches your version of R.
-        3.  **Crucially**, on the installer's component selection screen, make sure the box for **"Add Rtools to system PATH"** is checked. This allows R to find the compilers automatically.
-
-    *   **macOS:** You need the **Xcode Command Line Tools**.
-        1.  Open the Terminal application (found in `/Applications/Utilities/`).
-        2.  Type the command `xcode-select --install` and press Enter.
-        3.  A dialog box will appear. Click "Install" and agree to the terms. This will download and install the necessary tools.
-
-    *   **Linux (Debian/Ubuntu):** You need the `r-base-dev` package.
-        1.  Open a terminal.
-        2.  Run the command: `sudo apt-get install r-base-dev`
+*   **Windows:** Install **[RTools](https://cran.r-project.org/bin/windows/Rtools/)**. **Crucially**, ensure the box for **"Add Rtools to system PATH"** is checked during installation.
+*   **macOS:** Open the Terminal and run `xcode-select --install`.
+*   **Linux (Debian/Ubuntu):** Open a terminal and run `sudo apt-get install r-base-dev`.
 
 ### Installation Steps
 
-Once the prerequisites are met, open R or RStudio and run the following commands in the console.
+Once the prerequisites are met, open R or RStudio and run the following commands.
 
-#### Step 1: Install `devtools`
-
-The `devtools` package provides the tools needed to install R packages directly from GitHub.
-
-```{r}
-# This command only needs to be run once. 
-# If you are asked to choose a 'CRAN mirror', any location is fine.
+```{r, eval=FALSE}
+# First, ensure you have the devtools package
 install.packages("devtools")
-```
 
-#### Step 2: Install `crystract` from GitHub
-
-Now, use the `install_github` function from the `devtools` package to install `crystract`.
-
-> **Note on Repository Structure**
->
-> `crystract` is located in a subfolder of the `ml-crystals` repository. The `subdir = "crystract"` argument is essential for telling `devtools` where to find the package.
-
-```{r}
-# This is the main installation command for crystract.
-# It will download the source code and may install several other required 
-# packages (dependencies). This process might take a few minutes.
-
+# Install crystract from the  GitHub repositoy
 devtools::install_github("PrabhuLab/ml-crystals", subdir = "crystract")
 ```
 
 ### Verifying the Installation
 
-To make sure the package was installed correctly, you can load it into your R session.
+To make sure the package was installed correctly, load it into your R session.
 
 ```{r}
 library(crystract)
 ```
 
-If this command runs without any errors, the installation was successful! You are now ready to use `crystract`.
+If this command runs without any errors, the installation was successful.
 
-If you encounter an error, the most common issue is a missing C++ compiler. Please carefully review the **Prerequisites** section, especially the instructions for installing RTools (Windows) or Xcode Command Line Tools (macOS).
+## Quickstart: A Complete Workflow
 
-## A Complete Workflow
-
-`crystract` is designed around a simple, powerful workflow. You can go from a `.cif` file on disk to a rich `data.table` of structural information with a single function call.
+The `analyze_cif_files()` function provides a complete, one-step workflow. It can process hundreds of files, but here we demonstrate it on a single example file included with the package.
 
 ```{r workflow, message=FALSE, warning=FALSE}
 library(crystract)
 
-# 1. Get the path to a sample CIF file included with the package
-# Ensure the package name here matches your package's name
+# 1. Get the path to a sample CIF file
 cif_path <- system.file("extdata", "ICSD422.cif", package = "crystract")
 
 # 2. Analyze the file(s)
@@ -127,41 +112,23 @@ analysis_results <- analyze_cif_files(cif_path)
 # The output is a data.table with metadata and list-columns for detailed results.
 print(analysis_results[, .(database_code, chemical_formula, space_group_name)])
 
-# 4. Access detailed calculated properties
-# For example, let's see how many bonded pairs and bond angles were found.
-cat("\nNumber of unique bonded pairs found:", nrow(analysis_results$bonded_pairs[[1]]))
-cat("\nNumber of bond angles calculated:", nrow(analysis_results$bond_angles[[1]]))
-
-# 5. Inspect specific results, including propagated errors
-# Let's look at the first calculated bond angle and its uncertainty.
-cat("\n\nExample bond angle with calculated error:\n")
-print(analysis_results$bond_angles[[1]][1, .(CentralAtom, Neighbor1, Neighbor2, Angle, AngleError)])
+# 4. Access detailed calculated properties, like the final bond angles table
+# The list-columns are accessed with [[]]
+cat("\nFirst 5 calculated bond angles (with propagated errors):\n")
+print(analysis_results$bond_angles[][1:5])
 ```
 
-## Key Features
+## Learning More
 
-`crystract` provides a comprehensive suite of tools for crystallographic data analysis:
+For a detailed, step-by-step guide explaining each function, the crystallographic principles, and the formulas used for calculations, please see the package vignette.
 
-*   **Efficient CIF Parsing**: Utilizes `data.table::fread` for fast file reading and robust, vectorized string operations for parsing data blocks.
+You can access it with the following command after you have successfully installed the package:
 
-*   **Data Extraction**:
-    *   `extract_database_code()`, `extract_chemical_formula()`, `extract_space_group_name()` and more for essential metadata.
-    *   `extract_unit_cell_metrics()`: Parses cell lengths and angles, including their experimental uncertainties (e.g., `1.234(5)`).
-    *   `extract_atomic_coordinates()`: Extracts asymmetric atom labels, fractional coordinates, and uncertainties.
-    *   `extract_symmetry_operations()`: Correctly parses symmetry operation strings (e.g., `x, -y+1/2, z`).
+```{r, eval=FALSE}
+# This command opens the detailed package guide
+vignette("crystract")
+```
 
-*   **Structural Calculations**:
-    *   `apply_symmetry_operations()`: Generates all atoms in the unit cell from the asymmetric set.
-    *   `expand_transformed_coords()`: Creates a 3x3x3 supercell for neighbor searching.
-    *   `calculate_distances()`: Computes interatomic distances using the metric tensor, ensuring correctness for all crystal systems.
-    *   `calculate_angles()`: Computes bond angles.
+## Author
 
-*   **Bonding Analysis**:
-    *   `minimum_distance()`: A robust algorithm to identify bonded atoms based on a nearest-neighbor distance cutoff.
-    *   `brunner()` and `hoppe()`: Implementations of alternative bonding algorithms.
-
-*   **Error Propagation**:
-    *   `propagate_distance_error()`: Calculates the uncertainty in each bond length.
-    *   `propagate_angle_error()`: Calculates the uncertainty in each bond angle.
-
-*   **Batch Processing**: The `analyze_cif_files()` function is designed to process multiple files efficiently, returning a single, tidy `data.table` of results.
+**Author and Maintainer:** Don Ngo (`dngo@carnegiescience.edu`)
