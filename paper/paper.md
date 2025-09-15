@@ -46,6 +46,8 @@ Within the R ecosystem, the landscape is sparse. The `cry` package provides basi
 
 To our knowledge, no package or software—whether in Python, as GUIs, or within R—provides a single, integrated solution capable of combining the automated batch processing of large collections of CIF files and the systematic propagation of experimental uncertainties, while providing additional features indispensable for the structural analysis of large datasets. Such a research software landscape forces researchers into creating fragmented and inefficient workflows, piecing together disparate tools for structure generation, geometric analysis, and finally statistical modeling.
 
+## Overview of functionalities provided by existing packages in Python and R.
+
 | Task | CIFkit | CBA (CIF Bond analyzer) | pymatgen | cry | crystract |
 |------------|------------|------------|------------|------------|------------|
 | Read/parse singular CIF file | Yes | No, uses cifcit for this | Partially, via importers like CifParser | Yes | Yes |
@@ -60,8 +62,6 @@ To our knowledge, no package or software—whether in Python, as GUIs, or within
 | Filtering for specific atoms or crystallographic sites | Yes | Yes | No | No | Yes |
 | Calculation of weighted average accounting for disorder. | No | No | No | No | Yes |
 | Output to multiple formats | No outputs of extracted data, only figures such as histograms or visualizations | No outputs of extracted data, only figures such as histograms or visualizations | No | No | Yes |
-
-: Overview of functionalities provided by existing packages in Python and R.
 
 # Crystract
 
