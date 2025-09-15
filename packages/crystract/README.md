@@ -1,0 +1,229 @@
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+# crystract
+
+<!-- badges: start -->
+
+<!-- After setting up, uncomment and update these badges -->
+
+<!-- [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental) -->
+
+<!-- [![R-CMD-check](https://github.com/Don-Tat/ml-crystals/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/Don-Tat/ml-crystals/actions/workflows/R-CMD-check.yaml) -->
+
+<!-- badges: end -->
+
+**crystract** provides a suite of functions to parse Crystallographic
+Information Files (`.cif`), extracting essential data such as chemical
+formulas, unit cell parameters, atomic coordinates, and symmetry
+operations. It also includes tools to calculate interatomic distances,
+identify bonded pairs using various algorithms (Minimum Distance,
+Brunner’s, Hoppe’s), determine nearest neighbor counts, and calculate
+bond angles. The package is designed to facilitate the preparation of
+crystallographic data for further analysis, including machine learning
+applications in materials science.
+
+> **Note on Repository Structure**
+>
+> The `crystract` package is located within the `crystract/`
+> subdirectory of the `Prabhulab/ml-crystals` GitHub repository. You
+> must use the `subdir` argument during installation, as shown below.
+
+## Key Features
+
+- **Efficient CIF Parsing**: Utilizes `data.table` for fast and robust
+  extraction of metadata, unit cell parameters, atomic coordinates, and
+  symmetry operations.
+
+- **Symmetry and Supercell Generation**: Applies symmetry operations to
+  generate a full unit cell from the asymmetric unit and expands
+  coordinates into a 3x3x3 supercell for neighbor searching.
+
+- **Geometric Calculations**: Computes interatomic distances using the
+  metric tensor (correct for all crystal systems) and calculates bond
+  angles.
+
+- **Multiple Bonding Algorithms**: Implements several algorithms to
+  identify bonded atoms, including the `minimum_distance` (default),
+  `brunner`, and `hoppe` methods.
+
+- **Rigorous Error Propagation**: Calculates and propagates experimental
+  uncertainties from the CIF file into the final calculated bond lengths
+  and angles.
+
+- **Powerful Post-Processing Tools**: Includes functions to filter
+  results by chemical element, Wyckoff site, or to remove non-physical
+  “ghost” distances caused by site disorder using a customizable atomic
+  radii table.
+
+- **Batch Processing & Export**: The main `analyze_cif_files()` function
+  is designed to process hundreds of files in a single run, and results
+  can be easily exported to a structured directory of CSV files with
+  `export_analysis_to_csv()`.
+
+## Licensing
+
+`crystract` is offered under a dual-license model to accommodate a
+variety of use cases:
+
+- **For Open-Source Projects:** The package is licensed under the **GNU
+  General Public License v3.0 (GPL-3.0)**. If you are developing other
+  open-source software, you are free to use, modify, and distribute
+  `crystract` under the terms of the GPL-3.0.
+
+- **For Non-Commercial Use:** For academic, research, personal, and
+  other non-commercial purposes, the package is licensed under the
+  **PolyForm Noncommercial License 1.0.0** (specified in the `LICENSE`
+  file).
+
+- **For Commercial Use:** If you wish to use `crystract` in a commercial
+  product, for commercial services, or for any other commercial purpose,
+  you must obtain a separate commercial license. Please contact the
+  package maintainer to arrange the terms.
+
+## Installation
+
+Installing `crystract` involves a few steps, as it is currently hosted
+on GitHub.
+
+### Prerequisites: What You Need First
+
+#### 1. R and RStudio
+
+- Install the latest version of **[R](https://cran.r-project.org/)**.
+- Install the free **[RStudio Desktop
+  IDE](https://posit.co/download/rstudio-desktop/)**.
+
+#### 2. C++ Compiler
+
+`crystract` and its dependencies require a C++ compiler to be installed
+from source.
+
+- **Windows:** Install
+  **[RTools](https://cran.r-project.org/bin/windows/Rtools/)**.
+  **Crucially**, ensure the box for **“Add Rtools to system PATH”** is
+  checked during installation.
+- **macOS:** Open the Terminal and run `xcode-select --install`.
+- **Linux (Debian/Ubuntu):** Open a terminal and run
+  `sudo apt-get install r-base-dev`.
+
+### Installation Steps
+
+Once the prerequisites are met, open R or RStudio and run the following
+commands.
+
+``` r
+# First, ensure you have the devtools package
+install.packages("devtools")
+
+# Install crystract from the  GitHub repositoy
+devtools::install_github("PrabhuLab/ml-crystals", subdir = "crystract")
+```
+
+### Verifying the Installation
+
+To make sure the package was installed correctly, load it into your R
+session.
+
+``` r
+library(crystract)
+```
+
+If this command runs without any errors, the installation was
+successful.
+
+## Quickstart: A Complete Workflow
+
+The `analyze_cif_files()` function provides a complete, one-step
+workflow. It can process hundreds of files, but here we demonstrate it
+on a single example file included with the package.
+
+``` r
+library(crystract)
+
+# 1. Get the path to a sample CIF file
+cif_path <- system.file("extdata", "ICSD422.cif", package = "crystract")
+
+# 2. Analyze the file(s)
+# This single function handles all extraction, calculation, and error propagation.
+analysis_results <- analyze_cif_files(cif_path)
+
+# 3. Explore the high-level results
+# The output is a data.table with metadata and list-columns for detailed results.
+print(analysis_results[, .(database_code, chemical_formula, space_group_name)])
+#>    database_code chemical_formula space_group_name
+#>           <char>           <char>           <char>
+#> 1:      ICSD 422          Si1 Sr2          P n m a
+
+# 4. Access detailed calculated properties, like the final bond angles table
+# The list-columns are accessed with [[]]
+cat("\nFirst 5 calculated bond angles (with propagated errors):\n")
+#> 
+#> First 5 calculated bond angles (with propagated errors):
+print(analysis_results$bond_angles[][1:5])
+#> [[1]]
+#> Key: <CentralAtom, Neighbor1, Neighbor2>
+#>     CentralAtom     Neighbor1     Neighbor2     Angle AngleError
+#>          <char>        <fctr>        <fctr>     <num>      <num>
+#>  1:         Si1 Sr1_4_0_-1_-1  Sr1_4_0_0_-1 107.92071  0.3991814
+#>  2:         Si1 Sr1_4_0_-1_-1  Sr2_1_0_0_-1  72.62529  0.2625336
+#>  3:         Si1 Sr1_4_0_-1_-1 Sr2_3_-1_-1_0  69.97350  0.1320523
+#>  4:         Si1 Sr1_4_0_-1_-1  Sr2_3_-1_0_0 149.23688  0.4492550
+#>  5:         Si1 Sr1_4_0_-1_-1   Sr1_1_0_0_0 125.55190  0.2121372
+#>  6:         Si1 Sr1_4_0_-1_-1   Sr1_2_0_0_0  73.87978  0.2610475
+#>  7:         Si1  Sr1_4_0_0_-1  Sr2_1_0_0_-1  72.62529  0.2625336
+#>  8:         Si1  Sr1_4_0_0_-1 Sr2_3_-1_-1_0 149.23688  0.4492550
+#>  9:         Si1  Sr1_4_0_0_-1  Sr2_3_-1_0_0  69.97350  0.1320523
+#> 10:         Si1  Sr1_4_0_0_-1   Sr1_1_0_0_0 125.55190  0.2121372
+#> 11:         Si1  Sr1_4_0_0_-1   Sr1_2_0_0_0  73.87978  0.2610475
+#> 12:         Si1  Sr2_1_0_0_-1 Sr2_3_-1_-1_0  77.75631  0.2603180
+#> 13:         Si1  Sr2_1_0_0_-1  Sr2_3_-1_0_0  77.75631  0.2603180
+#> 14:         Si1  Sr2_1_0_0_-1   Sr1_1_0_0_0 129.28796  0.4362480
+#> 15:         Si1  Sr2_1_0_0_-1   Sr1_2_0_0_0 121.33944  0.4252563
+#> 16:         Si1 Sr2_3_-1_-1_0  Sr2_3_-1_0_0  95.99102  0.3306464
+#> 17:         Si1 Sr2_3_-1_-1_0   Sr1_1_0_0_0  69.08689  0.2442089
+#> 18:         Si1 Sr2_3_-1_-1_0   Sr1_2_0_0_0 130.72237  0.1897741
+#> 19:         Si1  Sr2_3_-1_0_0   Sr1_1_0_0_0  69.08689  0.2442089
+#> 20:         Si1  Sr2_3_-1_0_0   Sr1_2_0_0_0 130.72237  0.1897741
+#> 21:         Si1   Sr1_1_0_0_0   Sr1_2_0_0_0 109.37260  0.4040346
+#> 22:         Sr1 Si1_4_0_-1_-1  Si1_4_0_0_-1 107.92071  0.3069470
+#> 23:         Sr1 Si1_4_0_-1_-1   Si1_1_0_0_0 117.29212  0.2557722
+#> 24:         Sr1 Si1_4_0_-1_-1   Si1_2_0_0_0 106.12022  0.2797485
+#> 25:         Sr1  Si1_4_0_0_-1   Si1_1_0_0_0 117.29212  0.2557722
+#> 26:         Sr1  Si1_4_0_0_-1   Si1_2_0_0_0 106.12022  0.2797485
+#> 27:         Sr1   Si1_1_0_0_0   Si1_2_0_0_0 100.63957  0.3584927
+#> 28:         Sr2  Si1_3_0_-1_0   Si1_1_0_0_0 102.24369  0.2819465
+#> 29:         Sr2  Si1_3_0_-1_0   Si1_3_0_0_0  95.99102  0.2556365
+#> 30:         Sr2   Si1_1_0_0_0   Si1_3_0_0_0 102.24369  0.2819465
+#>     CentralAtom     Neighbor1     Neighbor2     Angle AngleError
+#> 
+#> [[2]]
+#> NULL
+#> 
+#> [[3]]
+#> NULL
+#> 
+#> [[4]]
+#> NULL
+#> 
+#> [[5]]
+#> NULL
+```
+
+## Learning More
+
+For a detailed, step-by-step guide explaining each function, the
+crystallographic principles, and the formulas used for calculations,
+please see the package vignette.
+
+You can access it with the following command after you have successfully
+installed the package:
+
+``` r
+# This command opens the detailed package guide
+vignette("crystract")
+```
+
+## Author
+
+**Author and Maintainer:** Don Ngo (`dngo@carnegiescience.edu`)
