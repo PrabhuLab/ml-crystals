@@ -72,6 +72,7 @@ if (file.exists(cif_file)) {
 \seealso{
 Other post-processing: 
 \code{\link{calculate_weighted_average_network_distance}()},
-\code{\link{filter_ghost_distances}()}
+\code{\link{filter_ghost_distances}()},
+\code{\link{set_radii_data}()}
 }
 \concept{post-processing}

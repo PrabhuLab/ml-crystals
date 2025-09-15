@@ -5,7 +5,6 @@ date: "`r Sys.Date()`"
 output:
   rmarkdown::html_vignette:
     toc: true
-    toc_float: true
 vignette: >
   %\VignetteIndexEntry{Advanced Workflow: High-Throughput Analysis of Clathrate Structures}
   %\VignetteEngine{knitr::rmarkdown}
@@ -61,35 +60,23 @@ For this analysis, the CIF files are assumed to be organized into subdirectories
 
 ```{r load-files, echo=TRUE}
 # --- IMPORTANT ---
-# Replace this path with the root directory containing your categorized CIF files.
-cif_root_dir <- "path/to/your/cif/root/directory" 
+cif_root_dir <- system.file("extdata", "Verified", package = "crystract")
 
-if (!dir.exists(cif_root_dir)) {
-  # For this vignette, we'll create a placeholder to prevent an error.
-  # In a real run, you should ensure the path is correct.
-  warning(paste("Directory not found:", cif_root_dir, ". Placeholder data will be used."), immediate. = TRUE)
-  file_map <- data.table(file_path = character(0), file_name = character(0), category = character(0))
-  all_cif_paths <- character(0)
-} else {
-  category_dirs <- list.dirs(path = cif_root_dir, full.names = TRUE, recursive = FALSE)
-  
-  file_map_list <- lapply(category_dirs, function(dir) {
-    full_paths <- list.files(path = dir, pattern = "\\.cif$", full.names = TRUE, ignore.case = TRUE)
-    if (length(full_paths) == 0) return(NULL)
-    data.table(file_path = full_paths, file_name = basename(full_paths), category = basename(dir))
-  })
-  
-  file_map <- rbindlist(file_map_list, fill = TRUE)
-  all_cif_paths <- if (nrow(file_map) > 0) file_map$file_path else character(0)
-}
+if (!dir.exists(cif_root_dir)) stop(paste("CRITICAL ERROR: Root directory not found:", cif_root_dir))
 
-# Stop if no files are found; otherwise, report the count.
-if (length(all_cif_paths) == 0) {
-  cat("No CIF files found. The rest of the vignette will not be executed.\n")
-  knitr::opts_chunk$set(eval = FALSE) # Stop running the following chunks
-} else {
-  cat("Found", length(all_cif_paths), "total CIF files across", length(unique(file_map$category)), "categories.\n")
-}
+category_dirs <- list.dirs(path = cif_root_dir, full.names = TRUE, recursive = FALSE)
+
+file_map_list <- lapply(category_dirs, function(dir) {
+  full_paths <- list.files(path = dir, pattern = "\\.cif$", full.names = TRUE, ignore.case = TRUE)
+  if (length(full_paths) == 0) return(NULL)
+  data.table(file_path = full_paths, file_name = basename(full_paths), category = basename(dir))
+})
+
+file_map <- rbindlist(file_map_list, fill = TRUE)
+all_cif_paths <- if (nrow(file_map) > 0) file_map$file_path else character(0)
+
+cat("Found", length(all_cif_paths), "total CIF files across", length(category_dirs), "categories.\n")
+if (length(all_cif_paths) == 0) stop("Execution stopped: No CIF files were found.")
 ```
 
 ## 3. Optimized Batch Analysis and Custom Pipeline
@@ -262,31 +249,6 @@ datatable(
   options = list(pageLength = 15, dom = 'Bfrtip', buttons = c('copy', 'csv', 'excel')),
   colnames = c("File", "Category", "Lattice 'a' (Å)", "Weighted Dist (Å)")
 )
-```
-
-## 6. Exporting Final Results and Conclusion
-
-This final section saves all key results for sharing and archival.
-
-```{r export-artifacts, echo=TRUE}
-# Save the interactive plot as a self-contained HTML file
-plot_filename <- file.path(export_dir, "interactive_clathrate_plot.html")
-saveWidget(interactive_plot, file = plot_filename, selfcontained = TRUE)
-cat(paste0("Interactive plot saved to '", plot_filename, "'\n"))
-
-# Save the final data table as a self-contained HTML file
-final_data_table_widget <- datatable(
-  plot_data, caption = "Final Processed Data for Clathrate Structures",
-  extensions = 'Buttons', options = list(dom = 'Bfrtip', buttons = c('copy', 'csv', 'excel'))
-)
-plot_table_filename <- file.path(export_dir, "final_clathrate_data.html")
-saveWidget(final_data_table_widget, file = plot_table_filename, selfcontained = TRUE)
-cat(paste0("Interactive plot data table saved to '", plot_table_filename, "'\n"))
-
-# Use the package's built-in exporter for the detailed raw analysis results
-detailed_export_path <- file.path(export_dir, "detailed_analysis_csvs")
-export_analysis_to_csv(analysis_results = analysis_results, output_dir = detailed_export_path, overwrite = TRUE)
-cat("...Done. Check the '", export_dir, "' folder for all outputs.\n")
 ```
 
 ### Conclusion

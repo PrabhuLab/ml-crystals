@@ -5,10 +5,11 @@
 \alias{covalent_radii}
 \title{Atomic Radii Data for Bond-Length Estimation}
 \format{
-A data table with two columns:
+A data table with three columns:
 \describe{
 \item{Symbol}{The chemical symbol of the element.}
 \item{Radius}{The atomic radius in Angstroms.}
+\item{Type}{The type of radius, e.g., "covalent". The default table only contains covalent radii.}
 }
 }
 \source{

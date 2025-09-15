@@ -4,5 +4,4 @@
 ^Meta$
 ^LICENSE\.md$
 ^README\.Rmd$
-^covalent_radii\.R$
-^covalent_radii_emsley\.csv$
+^data-raw$

@@ -4,7 +4,12 @@
 \alias{filter_ghost_distances}
 \title{Filter Ghost Distances Using Atomic Radii}
 \usage{
-filter_ghost_distances(distances, atomic_coordinates, margin = 0.1)
+filter_ghost_distances(
+  distances,
+  atomic_coordinates,
+  margin = 0.1,
+  radii_type = "covalent"
+)
 }
 \arguments{
 \item{distances}{A \code{data.table} of interatomic distances, typically from
@@ -16,6 +21,11 @@ filter_ghost_distances(distances, atomic_coordinates, margin = 0.1)
 \item{margin}{A numeric value (default 0.1) specifying the tolerance. A
 distance \code{d} between atoms with radii \code{r1} and \code{r2} is kept if
 \verb{(r1+r2)*(1-margin) <= d <= (r1+r2)*(1+margin)}.}
+
+\item{radii_type}{A character string specifying the type of radius to use for
+the calculation (e.g., \code{"covalent"}, \code{"ionic"}). This value must correspond
+to an entry in the \code{Type} column of the active radii table. Defaults to \code{"covalent"}.
+The radii table can be customized for the session using \code{set_radii_data()}.}
 }
 \value{
 A list containing two \code{data.table}s:
@@ -25,7 +35,7 @@ explaining the reason for removal.}
 }
 \description{
 Cleans a distance table by removing physically implausible distances.
-It uses a built-in table of covalent radii to establish a plausible bond length
+It uses a table of atomic radii to establish a plausible bond length
 range for each atom pair. Any calculated distance falling outside this range
 (defined by a \code{margin}) is considered a "ghost" distance and is removed. This
 is particularly useful for cleaning data from disordered crystal structures.
@@ -37,6 +47,7 @@ is particularly useful for cleaning data from disordered crystal structures.
 \seealso{
 Other post-processing: 
 \code{\link{calculate_weighted_average_network_distance}()},
-\code{\link{export_analysis_to_csv}()}
+\code{\link{export_analysis_to_csv}()},
+\code{\link{set_radii_data}()}
 }
 \concept{post-processing}

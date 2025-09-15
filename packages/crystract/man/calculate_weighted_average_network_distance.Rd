@@ -31,6 +31,7 @@ for site multiplicity and occupancy of the central atoms.
 \seealso{
 Other post-processing: 
 \code{\link{export_analysis_to_csv}()},
-\code{\link{filter_ghost_distances}()}
+\code{\link{filter_ghost_distances}()},
+\code{\link{set_radii_data}()}
 }
 \concept{post-processing}

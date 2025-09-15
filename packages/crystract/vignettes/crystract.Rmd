@@ -1,11 +1,10 @@
 ---
 title: "Using the crystract Package for Crystallographic Analysis"
-author: "Don Ngo"
+author: "Don Ngo, Julia Maria Hubner, Anirudh Prabhu"
 date: "`r Sys.Date()`"
 output:
   rmarkdown::html_vignette:
     toc: true
-    toc_float: true
   pdf_document:
     toc: true
 vignette: >
@@ -202,7 +201,8 @@ adjacent unit cells. The `expand_transformed_coords` function generates
 a **supercell** (in this case, 3x3x3) by translating the primary unit
 cell atoms by integer vectors $(i, j, k)$, where $i, j, k$ each range
 from -1 to 1. An atom at fractional coordinate $(x, y, z)$ generates new
-coordinates: $$
+coordinates: 
+$$
 (x_{exp}, y_{exp}, z_{exp}) = (x + i, y + j, z + k)
 $$
 
@@ -256,9 +256,11 @@ print(head(distances[order(Distance)]))
 Identifying which atoms are "bonded" is key to determining the
 **coordination number (CN)**. `crystract` implements several methods:
 
--   **`minimum_distance` (Default)**: Defines a custom distance cutoff for each central atom $i$: $$
+-   **`minimum_distance` (Default)**: Defines a custom distance cutoff for each central atom $i$: 
+$$
     d_i^\text{cut} = (1+\delta) d_i^\text{min}
-    $$ Here, $d_i^\text{min}$ is the shortest distance from atom $i$ to
+$$
+    Here, $d_i^\text{min}$ is the shortest distance from atom $i$ to
     any other atom, and $\delta$ is a tolerance parameter (default is
     0.1).
 -   **`brunner`**: Identifies bonds by finding the largest gap in the reciprocal distances.
@@ -290,21 +292,22 @@ coordinates must first be converted to an orthogonal Cartesian system.
 1.  **Fractional to Cartesian Conversion:** A fractional coordinate
     $(\mathbf{x}_f)$ is converted to a Cartesian coordinate
     $(\mathbf{x}_c)$ via a transformation matrix $\mathbf{M}$:
-    $$
+$$
     \begin{pmatrix} x_c \\ y_c \\ z_c \end{pmatrix} = \mathbf{M} \cdot \begin{pmatrix} x_f \\ y_f \\ z_f \end{pmatrix} \quad \text{where} \quad
     \mathbf{M} = \begin{pmatrix}
     a & b \cos\gamma & c \cos\beta \\
     0 & b \sin\gamma & \frac{c(\cos\alpha - \cos\beta \cos\gamma)}{\sin\gamma} \\
     0 & 0 & \frac{V}{ab\sin\gamma}
     \end{pmatrix}
-    $$ where $V$ is the unit cell volume.
+$$
+    where $V$ is the unit cell volume.
 
 2.  **Angle via Dot Product:** With atoms in Cartesian space, the angle
     $\theta$ between vectors $\vec{u}$ (from B to A) and $\vec{v}$ (from
     B to C) is:
-    $$
+$$
     \theta = \arccos\left( \frac{\vec{u} \cdot \vec{v}}{|\vec{u}| |\vec{v}|} \right)
-    $$
+$$
 
 The `calculate_angles` function implements this for all possible bond
 angles around each central atom.
@@ -540,6 +543,37 @@ print(list.files(export_path, recursive = TRUE))
 # 5. Clean up the temporary directory after the example.
 unlink(export_path, recursive = TRUE)
 ```
+### 2.7 Customizing Atomic Radii
+
+The `crystract` package includes a comprehensive table of covalent radii for use with `filter_ghost_distances()`. However, you may want to use a different set of radii, such as ionic radii, or add a missing element. The `set_radii_data()` function provides a flexible way to replace the default data for your entire R session.
+
+A custom radii table must contain three columns: `Symbol`, `Radius`, and `Type`. This allows you to create a single table with multiple radius types and select the one you need at analysis time.
+
+Let's demonstrate by creating a small table with both covalent and ionic radii for Sodium (Na) and Chlorine (Cl).
+
+```{r customize-radii}
+# 1. Create a custom radii data.table
+my_custom_radii <- data.table::data.table(
+  Symbol = c("Na", "Na", "Cl", "Cl"),
+  Radius = c(1.54, 1.02, 0.99, 1.81),
+  Type   = c("covalent", "ionic", "covalent", "ionic")
+)
+
+# 2. Set this table as the active table for this R session
+set_radii_data(my_custom_radii)
+
+# 3. Now, if you were to call filter_ghost_distances(), you could specify
+#    which radius type to use. For example, to filter based on ionic radii:
+#
+#    filter_ghost_distances(distances, atomic_coordinates, radii_type = "ionic")
+#    
+#    This would use radii of 1.02 Å for Na and 1.81 Å for Cl.
+#    If you omit the argument, it defaults to "covalent" (1.54 Å and 0.99 Å).
+
+# 4. To reset to the package's default table at any time:
+set_radii_data(NULL)
+```
+This feature provides full control over the criteria used for identifying and filtering physically implausible bond distances, making the analysis adaptable to a wide range of chemical systems.
 
 ## Conclusion
 

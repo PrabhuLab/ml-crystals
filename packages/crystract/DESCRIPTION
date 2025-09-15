@@ -23,8 +23,13 @@ Imports:
     dplyr,
     stringr
 Suggests:
+    DT,
+    ggplot2,
+    htmlwidgets,
     knitr,
+    plotly,
     rmarkdown,
     testthat (>= 3.0.0)
 VignetteBuilder: knitr
 Config/testthat/edition: 3
+LazyData: true

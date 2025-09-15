@@ -855,49 +855,98 @@ filter_by_elements <- function(distances,
 
 #' @title Filter Ghost Distances Using Atomic Radii
 #' @description Cleans a distance table by removing physically implausible distances.
-#'   It uses a built-in table of covalent radii to establish a plausible bond length
-#'   range for each atom pair. Any calculated distance falling outside this range
-#'   (defined by a `margin`) is considered a "ghost" distance and is removed. This
-#'   is particularly useful for cleaning data from disordered crystal structures.
+#' It uses a table of atomic radii to establish a plausible bond length
+#' range for each atom pair. Any calculated distance falling outside this range
+#' (defined by a `margin`) is considered a "ghost" distance and is removed. This
+#' is particularly useful for cleaning data from disordered crystal structures.
 #' @param distances A `data.table` of interatomic distances, typically from
-#'   `calculate_distances`. Must contain `Atom1`, `Atom2`, and `Distance`.
+#' `calculate_distances`. Must contain `Atom1`, `Atom2`, and `Distance`.
 #' @param atomic_coordinates A `data.table` of asymmetric atoms from
-#'   `extract_atomic_coordinates`. Used to link atom labels to element types.
+#' `extract_atomic_coordinates`. Used to link atom labels to element types.
 #' @param margin A numeric value (default 0.1) specifying the tolerance. A
-#'   distance `d` between atoms with radii `r1` and `r2` is kept if
-#'   `(r1+r2)*(1-margin) <= d <= (r1+r2)*(1+margin)`.
+#' distance `d` between atoms with radii `r1` and `r2` is kept if
+#' `(r1+r2)*(1-margin) <= d <= (r1+r2)*(1+margin)`.
+#' @param radii_type A character string specifying the type of radius to use for
+#' the calculation (e.g., `"covalent"`, `"ionic"`). This value must correspond
+#' to an entry in the `Type` column of the active radii table. Defaults to `"covalent"`.
+#' The radii table can be customized for the session using `set_radii_data()`.
 #' @return A list containing two `data.table`s:
-#'   \item{kept}{The distances considered physically plausible.}
-#'   \item{removed}{The "ghost" distances that were filtered out, with columns
-#'   explaining the reason for removal.}
+#' \item{kept}{The distances considered physically plausible.}
+#' \item{removed}{The "ghost" distances that were filtered out, with columns
+#' explaining the reason for removal.}
 #' @family post-processing
 #' @export
 #' @examples
 #' # This example assumes you have `distances` and `atomic_coordinates` tables.
 #' # See the vignette for a full workflow.
-filter_ghost_distances <- function(distances, atomic_coordinates, margin = 0.1) {
+filter_ghost_distances <- function(distances,
+                                   atomic_coordinates,
+                                   margin = 0.1,
+                                   radii_type = "covalent") {
   # --- 1. Augment data for calculation ---
   # Create a lookup for element type from the parent atom label
-  element_info <- atomic_coordinates[, .(ParentLabel = Label, Element = sub("[0-9].*", "", Label))]
-  # Use the package's covalent radii data
-  radii_lookup <- copy(covalent_radii)
+  element_info <- atomic_coordinates[, .(ParentLabel = Label,
+                                         Element = sub("[0-9].*", "", Label))]
+
+  # Use the new helper to get the active radii table (user-defined or default)
+  all_radii_data <- get_radii_data()
+
+  # Filter the radii table for the specific type requested by the user
+  radii_lookup <- all_radii_data[Type == radii_type]
+
+  if (nrow(radii_lookup) == 0) {
+    stop(
+      paste0(
+        "Radii type '",
+        radii_type,
+        "' not found in the active radii table. ",
+        "Available types are: ",
+        paste(unique(all_radii_data$Type), collapse = ", ")
+      )
+    )
+  }
+
+  # Keep only Symbol and Radius for the merge
+  radii_lookup <- radii_lookup[, .(Symbol, Radius)]
 
   merged <- copy(distances)
   # Create Parent labels in the distances table to match element_info
-  merged[, `:=`(Parent1 = sub("_.*", "", Atom1), Parent2 = sub("_.*", "", Atom2))]
-
+  merged[, `:=`(Parent1 = sub("_.*", "", Atom1),
+                Parent2 = sub("_.*", "", Atom2))]
   # Merge to get Element and Radius for Atom1
-  merged <- merge(merged, element_info, by.x = "Parent1", by.y = "ParentLabel", all.x = TRUE)
+  merged <- merge(
+    merged,
+    element_info,
+    by.x = "Parent1",
+    by.y = "ParentLabel",
+    all.x = TRUE
+  )
   setnames(merged, "Element", "Element1")
-  merged <- merge(merged, radii_lookup, by.x = "Element1", by.y = "Symbol", all.x = TRUE)
+  merged <- merge(
+    merged,
+    radii_lookup,
+    by.x = "Element1",
+    by.y = "Symbol",
+    all.x = TRUE
+  )
   setnames(merged, "Radius", "Radius1")
-
   # Merge to get Element and Radius for Atom2
-  merged <- merge(merged, element_info, by.x = "Parent2", by.y = "ParentLabel", all.x = TRUE)
+  merged <- merge(
+    merged,
+    element_info,
+    by.x = "Parent2",
+    by.y = "ParentLabel",
+    all.x = TRUE
+  )
   setnames(merged, "Element", "Element2")
-  merged <- merge(merged, radii_lookup, by.x = "Element2", by.y = "Symbol", all.x = TRUE)
+  merged <- merge(
+    merged,
+    radii_lookup,
+    by.x = "Element2",
+    by.y = "Symbol",
+    all.x = TRUE
+  )
   setnames(merged, "Radius", "Radius2")
-
   # Handle cases where radii are not found (e.g., vacancies) by setting them to 0
   merged[is.na(Radius1), Radius1 := 0][is.na(Radius2), Radius2 := 0]
 
@@ -907,15 +956,23 @@ filter_ghost_distances <- function(distances, atomic_coordinates, margin = 0.1) 
   merged[, upper_bound := expected_dist * (1 + margin)]
 
   # --- 3. Apply the filter ---
-  kept_mask <- merged$Distance >= merged$lower_bound & merged$Distance <= merged$upper_bound
-
+  kept_mask <- merged$Distance >= merged$lower_bound &
+    merged$Distance <= merged$upper_bound & merged$expected_dist > 0
   kept_dt <- merged[kept_mask, names(distances), with = FALSE]
   # Create a detailed table of removed rows for quality control
   removed_dt <- merged[!kept_mask, .(
-    Atom1, Atom2, Distance, expected_dist, lower_bound, upper_bound,
-    Reason = ifelse(Distance < lower_bound, "Distance is TOO SHORT", "Distance is TOO LONG")
+    Atom1,
+    Atom2,
+    Distance,
+    expected_dist,
+    lower_bound,
+    upper_bound,
+    Reason = ifelse(
+      Distance < lower_bound,
+      "Distance is TOO SHORT",
+      "Distance is TOO LONG"
+    )
   )]
-
   return(list(kept = kept_dt, removed = removed_dt))
 }
 
@@ -933,7 +990,9 @@ filter_ghost_distances <- function(distances, atomic_coordinates, margin = 0.1) 
 #' @return A single numeric value representing the weighted average bond distance.
 #' @family post-processing
 #' @export
-calculate_weighted_average_network_distance <- function(distances, atomic_coordinates, wyckoff_symbols) {
+calculate_weighted_average_network_distance <- function(distances,
+                                                        atomic_coordinates,
+                                                        wyckoff_symbols) {
   # --- 1. Prepare atomic info and identify network atoms ---
   atom_info <- copy(atomic_coordinates)
   atom_info[, FullWyckoff := paste0(WyckoffMultiplicity, WyckoffSymbol)]
@@ -956,14 +1015,17 @@ calculate_weighted_average_network_distance <- function(distances, atomic_coordi
   network_distances <- merge(
     network_distances,
     atom_info[, .(Label, Occupancy2 = Occupancy)],
-    by.x = "Parent2", by.y = "Label", all.x = TRUE
+    by.x = "Parent2",
+    by.y = "Label",
+    all.x = TRUE
   )
   network_distances[is.na(Occupancy2), Occupancy2 := 1]
   # --- END: ADDED SECTION ---
 
   # --- 3. Calculate SIMPLE sum of distances (sum_d) and coordination (n) ---
   atom_dist_summary <- network_distances[, .(
-    sum_d = sum(Distance), # Simple, unweighted sum of bond lengths
+    sum_d = sum(Distance),
+    # Simple, unweighted sum of bond lengths
     n = .N               # Simple, unweighted coordination number
   ), by = Atom1]
 
@@ -971,16 +1033,25 @@ calculate_weighted_average_network_distance <- function(distances, atomic_coordi
 
   # --- 4. Merge summary with main atomic info ---
   unique_summary <- unique(atom_dist_summary, by = "ParentLabel")
-  merged_data <- merge(atom_info[Label %in% network_atom_labels],
-                       unique_summary[, .(ParentLabel, sum_d, n)],
-                       by.x = "Label", by.y = "ParentLabel", all.x = TRUE)
+  merged_data <- merge(
+    atom_info[Label %in% network_atom_labels],
+    unique_summary[, .(ParentLabel, sum_d, n)],
+    by.x = "Label",
+    by.y = "ParentLabel",
+    all.x = TRUE
+  )
 
   merged_data <- merged_data[!is.na(sum_d)]
-  if (nrow(merged_data) == 0) return(NA_real_)
+  if (nrow(merged_data) == 0)
+    return(NA_real_)
 
   # --- 5. Calculate the final weighted average ---
-  numerator <- sum(merged_data$WyckoffMultiplicity * merged_data$Occupancy * merged_data$sum_d, na.rm = TRUE)
-  denominator <- sum(merged_data$WyckoffMultiplicity * merged_data$Occupancy * merged_data$n, na.rm = TRUE)
+  numerator <- sum(
+    merged_data$WyckoffMultiplicity * merged_data$Occupancy * merged_data$sum_d,
+    na.rm = TRUE
+  )
+  denominator <- sum(merged_data$WyckoffMultiplicity * merged_data$Occupancy * merged_data$n,
+                     na.rm = TRUE)
 
   if (is.na(denominator) || denominator == 0) {
     return(NA_real_)

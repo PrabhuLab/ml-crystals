@@ -155,6 +155,8 @@ utils::globalVariables(
     "expected_dist",
     "lower_bound",
     "upper_bound",
+    "Type",
+    "Radius",
     "NeighborOccupancy",
     "avg_d",
     "n",
