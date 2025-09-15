@@ -7,12 +7,12 @@ authors:
   - name: Julia M. Huebner
     orcid: 0000-0003-2048-6629
     affiliation: 2
-      - name: Marc Spitzner
+  - name: Marc Spitzner
     affiliation: 3
   - name: Shaunna M. Morrison
     orcid: 0000-0002-1712-8057
     affiliation: 4
-    - name: Anirudh Prabhu
+  - name: Anirudh Prabhu
     orcid: 0000-0002-9921-6084
     affiliation: 1
 affiliations:
@@ -22,7 +22,7 @@ affiliations:
    index: 2
  - name: Elbe Flugzeugwerke GmbH, Dresden, Germany
    index: 3
-   -name: Department of Earth and Planetary Sciences, Rutgers University, Piscataway, NJ, USA
+ - name: Department of Earth and Planetary Sciences, Rutgers University, Piscataway, NJ, USA
    index: 4
 date: 15 September 2025
 bibliography: paper.bib
