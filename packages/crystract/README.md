@@ -155,59 +155,21 @@ print(analysis_results[, .(database_code, chemical_formula, space_group_name)])
 #>           <char>           <char>           <char>
 #> 1:      ICSD 422          Si1 Sr2          P n m a
 
-# 4. Access detailed calculated properties, like the final bond angles table
-# The list-columns are accessed with [[]]
+# 4. Access detailed calculated properties
+# To get the bond angles table, we must extract the first element `[[1]]` 
+# from the list-column, then we can select the first 5 rows `[1:5, ]`.
 cat("\nFirst 5 calculated bond angles (with propagated errors):\n")
 #> 
 #> First 5 calculated bond angles (with propagated errors):
-print(analysis_results$bond_angles[][1:5])
-#> [[1]]
+print(analysis_results$bond_angles[[1]][1:5, ])
 #> Key: <CentralAtom, Neighbor1, Neighbor2>
-#>     CentralAtom     Neighbor1     Neighbor2     Angle AngleError
-#>          <char>        <fctr>        <fctr>     <num>      <num>
-#>  1:         Si1 Sr1_4_0_-1_-1  Sr1_4_0_0_-1 107.92071  0.3991814
-#>  2:         Si1 Sr1_4_0_-1_-1  Sr2_1_0_0_-1  72.62529  0.2625336
-#>  3:         Si1 Sr1_4_0_-1_-1 Sr2_3_-1_-1_0  69.97350  0.1320523
-#>  4:         Si1 Sr1_4_0_-1_-1  Sr2_3_-1_0_0 149.23688  0.4492550
-#>  5:         Si1 Sr1_4_0_-1_-1   Sr1_1_0_0_0 125.55190  0.2121372
-#>  6:         Si1 Sr1_4_0_-1_-1   Sr1_2_0_0_0  73.87978  0.2610475
-#>  7:         Si1  Sr1_4_0_0_-1  Sr2_1_0_0_-1  72.62529  0.2625336
-#>  8:         Si1  Sr1_4_0_0_-1 Sr2_3_-1_-1_0 149.23688  0.4492550
-#>  9:         Si1  Sr1_4_0_0_-1  Sr2_3_-1_0_0  69.97350  0.1320523
-#> 10:         Si1  Sr1_4_0_0_-1   Sr1_1_0_0_0 125.55190  0.2121372
-#> 11:         Si1  Sr1_4_0_0_-1   Sr1_2_0_0_0  73.87978  0.2610475
-#> 12:         Si1  Sr2_1_0_0_-1 Sr2_3_-1_-1_0  77.75631  0.2603180
-#> 13:         Si1  Sr2_1_0_0_-1  Sr2_3_-1_0_0  77.75631  0.2603180
-#> 14:         Si1  Sr2_1_0_0_-1   Sr1_1_0_0_0 129.28796  0.4362480
-#> 15:         Si1  Sr2_1_0_0_-1   Sr1_2_0_0_0 121.33944  0.4252563
-#> 16:         Si1 Sr2_3_-1_-1_0  Sr2_3_-1_0_0  95.99102  0.3306464
-#> 17:         Si1 Sr2_3_-1_-1_0   Sr1_1_0_0_0  69.08689  0.2442089
-#> 18:         Si1 Sr2_3_-1_-1_0   Sr1_2_0_0_0 130.72237  0.1897741
-#> 19:         Si1  Sr2_3_-1_0_0   Sr1_1_0_0_0  69.08689  0.2442089
-#> 20:         Si1  Sr2_3_-1_0_0   Sr1_2_0_0_0 130.72237  0.1897741
-#> 21:         Si1   Sr1_1_0_0_0   Sr1_2_0_0_0 109.37260  0.4040346
-#> 22:         Sr1 Si1_4_0_-1_-1  Si1_4_0_0_-1 107.92071  0.3069470
-#> 23:         Sr1 Si1_4_0_-1_-1   Si1_1_0_0_0 117.29212  0.2557722
-#> 24:         Sr1 Si1_4_0_-1_-1   Si1_2_0_0_0 106.12022  0.2797485
-#> 25:         Sr1  Si1_4_0_0_-1   Si1_1_0_0_0 117.29212  0.2557722
-#> 26:         Sr1  Si1_4_0_0_-1   Si1_2_0_0_0 106.12022  0.2797485
-#> 27:         Sr1   Si1_1_0_0_0   Si1_2_0_0_0 100.63957  0.3584927
-#> 28:         Sr2  Si1_3_0_-1_0   Si1_1_0_0_0 102.24369  0.2819465
-#> 29:         Sr2  Si1_3_0_-1_0   Si1_3_0_0_0  95.99102  0.2556365
-#> 30:         Sr2   Si1_1_0_0_0   Si1_3_0_0_0 102.24369  0.2819465
-#>     CentralAtom     Neighbor1     Neighbor2     Angle AngleError
-#> 
-#> [[2]]
-#> NULL
-#> 
-#> [[3]]
-#> NULL
-#> 
-#> [[4]]
-#> NULL
-#> 
-#> [[5]]
-#> NULL
+#>    CentralAtom     Neighbor1     Neighbor2     Angle AngleError
+#>         <char>        <fctr>        <fctr>     <num>      <num>
+#> 1:         Si1 Sr1_4_0_-1_-1  Sr1_4_0_0_-1 107.92071  0.3991814
+#> 2:         Si1 Sr1_4_0_-1_-1  Sr2_1_0_0_-1  72.62529  0.2625336
+#> 3:         Si1 Sr1_4_0_-1_-1 Sr2_3_-1_-1_0  69.97350  0.1320523
+#> 4:         Si1 Sr1_4_0_-1_-1  Sr2_3_-1_0_0 149.23688  0.4492550
+#> 5:         Si1 Sr1_4_0_-1_-1   Sr1_1_0_0_0 125.55190  0.2121372
 ```
 
 ## Learning More

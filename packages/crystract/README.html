@@ -737,59 +737,21 @@ demonstrate it on a single example file included with the package.</p>
 <span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a><span class="co">#&gt;           &lt;char&gt;           &lt;char&gt;           &lt;char&gt;</span></span>
 <span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a><span class="co">#&gt; 1:      ICSD 422          Si1 Sr2          P n m a</span></span>
 <span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a></span>
-<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a><span class="co"># 4. Access detailed calculated properties, like the final bond angles table</span></span>
-<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a><span class="co"># The list-columns are accessed with [[]]</span></span>
-<span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;</span><span class="sc">\n</span><span class="st">First 5 calculated bond angles (with propagated errors):</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
-<span id="cb3-20"><a href="#cb3-20" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb3-21"><a href="#cb3-21" tabindex="-1"></a><span class="co">#&gt; First 5 calculated bond angles (with propagated errors):</span></span>
-<span id="cb3-22"><a href="#cb3-22" tabindex="-1"></a><span class="fu">print</span>(analysis_results<span class="sc">$</span>bond_angles[][<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>])</span>
-<span id="cb3-23"><a href="#cb3-23" tabindex="-1"></a><span class="co">#&gt; [[1]]</span></span>
+<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a><span class="co"># 4. Access detailed calculated properties</span></span>
+<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a><span class="co"># To get the bond angles table, we must extract the first element `[[1]]` </span></span>
+<span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a><span class="co"># from the list-column, then we can select the first 5 rows `[1:5, ]`.</span></span>
+<span id="cb3-20"><a href="#cb3-20" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;</span><span class="sc">\n</span><span class="st">First 5 calculated bond angles (with propagated errors):</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb3-21"><a href="#cb3-21" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb3-22"><a href="#cb3-22" tabindex="-1"></a><span class="co">#&gt; First 5 calculated bond angles (with propagated errors):</span></span>
+<span id="cb3-23"><a href="#cb3-23" tabindex="-1"></a><span class="fu">print</span>(analysis_results<span class="sc">$</span>bond_angles[[<span class="dv">1</span>]][<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>, ])</span>
 <span id="cb3-24"><a href="#cb3-24" tabindex="-1"></a><span class="co">#&gt; Key: &lt;CentralAtom, Neighbor1, Neighbor2&gt;</span></span>
-<span id="cb3-25"><a href="#cb3-25" tabindex="-1"></a><span class="co">#&gt;     CentralAtom     Neighbor1     Neighbor2     Angle AngleError</span></span>
-<span id="cb3-26"><a href="#cb3-26" tabindex="-1"></a><span class="co">#&gt;          &lt;char&gt;        &lt;fctr&gt;        &lt;fctr&gt;     &lt;num&gt;      &lt;num&gt;</span></span>
-<span id="cb3-27"><a href="#cb3-27" tabindex="-1"></a><span class="co">#&gt;  1:         Si1 Sr1_4_0_-1_-1  Sr1_4_0_0_-1 107.92071  0.3991814</span></span>
-<span id="cb3-28"><a href="#cb3-28" tabindex="-1"></a><span class="co">#&gt;  2:         Si1 Sr1_4_0_-1_-1  Sr2_1_0_0_-1  72.62529  0.2625336</span></span>
-<span id="cb3-29"><a href="#cb3-29" tabindex="-1"></a><span class="co">#&gt;  3:         Si1 Sr1_4_0_-1_-1 Sr2_3_-1_-1_0  69.97350  0.1320523</span></span>
-<span id="cb3-30"><a href="#cb3-30" tabindex="-1"></a><span class="co">#&gt;  4:         Si1 Sr1_4_0_-1_-1  Sr2_3_-1_0_0 149.23688  0.4492550</span></span>
-<span id="cb3-31"><a href="#cb3-31" tabindex="-1"></a><span class="co">#&gt;  5:         Si1 Sr1_4_0_-1_-1   Sr1_1_0_0_0 125.55190  0.2121372</span></span>
-<span id="cb3-32"><a href="#cb3-32" tabindex="-1"></a><span class="co">#&gt;  6:         Si1 Sr1_4_0_-1_-1   Sr1_2_0_0_0  73.87978  0.2610475</span></span>
-<span id="cb3-33"><a href="#cb3-33" tabindex="-1"></a><span class="co">#&gt;  7:         Si1  Sr1_4_0_0_-1  Sr2_1_0_0_-1  72.62529  0.2625336</span></span>
-<span id="cb3-34"><a href="#cb3-34" tabindex="-1"></a><span class="co">#&gt;  8:         Si1  Sr1_4_0_0_-1 Sr2_3_-1_-1_0 149.23688  0.4492550</span></span>
-<span id="cb3-35"><a href="#cb3-35" tabindex="-1"></a><span class="co">#&gt;  9:         Si1  Sr1_4_0_0_-1  Sr2_3_-1_0_0  69.97350  0.1320523</span></span>
-<span id="cb3-36"><a href="#cb3-36" tabindex="-1"></a><span class="co">#&gt; 10:         Si1  Sr1_4_0_0_-1   Sr1_1_0_0_0 125.55190  0.2121372</span></span>
-<span id="cb3-37"><a href="#cb3-37" tabindex="-1"></a><span class="co">#&gt; 11:         Si1  Sr1_4_0_0_-1   Sr1_2_0_0_0  73.87978  0.2610475</span></span>
-<span id="cb3-38"><a href="#cb3-38" tabindex="-1"></a><span class="co">#&gt; 12:         Si1  Sr2_1_0_0_-1 Sr2_3_-1_-1_0  77.75631  0.2603180</span></span>
-<span id="cb3-39"><a href="#cb3-39" tabindex="-1"></a><span class="co">#&gt; 13:         Si1  Sr2_1_0_0_-1  Sr2_3_-1_0_0  77.75631  0.2603180</span></span>
-<span id="cb3-40"><a href="#cb3-40" tabindex="-1"></a><span class="co">#&gt; 14:         Si1  Sr2_1_0_0_-1   Sr1_1_0_0_0 129.28796  0.4362480</span></span>
-<span id="cb3-41"><a href="#cb3-41" tabindex="-1"></a><span class="co">#&gt; 15:         Si1  Sr2_1_0_0_-1   Sr1_2_0_0_0 121.33944  0.4252563</span></span>
-<span id="cb3-42"><a href="#cb3-42" tabindex="-1"></a><span class="co">#&gt; 16:         Si1 Sr2_3_-1_-1_0  Sr2_3_-1_0_0  95.99102  0.3306464</span></span>
-<span id="cb3-43"><a href="#cb3-43" tabindex="-1"></a><span class="co">#&gt; 17:         Si1 Sr2_3_-1_-1_0   Sr1_1_0_0_0  69.08689  0.2442089</span></span>
-<span id="cb3-44"><a href="#cb3-44" tabindex="-1"></a><span class="co">#&gt; 18:         Si1 Sr2_3_-1_-1_0   Sr1_2_0_0_0 130.72237  0.1897741</span></span>
-<span id="cb3-45"><a href="#cb3-45" tabindex="-1"></a><span class="co">#&gt; 19:         Si1  Sr2_3_-1_0_0   Sr1_1_0_0_0  69.08689  0.2442089</span></span>
-<span id="cb3-46"><a href="#cb3-46" tabindex="-1"></a><span class="co">#&gt; 20:         Si1  Sr2_3_-1_0_0   Sr1_2_0_0_0 130.72237  0.1897741</span></span>
-<span id="cb3-47"><a href="#cb3-47" tabindex="-1"></a><span class="co">#&gt; 21:         Si1   Sr1_1_0_0_0   Sr1_2_0_0_0 109.37260  0.4040346</span></span>
-<span id="cb3-48"><a href="#cb3-48" tabindex="-1"></a><span class="co">#&gt; 22:         Sr1 Si1_4_0_-1_-1  Si1_4_0_0_-1 107.92071  0.3069470</span></span>
-<span id="cb3-49"><a href="#cb3-49" tabindex="-1"></a><span class="co">#&gt; 23:         Sr1 Si1_4_0_-1_-1   Si1_1_0_0_0 117.29212  0.2557722</span></span>
-<span id="cb3-50"><a href="#cb3-50" tabindex="-1"></a><span class="co">#&gt; 24:         Sr1 Si1_4_0_-1_-1   Si1_2_0_0_0 106.12022  0.2797485</span></span>
-<span id="cb3-51"><a href="#cb3-51" tabindex="-1"></a><span class="co">#&gt; 25:         Sr1  Si1_4_0_0_-1   Si1_1_0_0_0 117.29212  0.2557722</span></span>
-<span id="cb3-52"><a href="#cb3-52" tabindex="-1"></a><span class="co">#&gt; 26:         Sr1  Si1_4_0_0_-1   Si1_2_0_0_0 106.12022  0.2797485</span></span>
-<span id="cb3-53"><a href="#cb3-53" tabindex="-1"></a><span class="co">#&gt; 27:         Sr1   Si1_1_0_0_0   Si1_2_0_0_0 100.63957  0.3584927</span></span>
-<span id="cb3-54"><a href="#cb3-54" tabindex="-1"></a><span class="co">#&gt; 28:         Sr2  Si1_3_0_-1_0   Si1_1_0_0_0 102.24369  0.2819465</span></span>
-<span id="cb3-55"><a href="#cb3-55" tabindex="-1"></a><span class="co">#&gt; 29:         Sr2  Si1_3_0_-1_0   Si1_3_0_0_0  95.99102  0.2556365</span></span>
-<span id="cb3-56"><a href="#cb3-56" tabindex="-1"></a><span class="co">#&gt; 30:         Sr2   Si1_1_0_0_0   Si1_3_0_0_0 102.24369  0.2819465</span></span>
-<span id="cb3-57"><a href="#cb3-57" tabindex="-1"></a><span class="co">#&gt;     CentralAtom     Neighbor1     Neighbor2     Angle AngleError</span></span>
-<span id="cb3-58"><a href="#cb3-58" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb3-59"><a href="#cb3-59" tabindex="-1"></a><span class="co">#&gt; [[2]]</span></span>
-<span id="cb3-60"><a href="#cb3-60" tabindex="-1"></a><span class="co">#&gt; NULL</span></span>
-<span id="cb3-61"><a href="#cb3-61" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb3-62"><a href="#cb3-62" tabindex="-1"></a><span class="co">#&gt; [[3]]</span></span>
-<span id="cb3-63"><a href="#cb3-63" tabindex="-1"></a><span class="co">#&gt; NULL</span></span>
-<span id="cb3-64"><a href="#cb3-64" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb3-65"><a href="#cb3-65" tabindex="-1"></a><span class="co">#&gt; [[4]]</span></span>
-<span id="cb3-66"><a href="#cb3-66" tabindex="-1"></a><span class="co">#&gt; NULL</span></span>
-<span id="cb3-67"><a href="#cb3-67" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb3-68"><a href="#cb3-68" tabindex="-1"></a><span class="co">#&gt; [[5]]</span></span>
-<span id="cb3-69"><a href="#cb3-69" tabindex="-1"></a><span class="co">#&gt; NULL</span></span></code></pre></div>
+<span id="cb3-25"><a href="#cb3-25" tabindex="-1"></a><span class="co">#&gt;    CentralAtom     Neighbor1     Neighbor2     Angle AngleError</span></span>
+<span id="cb3-26"><a href="#cb3-26" tabindex="-1"></a><span class="co">#&gt;         &lt;char&gt;        &lt;fctr&gt;        &lt;fctr&gt;     &lt;num&gt;      &lt;num&gt;</span></span>
+<span id="cb3-27"><a href="#cb3-27" tabindex="-1"></a><span class="co">#&gt; 1:         Si1 Sr1_4_0_-1_-1  Sr1_4_0_0_-1 107.92071  0.3991814</span></span>
+<span id="cb3-28"><a href="#cb3-28" tabindex="-1"></a><span class="co">#&gt; 2:         Si1 Sr1_4_0_-1_-1  Sr2_1_0_0_-1  72.62529  0.2625336</span></span>
+<span id="cb3-29"><a href="#cb3-29" tabindex="-1"></a><span class="co">#&gt; 3:         Si1 Sr1_4_0_-1_-1 Sr2_3_-1_-1_0  69.97350  0.1320523</span></span>
+<span id="cb3-30"><a href="#cb3-30" tabindex="-1"></a><span class="co">#&gt; 4:         Si1 Sr1_4_0_-1_-1  Sr2_3_-1_0_0 149.23688  0.4492550</span></span>
+<span id="cb3-31"><a href="#cb3-31" tabindex="-1"></a><span class="co">#&gt; 5:         Si1 Sr1_4_0_-1_-1   Sr1_1_0_0_0 125.55190  0.2121372</span></span></code></pre></div>
 <h2 id="learning-more">Learning More</h2>
 <p>For a detailed, step-by-step guide explaining each function, the
 crystallographic principles, and the formulas used for calculations,

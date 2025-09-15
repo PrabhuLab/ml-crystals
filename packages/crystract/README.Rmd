@@ -112,10 +112,11 @@ analysis_results <- analyze_cif_files(cif_path)
 # The output is a data.table with metadata and list-columns for detailed results.
 print(analysis_results[, .(database_code, chemical_formula, space_group_name)])
 
-# 4. Access detailed calculated properties, like the final bond angles table
-# The list-columns are accessed with [[]]
+# 4. Access detailed calculated properties
+# To get the bond angles table, we must extract the first element `[[1]]` 
+# from the list-column, then we can select the first 5 rows `[1:5, ]`.
 cat("\nFirst 5 calculated bond angles (with propagated errors):\n")
-print(analysis_results$bond_angles[][1:5])
+print(analysis_results$bond_angles[[1]][1:5, ])
 ```
 
 ## Learning More
