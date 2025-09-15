@@ -29,6 +29,11 @@ This directory contains the main research and analysis workflow. **If you want t
     *   `data/`: Contains the processed data used in the analysis.
     *   `workflow/`: Contains the primary analysis scripts, raw data, and supplementary materials.
         *   `workflow.Rmd`: A detailed R Markdown document (`.html` and `.pdf` renders are also available) that demonstrates the step-by-step application of the `crystract` package.
+<<<<<<< HEAD
+=======
+        *   `app.R`: A Shiny application for interactive exploration of the results.
+
+>>>>>>> 38db421b6270edc36726131660912bd4bc352b8c
 ### 3. `paper/`
 
 This directory contains the manuscript source files for the scientific publication associated with this work.
@@ -37,3 +42,7 @@ This directory contains the manuscript source files for the scientific publicati
 *   **Key Contents**:
     *   `paper.md`: The manuscript text written in Markdown.
     *   `paper.bib`: The bibliography and references in BibTeX format.
+<<<<<<< HEAD
+=======
+    Review and run the code in **[`notebook/project.Rmd`](./notebook/project.Rmd)** and **[`notebook/workflow/workflow.Rmd`](./notebook/workflow/workflow.Rmd)** to reproduce the analysis.
+>>>>>>> 38db421b6270edc36726131660912bd4bc352b8c
