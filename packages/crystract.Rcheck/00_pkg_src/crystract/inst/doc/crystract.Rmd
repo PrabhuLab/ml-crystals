@@ -1,0 +1,584 @@
+---
+title: "Using the crystract Package for Crystallographic Analysis"
+author: "Don Ngo, Julia Maria Hubner, Anirudh Prabhu"
+date: "`r Sys.Date()`"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+  pdf_document:
+    toc: true
+vignette: >
+  %\VignetteIndexEntry{Using the crystract Package for Crystallographic Analysis}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+options(width = 75)
+options(datatable.print.width = 80)
+```
+
+## Introduction
+
+This vignette demonstrates the core workflow for using the `crystract`
+package. The package is designed for the **batch processing** of
+Crystallographic Information Files (.cif) to extract structural and
+chemical information from the repeating atomic arrangement that defines
+a crystal. It calculates key geometric properties like bond lengths and
+angles and compiles the results into a structured format suitable for
+large-scale data analysis.
+
+We will first demonstrate the main batch-processing function,
+`analyze_cif_files`. Then, to illustrate how it works, we will walk
+through the analysis of a single file step-by-step, explaining the
+underlying functions, the crystallographic principles, and the
+mathematical formulas they employ.
+
+### Setup: Loading the Package
+
+First, we load the `crystract` package.
+
+```{r setup}
+library(crystract)
+```
+
+## 1. The Core `crystract` Workflow
+
+The primary goal of `crystract` is to automate the analysis of many CIF
+files at once. While the package provides granular functions for each
+step of the crystallographic analysis, the most common use case is to
+leverage the main wrapper function for an end-to-end pipeline.
+
+### 1.1 The Full Pipeline for Batch Processing
+
+The `analyze_cif_files()` function is the cornerstone of the package. It
+performs the entire sequence of operations—from reading files to
+calculating bond angles with error propagation—for one or more files. It
+takes a vector of file paths and returns a single `data.table` where
+each row corresponds to a processed CIF file. Complex results (like
+coordinates, distances, and angles) are stored in list-columns for easy
+access and analysis.
+
+This is the recommended function for batch processing.
+
+```{r full-pipeline-with-comment}
+# Find the path to the single example CIF file included in the package
+cif_path <- system.file("extdata", "ICSD422.cif", package = "crystract")
+
+# Run the pipeline on our single example file
+analysis_results <- analyze_cif_files(cif_path)
+
+# Let's inspect the structure of the output table.
+# It's a single row containing all our results in nested data.tables.
+str(analysis_results, max.level = 2)
+```
+
+As shown in the structure output, the result is a tidy `data.table`
+containing all extracted and calculated information. We can easily
+access the nested data frames for further analysis. Note that the output
+includes separate results for each bonding algorithm requested, such as
+`bonded_pairs_minimum_distance`, `bonded_pairs_brunner`, and `bonded_pairs_hoppe`.
+
+To get the final bonded pairs table from the Minimum Distance method (which includes propagated
+errors):
+
+```{r access-nested-data}
+# The result is a list-column, so we access the element with [[1]]
+final_bonds <- analysis_results$bonded_pairs_minimum_distance[[1]]
+
+print(head(final_bonds))
+```
+
+### 1.2 A Step-by-Step Walkthrough
+
+To understand what `analyze_cif_files()` does under the hood, this
+section breaks down the process. We will use a single CIF file to
+demonstrate each function individually, explaining the crystallographic
+concepts and the structure of the output at each stage.
+
+#### 1.2.1 Loading CIF Data
+
+We use the package's `read_cif_files()` function to load data into
+memory. For this demonstration, we use an example CIF file for Strontium
+Silicide (Sr$_2$Si) from the Inorganic Crystal Structure Database
+(ICSD), specifically entry 422. This entry can be found online here:<span style="color: #0000FF;">
+[[ICSD
+422]{.underline}](https://www.ccdc.cam.ac.uk/structures/search?pid=ccdc:422&DatabaseToSearch=ICSD)</span>.
+
+```{r load-data}
+# The path was defined in the previous section:
+cif_data_list <- read_cif_files(cif_path)
+
+# We'll work with the content of the first file
+cif_content <- cif_data_list[[1]]
+
+# Let's look at the first few lines of the raw data
+knitr::kable(
+  head(cif_content),
+  caption = "First 6 lines of the raw CIF data."
+)
+```
+
+#### 1.2.2 Extracting Metadata and Unit Cell Parameters
+
+A crystal structure is defined by its **unit cell** and the arrangement of atoms within it. We first
+extract this high-level information.
+
+```{r extract-metadata}
+database_code <- extract_database_code(cif_content)
+chemical_formula <- extract_chemical_formula(cif_content)
+space_group_name <- extract_space_group_name(cif_content)
+space_group_number <- extract_space_group_number(cif_content)
+
+cat("Database Code:", database_code, "\n")
+cat("Chemical Formula:", chemical_formula, "\n")
+cat("Space Group:", space_group_name, "(No.", space_group_number, ")\n")
+```
+
+Next, `extract_unit_cell_metrics()` extracts the six parameters that
+define the shape and size of the unit cell: the lengths of its three
+axes ($a$, $b$, $c$) and the angles between them ($\alpha$, $\beta$,
+$\gamma$). Their experimental uncertainties are also
+extracted.
+
+```{r extract-metrics}
+unit_cell_metrics <- extract_unit_cell_metrics(cif_content)
+print(unit_cell_metrics)
+```
+
+#### 1.2.3 Extracting Atomic and Symmetry Data
+
+Instead of listing every atom in the unit cell, a CIF file efficiently
+describes the structure using only the **asymmetric unit**: the smallest
+set of unique atoms. All other atoms in the unit cell can be generated
+by applying the crystal's **symmetry operations** to this unique set.
+
+```{r extract-coords-symm}
+# Extract the coordinates of the unique atoms in the asymmetric unit
+atomic_coordinates <- extract_atomic_coordinates(cif_content)
+print("Asymmetric Atomic Coordinates:")
+print(atomic_coordinates)
+
+# Extract the symmetry operations
+symmetry_operations <- extract_symmetry_operations(cif_content)
+print("Symmetry Operations (first 6 of 8):")
+print(head(symmetry_operations))
+```
+
+#### 1.2.4 Generating the Full Crystal Structure
+
+Now we use the asymmetric atoms and symmetry operations to
+computationally build the full crystal structure. This is a two-step
+process.
+
+**Formula Context: Symmetry Operations**
+
+A symmetry operation is an affine transformation that maps an initial
+fractional coordinate $(x, y, z)$ to a new coordinate $(x', y', z')$. It
+consists of a rotation/reflection matrix $\mathbf{W}$ and a translation
+vector $\mathbf{w}$.
+
+$$
+\begin{pmatrix} x' \\ y' \\ z' \end{pmatrix} =
+\begin{pmatrix} W_{11} & W_{12} & W_{13} \\ W_{21} & W_{22} & W_{23} \\ W_{31} & W_{32} & W_{33} \end{pmatrix}
+\begin{pmatrix} x \\ y \\ z \end{pmatrix} +
+\begin{pmatrix} w_1 \\ w_2 \\ w_3 \end{pmatrix}
+\quad \text{or} \quad \mathbf{x'} = \mathbf{W}\mathbf{x} + \mathbf{w}
+$$
+
+The `apply_symmetry_operations` function applies all of the crystal's
+symmetry operations to each atom in the asymmetric unit, generating the
+complete set of atoms within the primary unit cell.
+
+**Formula Context: Supercell Expansion**
+
+To find all nearest neighbors of an atom, we must also consider atoms in
+adjacent unit cells. The `expand_transformed_coords` function generates
+a **supercell** (in this case, 3x3x3) by translating the primary unit
+cell atoms by integer vectors $(i, j, k)$, where $i, j, k$ each range
+from -1 to 1. An atom at fractional coordinate $(x, y, z)$ generates new
+coordinates: 
+$$
+(x_{exp}, y_{exp}, z_{exp}) = (x + i, y + j, z + k)
+$$
+
+```{r generate-structure}
+# Apply symmetry to generate all atoms in the primary unit cell
+transformed_coords <- apply_symmetry_operations(atomic_coordinates, symmetry_operations)
+print("Unique atoms in full unit cell (first 6 of 12):")
+print(head(transformed_coords))
+
+# Expand into a 3x3x3 supercell for neighbor calculations
+expanded_coords <- expand_transformed_coords(transformed_coords)
+print("Atoms in supercell (first 6 of 324):")
+print(head(expanded_coords))
+```
+
+#### 1.2.5 Calculating Interatomic Distances
+
+**Formula Context: Interatomic Distance in a Triclinic System**
+
+Because unit cell axes are not always orthogonal, the simple Pythagorean
+theorem is insufficient. The distance $d$ between two atoms at
+fractional coordinates $(x_{f1}, y_{f1}, z_{f1})$ and
+$(x_{f2}, y_{f2}, z_{f2})$ requires the full crystallographic distance
+formula:
+
+$$
+d = \left(
+\begin{aligned}
+& a^2(x_{f1}-x_{f2})^2 + b^2(y_{f1}-y_{f2})^2 + c^2(z_{f1}-z_{f2})^2 \\
+& + 2ab(x_{f1}-x_{f2})(y_{f1}-y_{f2})\cos\gamma \\
+& + 2ac(x_{f1}-x_{f2})(z_{f1}-z_{f2})\cos\beta \\
+& + 2bc(y_{f1}-y_{f2})(z_{f1}-z_{f2})\cos\alpha
+\end{aligned}
+\right)^{1/2}
+$$
+
+The `calculate_distances` function computes the distances from each
+central atom (from the asymmetric unit) to all other atoms in the
+generated supercell.
+
+```{r calc-distances}
+distances <- calculate_distances(atomic_coordinates, expanded_coords, unit_cell_metrics)
+print("Calculated Distances (shortest 6):")
+print(head(distances[order(Distance)]))
+```
+
+#### 1.2.6 Identifying Bonds and Neighbors
+
+**Formula Context: Bonding and Coordination Number**
+
+Identifying which atoms are "bonded" is key to determining the
+**coordination number (CN)**. `crystract` implements several methods:
+
+-   **`minimum_distance` (Default)**: Defines a custom distance cutoff for each central atom $i$: 
+$$
+    d_i^\text{cut} = (1+\delta) d_i^\text{min}
+$$
+    Here, $d_i^\text{min}$ is the shortest distance from atom $i$ to
+    any other atom, and $\delta$ is a tolerance parameter (default is
+    0.1).
+-   **`brunner`**: Identifies bonds by finding the largest gap in the reciprocal distances.
+-   **`hoppe` (ECoN)**: Uses an iterative method to calculate Effective Coordination Numbers, weighting neighbor contributions by distance.
+
+The `minimum_distance` function filters the `distances` table to
+identify bonded pairs. `calculate_neighbor_counts` then summarizes these
+to find the integer CN for each central atom.
+
+```{r calc-bonding-neighbors}
+# Identify bonded pairs using the minimum distance method with a tolerance of 10%
+bonded_pairs <- minimum_distance(distances, delta = 0.1)
+print("Bonded Pairs (first 6):")
+print(head(bonded_pairs))
+
+# Calculate neighbor counts based on the bonded pairs
+neighbor_counts <- calculate_neighbor_counts(bonded_pairs)
+print("Neighbor Counts:")
+print(neighbor_counts)
+```
+
+#### 1.2.7 Calculating Bond Angles
+
+**Formula Context: Bond Angle Calculation**
+
+To calculate a bond angle A-B-C (with B at the vertex), the fractional
+coordinates must first be converted to an orthogonal Cartesian system.
+
+1.  **Fractional to Cartesian Conversion:** A fractional coordinate
+    $(\mathbf{x}_f)$ is converted to a Cartesian coordinate
+    $(\mathbf{x}_c)$ via a transformation matrix $\mathbf{M}$:
+$$
+    \begin{pmatrix} x_c \\ y_c \\ z_c \end{pmatrix} = \mathbf{M} \cdot \begin{pmatrix} x_f \\ y_f \\ z_f \end{pmatrix} \quad \text{where} \quad
+    \mathbf{M} = \begin{pmatrix}
+    a & b \cos\gamma & c \cos\beta \\
+    0 & b \sin\gamma & \frac{c(\cos\alpha - \cos\beta \cos\gamma)}{\sin\gamma} \\
+    0 & 0 & \frac{V}{ab\sin\gamma}
+    \end{pmatrix}
+$$
+    where $V$ is the unit cell volume.
+
+2.  **Angle via Dot Product:** With atoms in Cartesian space, the angle
+    $\theta$ between vectors $\vec{u}$ (from B to A) and $\vec{v}$ (from
+    B to C) is:
+$$
+    \theta = \arccos\left( \frac{\vec{u} \cdot \vec{v}}{|\vec{u}| |\vec{v}|} \right)
+$$
+
+The `calculate_angles` function implements this for all possible bond
+angles around each central atom.
+
+```{r calc-angles}
+bond_angles <- calculate_angles(
+  bonded_pairs,
+  atomic_coordinates,
+  expanded_coords,
+  unit_cell_metrics
+)
+print("Calculated Bond Angles (first 6):")
+print(head(bond_angles))
+```
+
+#### 1.2.8 Error Propagation
+
+Finally, `crystract` propagates the experimental uncertainties from cell
+parameters and atomic coordinates to the calculated distances and
+angles.
+
+**Formula Context: Error Propagation**
+
+The uncertainty, $\sigma_f$, in a calculated value $f$ that depends on
+several uncorrelated variables $p_i$ (each with uncertainty $\sigma_{p_i}$) is found
+using the sum of squares of the partial derivatives:
+$$
+\sigma_f^2 = \sum_i \left( \frac{\partial f}{\partial p_i} \sigma_{p_i} \right)^2
+$$
+
+##### Uncertainty in Interatomic Distance ($\sigma_d$)
+
+The uncertainty in the distance, $\sigma_d$, is found by applying the
+general formula to the distance $d$. The input parameters $p_i$ are the
+12 variables that define the distance:
+$\{a, b, c, \alpha, \beta, \gamma, x_{f1}, y_{f1}, z_{f1}, x_{f2}, y_{f2}, z_{f2}\}$.
+Letting $\Delta x = x_{f1} - x_{f2}$, etc., the partial derivatives are,
+for example:
+$$
+\frac{\partial d}{\partial a} = \frac{1}{2d} \left( 2a(\Delta x)^2 + 2b(\Delta x)(\Delta y)\cos\gamma + 2c(\Delta x)(\Delta z)\cos\beta \right)
+$$
+
+##### Uncertainty in Bond Angle ($\sigma_\theta$)
+
+Propagating error to the bond angle $\theta$ is a more complex,
+multi-step process involving propagating initial errors first to Cartesian coordinates, and then from those Cartesian uncertainties to the final angle via the chain rule.
+
+```{r propagate-errors}
+# Propagate errors for interatomic distances
+bonded_pairs_with_error <- propagate_distance_error(
+  bonded_pairs,
+  atomic_coordinates,
+  unit_cell_metrics
+)
+print("Bonded Pairs with Distance Error (first 6):")
+print(head(bonded_pairs_with_error))
+
+# Propagate errors for bond angles
+bond_angles_with_error <- propagate_angle_error(
+  bond_angles,
+  atomic_coordinates,
+  expanded_coords,
+  unit_cell_metrics
+)
+print("Bond Angles with Angle Error (first 6):")
+print(head(bond_angles_with_error))
+```
+
+## 2. Tools for Post-Processing and Analysis
+
+After running the main analysis pipeline, `crystract` provides several helper functions to filter and refine the results, allowing you to isolate data based on chemical identity or key crystallographic properties.
+
+### 2.1 Filtering by Chemical Identity
+
+The `filter_atoms_by_symbol()` function provides an interactive way to filter results (like bond or angle tables) to focus on the coordination environment around a specific type of element.
+
+```{r, eval=FALSE}
+# In an interactive R session, you would run this:
+filtered_bonds <- filter_atoms_by_symbol(
+  data_table = bonded_pairs_with_error,
+  atom_col = "Atom1" # Filter based on the central atom
+)
+```
+If you were to type `Si` and press Enter, the function would return a new `data.table` containing only the rows where the central atom (`Atom1`) is Silicon.
+
+### 2.2 Filtering by Wyckoff Position
+
+For many crystallographic studies, it is crucial to analyze atoms based on their specific site symmetry, described by their **Wyckoff position** (e.g., "2a", "6c"). The `filter_by_wyckoff_symbol()` function is designed for this purpose.
+
+```{r filter-by-wyckoff}
+# 1. In our example, all asymmetric atoms occupy the Wyckoff site 'c' with multiplicity 4 ("4c").
+print("Atomic coordinates showing Wyckoff information:")
+print(atomic_coordinates[, .(Label, WyckoffSymbol, WyckoffMultiplicity)])
+cat("\n")
+
+# 2. Filter bonds where the central atom is on the "4c" Wyckoff site.
+bonds_from_4c_site <- filter_by_wyckoff_symbol(
+  data_table = bonded_pairs_with_error,
+  atomic_coordinates = atomic_coordinates,
+  atom_col = "Atom1",
+  wyckoff_symbols = "4c"
+)
+
+print(paste("Number of rows in original bond table:", nrow(bonded_pairs_with_error)))
+print(paste("Number of rows after filtering for site '4c':", nrow(bonds_from_4c_site)))
+```
+
+### 2.3 Filtering Ghost Distances Using Atomic Radii
+
+A common issue in crystallography is **site-occupancy disorder**, where a single crystallographic site is statistically co-occupied by different atoms. Standard calculations can produce physically meaningless, short "ghost" distances.
+
+The `filter_ghost_distances()` function cleans the distance table by removing these artifacts. It uses a built-in table of covalent radii to establish a plausible bond length range. Any calculated distance falling outside this physical range (defined by a `margin`) is filtered out.
+
+```{r filter-ghost-distances}
+# A distance d is kept if: (r1+r2)*(1-margin) <= d <= (r1+r2)*(1+margin)
+filtered_result <- filter_ghost_distances(
+    distances = distances,
+    atomic_coordinates = atomic_coordinates,
+    margin = 0.1 # Default margin is 10%
+)
+
+kept_distances <- filtered_result$kept
+removed_distances <- filtered_result$removed
+
+cat("Total distances calculated:", nrow(distances), "\n")
+cat("Distances kept after filtering:", nrow(kept_distances), "\n")
+cat("Ghost distances removed:", nrow(removed_distances), "\n\n")
+
+# For a well-ordered structure like Sr2Si, the 'removed' table should be empty.
+print("Removed ghost distances (should be empty for this well-ordered example):")
+print(removed_distances)
+```
+
+### 2.4 Filtering by Element Exclusion
+
+To focus an analysis on a specific part of a structure (e.g., a host framework without guest atoms), `filter_by_elements()` allows for the complete removal of bonds involving certain elements.
+
+```{r filter-by-elements}
+# Let's filter our bond table to exclude any bonds involving Strontium ("Sr").
+# Since all bonds in this structure are Si-Sr, the result should be an empty table.
+bonds_without_sr <- filter_by_elements(
+    distances = bonded_pairs_with_error,
+    atomic_coordinates = atomic_coordinates,
+    elements_to_exclude = "Sr"
+)
+
+cat("Number of bonds in original table:", nrow(bonded_pairs_with_error), "\n")
+cat("Number of bonds after excluding 'Sr':", nrow(bonds_without_sr), "\n")
+```
+
+### 2.5 Calculating Weighted Average Network Bond Distance
+
+A common goal is to compute a single summary statistic that represents a structure. 
+
+The `calculate_weighted_average_network_distance()` function calculates a representative **bond length** for a specified atomic network (defined by a set of Wyckoff sites).
+
+This calculation should always be performed on a table of identified **bonds** to ensure the result is physically meaningful.
+
+#### Formula Context: Weighted Average Network Distance
+
+To obtain a single, representative bond length for an atomic network, the function calculates a true weighted average over all individual bonds in the unit cell. This is equivalent to calculating the **total sum of all bond lengths** within the network and dividing by the **total number of bonds**. This method correctly accounts for site multiplicity, site occupancy, and varying coordination numbers.
+
+The formula is defined as:
+
+$$
+\large \bar{d}_\text{network} = \frac{\sum_j (m_j \cdot \text{occ}_j \cdot S_j)}{\sum_j (m_j \cdot \text{occ}_j \cdot n_j)}
+$$
+
+Where, for each unique atomic site *j* in the asymmetric unit:
+- $m_j$ is the **Wyckoff multiplicity** (how many equivalent atoms are generated by symmetry).
+- $\text{occ}_j$ is the **site occupancy** (accounts for disorder; 1.0 for a fully occupied site).
+- $n_j$ is the **coordination number** (the number of bonds for an atom at site *j*).
+- $S_j$ is the **sum of all bond distances** for a single atom at site *j*. It is calculated as:
+$$
+\large S_j = \sum_{i=1}^{n_j} d_{ij}
+$$
+
+The numerator, $\sum_j (m_j \cdot \text{occ}_j \cdot S_j)$, represents the grand total sum of the lengths of every bond in the unit cell. The denominator, $\sum_j (m_j \cdot \text{occ}_j \cdot n_j)$, represents the total number of bonds in the unit cell.
+
+#### Best Practices for Accurate Calculation
+
+For the most physically meaningful and accurate results, it is crucial to perform this calculation as the final step in a filtering pipeline, especially when dealing with complex or disordered structures. The recommended workflow is:
+
+1.  Calculate all potential interatomic distances using `calculate_distances()`.
+2.  Clean this raw data by removing non-physical "ghost" distances with `filter_ghost_distances()`.
+3.  Identify the true bonded pairs from the cleaned data using an algorithm like `minimum_distance()`.
+4.  **Only then**, pass the resulting table of confirmed bonds to `calculate_weighted_average_network_distance()`.
+
+This "Ghosts -> Bonds -> Average" sequence ensures the final metric is calculated only over actual chemical bonds, preventing artifacts from skewing the result.
+
+```{r calculate-weighted-average-distance}
+# Calculate the weighted average BOND distance for the entire Sr2Si network.
+# First, identify the bonds in the structure. We use the `bonded_pairs` table
+# created in section 1.2.6.
+
+# Then, define the Wyckoff sites belonging to the network. Here, it's just "4c".
+# Note: The function expects the full Wyckoff symbol including multiplicity.
+network_wyckoff_sites <- "4c"
+
+# Apply the function to the table of identified bonds.
+# For this simple, ordered structure, all occupancies are 1.0, but the function
+# correctly applies the full formula.
+weighted_avg_bond_dist <- calculate_weighted_average_network_distance(
+    distances = bonded_pairs, # Use the bond table as input
+    atomic_coordinates = atomic_coordinates,
+    wyckoff_symbols = network_wyckoff_sites
+)
+
+cat("Weighted average network bond distance for the '4c' sites:", weighted_avg_bond_dist, "Å\n")
+```
+
+### 2.6 Exporting Results to CSV Files
+
+After performing a batch analysis, you are left with a `data.table` where many columns are themselves nested `data.table`s. While this is convenient for interactive analysis in R, it is not ideal for sharing or for use with other software.
+
+The `export_analysis_to_csv()` function solves this by unpacking the entire results table into a structured directory of CSV files. It creates a main directory and, within it, sub-directories for each type of data (e.g., `atomic_coordinates`, `bond_angles`, `distances`). Each sub-directory will contain one CSV file per analyzed CIF, named after the original file. A `meta` folder is also created to store a summary CSV of the non-nested metadata.
+
+This makes the results easily accessible and portable.
+
+```{r export-results-to-csv}
+# 1. We use the 'analysis_results' table from the main workflow.
+
+# 2. Define a temporary output directory for this example.
+export_path <- file.path(tempdir(), "crystract_export")
+
+# 3. Export the results. 'overwrite = TRUE' is used to allow re-running the example.
+export_analysis_to_csv(analysis_results, export_path, overwrite = TRUE)
+
+# 4. We can list the created files and folders to see the structure.
+cat("Exported directory structure:\n")
+print(list.files(export_path, recursive = TRUE))
+
+# 5. Clean up the temporary directory after the example.
+unlink(export_path, recursive = TRUE)
+```
+### 2.7 Customizing Atomic Radii
+
+The `crystract` package includes a comprehensive table of covalent radii for use with `filter_ghost_distances()`. However, you may want to use a different set of radii, such as ionic radii, or add a missing element. The `set_radii_data()` function provides a flexible way to replace the default data for your entire R session.
+
+A custom radii table must contain three columns: `Symbol`, `Radius`, and `Type`. This allows you to create a single table with multiple radius types and select the one you need at analysis time.
+
+Let's demonstrate by creating a small table with both covalent and ionic radii for Sodium (Na) and Chlorine (Cl).
+
+```{r customize-radii}
+# 1. Create a custom radii data.table
+my_custom_radii <- data.table::data.table(
+  Symbol = c("Na", "Na", "Cl", "Cl"),
+  Radius = c(1.54, 1.02, 0.99, 1.81),
+  Type   = c("covalent", "ionic", "covalent", "ionic")
+)
+
+# 2. Set this table as the active table for this R session
+set_radii_data(my_custom_radii)
+
+# 3. Now, if you were to call filter_ghost_distances(), you could specify
+#    which radius type to use. For example, to filter based on ionic radii:
+#
+#    filter_ghost_distances(distances, atomic_coordinates, radii_type = "ionic")
+#    
+#    This would use radii of 1.02 Å for Na and 1.81 Å for Cl.
+#    If you omit the argument, it defaults to "covalent" (1.54 Å and 0.99 Å).
+
+# 4. To reset to the package's default table at any time:
+set_radii_data(NULL)
+```
+This feature provides full control over the criteria used for identifying and filtering physically implausible bond distances, making the analysis adaptable to a wide range of chemical systems.
+
+## Conclusion
+
+This vignette has demonstrated the core workflow of the `crystract` package, from the high-level, automated processing of multiple CIF files with `analyze_cif_files` to a detailed, step-by-step breakdown of the underlying calculations. We have seen how the package extracts fundamental data, builds a complete crystal model, calculates key geometric properties like bond distances and angles, and rigorously propagates experimental uncertainties into these final results.
+
+Furthermore, with a powerful suite of post-processing tools such as `filter_atoms_by_symbol`, `filter_by_wyckoff_symbol`, `filter_ghost_distances`, `calculate_weighted_average_network_distance`, and `export_analysis_to_csv`, you can easily refine, clean, analyze, and share the generated datasets to focus on the specific chemical or crystallographic features of interest.
+
+The goal of `crystract` is to provide a robust and accessible platform for crystallographic data mining in R.

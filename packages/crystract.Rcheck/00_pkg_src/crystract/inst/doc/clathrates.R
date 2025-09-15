@@ -1,0 +1,176 @@
+## ----setup, include=FALSE-----------------------------------------------------
+# This chunk sets up the environment for the analysis.
+knitr::opts_chunk$set(
+  echo = TRUE, message = FALSE, warning = FALSE,
+  fig.width = 10, fig.height = 7, fig.align = 'center'
+)
+
+# Load all necessary libraries
+library(crystract)
+library(data.table)
+library(ggplot2)
+library(plotly)
+library(DT)
+library(htmlwidgets)
+library(knitr)
+
+# Load the package's built-in covalent radii data
+data(covalent_radii, package = "crystract")
+
+## ----load-files, echo=TRUE----------------------------------------------------
+# Use system.file() to locate the example data directory within the installed package.
+# The case ("Verified") must exactly match the directory name in inst/extdata/.
+cif_root_dir <- system.file("extdata", "Verified", package = "crystract")
+
+# Check if the directory was found. If not, stop with a helpful message.
+if (nchar(cif_root_dir) == 0 || !dir.exists(cif_root_dir)) {
+  stop("CRITICAL ERROR: Could not find the 'Verified' data directory in inst/extdata/. Please check the package installation and file name case.")
+}
+
+category_dirs <- list.dirs(path = cif_root_dir, full.names = TRUE, recursive = FALSE)
+
+file_map_list <- lapply(category_dirs, function(dir) {
+  full_paths <- list.files(path = dir, pattern = "\\.cif$", full.names = TRUE, ignore.case = TRUE)
+  if (length(full_paths) == 0) return(NULL)
+  data.table(file_path = full_paths, file_name = basename(full_paths), category = basename(dir))
+})
+
+file_map <- rbindlist(file_map_list, fill = TRUE)
+all_cif_paths <- if (!is.null(file_map) && nrow(file_map) > 0) file_map$file_path else character(0)
+
+cat("Found", length(all_cif_paths), "total CIF files across", length(category_dirs), "categories.\n")
+if (length(all_cif_paths) == 0) {
+    stop("Execution stopped: No CIF files were found inside the 'Verified' directory.")
+}
+
+## ----run-batch-analysis-optimized, echo=TRUE----------------------------------
+analysis_results <- analyze_cif_files(
+  file_paths = all_cif_paths,
+  perform_extraction = TRUE,
+  perform_calcs_and_transforms = TRUE,
+  bonding_algorithms = "none",
+  calculate_bond_angles = FALSE,
+  perform_error_propagation = FALSE
+)
+cat("Optimized analysis complete. Raw results table has", nrow(analysis_results), "rows.\n")
+
+## ----process-data, echo=TRUE--------------------------------------------------
+# --- Timing Start ---
+timing_processing <- system.time({
+  
+  guest_atoms <- c("Na", "K", "Rb", "Cs", "Sr", "Ba", "Eu")
+  all_removed_ghosts <- list()
+  
+  process_file_results <- function(i) {
+    current_filename <- analysis_results$file_name[i]
+    category_info <- file_map[file_name == current_filename]
+    
+    if (is.null(current_filename) || nrow(category_info) == 0) return(NULL)
+    
+    distances <- analysis_results$distances[[i]]
+    coords <- analysis_results$atomic_coordinates[[i]]
+    
+    if (is.null(distances) || is.null(coords) || nrow(distances) == 0) return(NULL)
+    
+    # --- Pipeline Steps ---
+    category <- category_info$category
+    target_wyckoff_symbols <- strsplit(gsub("\\+M_on_.*", "", category), "-")[]
+    
+    distances <- filter_by_elements(distances, coords, guest_atoms)
+    if (nrow(distances) == 0) return(NULL)
+    
+    ghost_filter_result <- filter_ghost_distances(distances, coords, margin = 0.1)
+    cleaned_distances <- ghost_filter_result$kept
+    
+    removed_table <- ghost_filter_result$removed
+    if (nrow(removed_table) > 0) {
+      removed_table[, file := current_filename]
+      all_removed_ghosts[[length(all_removed_ghosts) + 1]] <<- removed_table
+    }
+    if (nrow(cleaned_distances) == 0) return(NULL)
+    
+    bonded_pairs <- minimum_distance(cleaned_distances, delta = 0.1)
+    if (nrow(bonded_pairs) == 0) return(NULL)
+    
+    weighted_avg <- calculate_weighted_average_network_distance(bonded_pairs, coords, target_wyckoff_symbols)
+    if (is.na(weighted_avg)) return(NULL)
+    
+    return(
+      data.table(
+        file = current_filename,
+        category = category,
+        lattice_parameter_a = analysis_results$unit_cell_metrics[[i]]$`_cell_length_a`,
+        weighted_distance = weighted_avg
+      )
+    )
+  }
+  
+  plot_data_list <- lapply(1:nrow(analysis_results), process_file_results)
+  plot_data <- rbindlist(plot_data_list, use.names = TRUE, fill = TRUE)
+  plot_data <- na.omit(plot_data)
+  removed_ghosts_summary <- rbindlist(all_removed_ghosts, fill = TRUE)
+}) # --- Timing End ---
+
+cat("Data processing complete.\n")
+cat("Final plot table has", nrow(plot_data), "entries.\n")
+if (exists("removed_ghosts_summary") && nrow(removed_ghosts_summary) > 0) {
+  cat(
+    nrow(removed_ghosts_summary),
+    "non-physical 'ghost' distances were identified and removed.\n"
+  )
+}
+
+## ----show-removed-distances, echo=TRUE----------------------------------------
+export_dir <- tempfile(pattern = "interactive_report_files")
+dir.create(export_dir, showWarnings = FALSE)
+
+if (exists("removed_ghosts_summary") && nrow(removed_ghosts_summary) > 0) {
+  sample_size <- min(1000, nrow(removed_ghosts_summary))
+  cat(paste("Displaying a sample of the first", sample_size, "removed distances below:\n"))
+  
+  datatable(
+    removed_ghosts_summary[1:sample_size, ],
+    caption = paste("Sample of Removed Ghost Distances (", sample_size, " of ", nrow(removed_ghosts_summary), " total)"),
+    rownames = FALSE, extensions = 'Buttons',
+    options = list(pageLength = 10, dom = 'Bfrtip', buttons = c('copy', 'csv')),
+    colnames = c("Atom 1", "Atom 2", "Removed Distance (Å)", "Expected (Å)", "Lower Bound (Å)", "Upper Bound (Å)", "Reason", "File")
+  )
+} else {
+  cat("No 'ghost' distances were detected during the analysis.")
+}
+
+## ----generate-plot, echo=TRUE-------------------------------------------------
+# Only generate the plot if the data processing was successful
+if (exists("plot_data") && nrow(plot_data) > 0) {
+  p <- ggplot(plot_data, aes(x = lattice_parameter_a, y = weighted_distance, color = category, shape = category, text = file)) +
+    geom_point(alpha = 0.65, size = 2.5) +
+    geom_smooth(aes(group = 1), method = "lm", se = FALSE, color = "black", linetype = "dotted", fullrange = TRUE) +
+    labs(
+      title = "Average Network Bond Length vs. Lattice Parameter 'a'",
+      subtitle = "Data points are colored by structural category",
+      x = "Lattice Parameter a (Å)",
+      y = "Weighted Average Network Bond Length (Å)",
+      color = "Structural Category", shape = "Structural Category"
+    ) +
+    theme_bw(base_size = 14) +
+    theme(legend.position = "bottom", legend.title = element_text(face = "bold"))
+
+  interactive_plot <- ggplotly(p, tooltip = c("x", "y", "text", "color"))
+  interactive_plot
+} else {
+  cat("No data available to generate plot.")
+}
+
+## ----show-final-data-table, echo=TRUE-----------------------------------------
+if (exists("plot_data") && nrow(plot_data) > 0) {
+  datatable(
+    plot_data,
+    caption = "Final Processed Data for Clathrate Structures",
+    rownames = FALSE, filter = 'top', extensions = 'Buttons',
+    options = list(pageLength = 15, dom = 'Bfrtip', buttons = c('copy', 'csv', 'excel')),
+    colnames = c("File", "Category", "Lattice 'a' (Å)", "Weighted Dist (Å)")
+  )
+} else {
+  cat("No final data to display.")
+}
+
