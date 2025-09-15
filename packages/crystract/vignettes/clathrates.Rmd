@@ -4,7 +4,6 @@ author: "Don Ngo, Julia Maria Hubner, Anirudh Prabhu"
 date: "`r Sys.Date()`"
 output:
   rmarkdown::html_vignette:
-    toc: true
 vignette: >
   %\VignetteIndexEntry{Advanced Workflow: High-Throughput Analysis of Clathrate Structures}
   %\VignetteEngine{knitr::rmarkdown}
@@ -35,34 +34,36 @@ data(covalent_radii, package = "crystract")
 
 This vignette demonstrates an advanced, robust workflow using the `crystract` package to analyze a large, complex dataset. While the introductory vignette focuses on the step-by-step analysis of a single, well-ordered crystal, this tutorial tackles the challenges of real-world, high-throughput analysis, specifically for disordered structures like clathrates.
 
-The goal is to process a dataset of 704 clathrate structures to calculate a representative "weighted average network bond distance" for each one and explore its relationship with the lattice parameter 'a'.
+The goal is to process a dataset of clathrate structures bundled with this package to calculate a representative "weighted average network bond distance" for each one and explore its relationship with the lattice parameter 'a'.
 
 ### The Robust Pipeline for Disordered Structures
 
-Clathrate structures often feature site-occupancy disorder (where a crystallographic site is shared by multiple atom types) and guest atoms within a host framework. A naive distance calculation can lead to non-physical "ghost" distances or include bonds that are not part of the framework.
-
-To handle this, we will implement a specific, multi-step filtering pipeline for each crystal:
+Clathrate structures often feature site-occupancy disorder and guest atoms within a host framework. A naive distance calculation can lead to non-physical "ghost" distances. To handle this, we will implement a specific, multi-step filtering pipeline for each crystal:
 
 1.  **Filter Guests:** Isolate the host framework by removing guest atoms.
-2.  **Filter Ghosts:** Remove physically implausible short or long distances that arise from disorder using `filter_ghost_distances()`.
-3.  **Identify Bonds:** Determine the true bonded pairs from the cleaned distance data using `minimum_distance()`.
-4.  **Calculate Average:** Compute the final `calculate_weighted_average_network_distance()` only on the confirmed, physical bonds of the host framework.
+2.  **Filter Ghosts:** Remove physically implausible distances using `filter_ghost_distances()`.
+3.  **Identify Bonds:** Determine the true bonded pairs from the cleaned data using `minimum_distance()`.
+4.  **Calculate Average:** Compute the final `calculate_weighted_average_network_distance()` only on the confirmed, physical bonds.
 
 This **Guests -> Ghosts -> Bonds -> Average** sequence ensures the final metric is accurate and physically meaningful.
 
 ## 2. Preparing the Data
 
-### 2.1. Loading Categorized CIF Files
+### 2.1. Loading the Bundled Example Data
 
-For this analysis, the CIF files are assumed to be organized into subdirectories. The name of each subdirectory defines the structural category and the Wyckoff sites that form the host network (e.g., `6c-16i-24k`).
+The CIF files for this analysis are included with the package in the `inst/extdata/Verified` directory. We use `system.file()` to find this directory in a portable way, ensuring the vignette is reproducible.
 
-**Note for Your Own Analysis:** To follow this tutorial, replace `"path/to/your/cif/root/directory"` with the actual path to your data. The code recursively finds all CIF files and maps each file to its category based on its parent directory's name.
+The files are organized into subdirectories whose names define the structural category (e.g., `6c-16i-24k`). The code recursively finds all CIF files and maps each one to its category.
 
 ```{r load-files, echo=TRUE}
-# --- IMPORTANT ---
+# Use system.file() to locate the example data directory within the installed package.
+# The case ("Verified") must exactly match the directory name in inst/extdata/.
 cif_root_dir <- system.file("extdata", "Verified", package = "crystract")
 
-if (!dir.exists(cif_root_dir)) stop(paste("CRITICAL ERROR: Root directory not found:", cif_root_dir))
+# Check if the directory was found. If not, stop with a helpful message.
+if (nchar(cif_root_dir) == 0 || !dir.exists(cif_root_dir)) {
+  stop("CRITICAL ERROR: Could not find the 'Verified' data directory in inst/extdata/. Please check the package installation and file name case.")
+}
 
 category_dirs <- list.dirs(path = cif_root_dir, full.names = TRUE, recursive = FALSE)
 
@@ -73,24 +74,26 @@ file_map_list <- lapply(category_dirs, function(dir) {
 })
 
 file_map <- rbindlist(file_map_list, fill = TRUE)
-all_cif_paths <- if (nrow(file_map) > 0) file_map$file_path else character(0)
+all_cif_paths <- if (!is.null(file_map) && nrow(file_map) > 0) file_map$file_path else character(0)
 
 cat("Found", length(all_cif_paths), "total CIF files across", length(category_dirs), "categories.\n")
-if (length(all_cif_paths) == 0) stop("Execution stopped: No CIF files were found.")
+if (length(all_cif_paths) == 0) {
+    stop("Execution stopped: No CIF files were found inside the 'Verified' directory.")
+}
 ```
 
 ## 3. Optimized Batch Analysis and Custom Pipeline
 
 ### 3.1. Step 1: Optimized Raw Data Extraction
 
-We first run the main `analyze_cif_files()` function. However, for efficiency and to allow for our custom pipeline, we will **disable** the built-in bonding and angle calculations (`bonding_algorithms = "none"`). This performs the most computationally intensive step—calculating all interatomic distances—just once, preparing the raw data for our specialized filtering workflow.
+We first run `analyze_cif_files()`. For efficiency and to enable our custom pipeline, we disable the built-in bonding calculations (`bonding_algorithms = "none"`). This performs the most intensive step—calculating all interatomic distances—just once.
 
 ```{r run-batch-analysis-optimized, echo=TRUE}
 analysis_results <- analyze_cif_files(
   file_paths = all_cif_paths,
   perform_extraction = TRUE,
   perform_calcs_and_transforms = TRUE,
-  bonding_algorithms = "none", # Disable default bonding to use our custom method
+  bonding_algorithms = "none",
   calculate_bond_angles = FALSE,
   perform_error_propagation = FALSE
 )
@@ -99,22 +102,19 @@ cat("Optimized analysis complete. Raw results table has", nrow(analysis_results)
 
 ### 3.2. Step 2: Applying the "Guests -> Ghosts -> Bonds -> Average" Pipeline
 
-Now, we apply our core filtering logic. We will loop through the results for each file and execute the robust pipeline.
+Now, we apply our core filtering logic by looping through the results for each file.
 
 ```{r process-data, echo=TRUE}
 # --- Timing Start ---
 timing_processing <- system.time({
   
-  # Define the guest atoms to be removed from the framework analysis
   guest_atoms <- c("Na", "K", "Rb", "Cs", "Sr", "Ba", "Eu")
   all_removed_ghosts <- list()
   
-  # This function processes the results for a single file (one row of `analysis_results`)
   process_file_results <- function(i) {
     current_filename <- analysis_results$file_name[i]
     category_info <- file_map[file_name == current_filename]
     
-    # Basic validation
     if (is.null(current_filename) || nrow(category_info) == 0) return(NULL)
     
     distances <- analysis_results$distances[[i]]
@@ -122,20 +122,16 @@ timing_processing <- system.time({
     
     if (is.null(distances) || is.null(coords) || nrow(distances) == 0) return(NULL)
     
-    # --- Pipeline Step 1: Parse Category Rules and Filter Guests ---
+    # --- Pipeline Steps ---
     category <- category_info$category
-    target_wyckoff_symbols <- strsplit(gsub("\\+M_on_.*", "", category), "-")[]
+    target_wyckoff_symbols <- strsplit(gsub("\\+M_on_.*", "", category), "-")[[1]]
     
-    # Use filter_by_elements to unconditionally remove guest atoms
     distances <- filter_by_elements(distances, coords, guest_atoms)
     if (nrow(distances) == 0) return(NULL)
     
-    # --- Pipeline Step 2: Filter "Ghost" Distances (Covalent Radii Method) ---
-    # This is critical for cleaning data from disordered structures
     ghost_filter_result <- filter_ghost_distances(distances, coords, margin = 0.1)
     cleaned_distances <- ghost_filter_result$kept
     
-    # Store removed distances for quality control analysis later
     removed_table <- ghost_filter_result$removed
     if (nrow(removed_table) > 0) {
       removed_table[, file := current_filename]
@@ -143,17 +139,12 @@ timing_processing <- system.time({
     }
     if (nrow(cleaned_distances) == 0) return(NULL)
     
-    # --- Pipeline Step 3: Identify Bonded Pairs (Minimum Distance Method) ---
-    # Run on the CLEANED distances table
     bonded_pairs <- minimum_distance(cleaned_distances, delta = 0.1)
     if (nrow(bonded_pairs) == 0) return(NULL)
     
-    # --- Pipeline Step 4: Calculate Final Weighted Average ---
-    # Use the table of confirmed bonds as input
     weighted_avg <- calculate_weighted_average_network_distance(bonded_pairs, coords, target_wyckoff_symbols)
     if (is.na(weighted_avg)) return(NULL)
     
-    # Return a final, clean data table for this file
     return(
       data.table(
         file = current_filename,
@@ -164,40 +155,31 @@ timing_processing <- system.time({
     )
   }
   
-  # Execute the processing function for all files and combine the results
   plot_data_list <- lapply(1:nrow(analysis_results), process_file_results)
   plot_data <- rbindlist(plot_data_list, use.names = TRUE, fill = TRUE)
   plot_data <- na.omit(plot_data)
   removed_ghosts_summary <- rbindlist(all_removed_ghosts, fill = TRUE)
 }) # --- Timing End ---
 
-# Final summary output
-cat("Data processing complete in", round(timing_processing, 2), "seconds.\n")
+cat("Data processing complete.\n")
 cat("Final plot table has", nrow(plot_data), "entries.\n")
 if (exists("removed_ghosts_summary") && nrow(removed_ghosts_summary) > 0) {
   cat(
     nrow(removed_ghosts_summary),
-    "non-physical 'ghost' distances were identified and removed across all files.\n"
+    "non-physical 'ghost' distances were identified and removed.\n"
   )
 }
 ```
 
 ## 4. Quality Control: Review of Removed "Ghost" Distances
 
-A key advantage of this workflow is the ability to inspect the distances that `filter_ghost_distances()` removed. This step is crucial for validating that the filtering logic is behaving as expected and for understanding the nature of disorder in the dataset.
-
-We will save the complete list to a CSV and display a sample in an interactive table.
+A key advantage of this workflow is the ability to inspect the distances that `filter_ghost_distances()` removed. This is crucial for validating the filtering logic and understanding the nature of disorder in the dataset.
 
 ```{r show-removed-distances, echo=TRUE}
-# Define a directory to store report outputs
-export_dir <- "interactive_report_files"
+export_dir <- tempfile(pattern = "interactive_report_files")
 dir.create(export_dir, showWarnings = FALSE)
 
 if (exists("removed_ghosts_summary") && nrow(removed_ghosts_summary) > 0) {
-  full_csv_path <- file.path(export_dir, "removed_ghosts_summary.csv")
-  fwrite(removed_ghosts_summary, full_csv_path)
-  cat(paste("Full list of", nrow(removed_ghosts_summary), "removed distances saved to:", full_csv_path, "\n\n"))
-  
   sample_size <- min(1000, nrow(removed_ghosts_summary))
   cat(paste("Displaying a sample of the first", sample_size, "removed distances below:\n"))
   
@@ -215,26 +197,31 @@ if (exists("removed_ghosts_summary") && nrow(removed_ghosts_summary) > 0) {
 
 ## 5. Visualizing and Exploring Final Results
 
-After applying the robust pipeline, we can now visualize the cleaned data. The interactive plot below shows the final relationship between the calculated weighted average network bond length and the lattice parameter 'a'.
+After applying the robust pipeline, we can now visualize the cleaned data.
 
 ### 5.1. Interactive Plot
 
 ```{r generate-plot, echo=TRUE}
-p <- ggplot(plot_data, aes(x = lattice_parameter_a, y = weighted_distance, color = category, shape = category, text = file)) +
-  geom_point(alpha = 0.65, size = 2.5) +
-  geom_smooth(aes(group = 1), method = "lm", se = FALSE, color = "black", linetype = "dotted", fullrange = TRUE) +
-  labs(
-    title = "Average Network Bond Length vs. Lattice Parameter 'a'",
-    subtitle = "Data points are colored and shaped by their structural category",
-    x = "Lattice Parameter a (Å)",
-    y = "Weighted Average Network Bond Length (Å)",
-    color = "Structural Category", shape = "Structural Category"
-  ) +
-  theme_bw(base_size = 14) +
-  theme(legend.position = "bottom", legend.title = element_text(face = "bold"))
+# Only generate the plot if the data processing was successful
+if (exists("plot_data") && nrow(plot_data) > 0) {
+  p <- ggplot(plot_data, aes(x = lattice_parameter_a, y = weighted_distance, color = category, shape = category, text = file)) +
+    geom_point(alpha = 0.65, size = 2.5) +
+    geom_smooth(aes(group = 1), method = "lm", se = FALSE, color = "black", linetype = "dotted", fullrange = TRUE) +
+    labs(
+      title = "Average Network Bond Length vs. Lattice Parameter 'a'",
+      subtitle = "Data points are colored by structural category",
+      x = "Lattice Parameter a (Å)",
+      y = "Weighted Average Network Bond Length (Å)",
+      color = "Structural Category", shape = "Structural Category"
+    ) +
+    theme_bw(base_size = 14) +
+    theme(legend.position = "bottom", legend.title = element_text(face = "bold"))
 
-interactive_plot <- ggplotly(p, tooltip = c("x", "y", "text", "color"))
-interactive_plot
+  interactive_plot <- ggplotly(p, tooltip = c("x", "y", "text", "color"))
+  interactive_plot
+} else {
+  cat("No data available to generate plot.")
+}
 ```
 
 ### 5.2. Interactive Data Table
@@ -242,15 +229,19 @@ interactive_plot
 The final, cleaned data used for the plot is provided below in a searchable and exportable table.
 
 ```{r show-final-data-table, echo=TRUE}
-datatable(
-  plot_data,
-  caption = "Final Processed Data for Clathrate Structures",
-  rownames = FALSE, filter = 'top', extensions = 'Buttons',
-  options = list(pageLength = 15, dom = 'Bfrtip', buttons = c('copy', 'csv', 'excel')),
-  colnames = c("File", "Category", "Lattice 'a' (Å)", "Weighted Dist (Å)")
-)
+if (exists("plot_data") && nrow(plot_data) > 0) {
+  datatable(
+    plot_data,
+    caption = "Final Processed Data for Clathrate Structures",
+    rownames = FALSE, filter = 'top', extensions = 'Buttons',
+    options = list(pageLength = 15, dom = 'Bfrtip', buttons = c('copy', 'csv', 'excel')),
+    colnames = c("File", "Category", "Lattice 'a' (Å)", "Weighted Dist (Å)")
+  )
+} else {
+  cat("No final data to display.")
+}
 ```
 
-### Conclusion
+## 6. Conclusion
 
-This vignette has demonstrated how to leverage the `crystract` package to build a powerful, customized pipeline for a high-throughput analysis of complex crystal structures. By strategically combining initial raw data extraction with a targeted sequence of filtering and calculation functions, we can robustly handle common real-world data challenges like site-occupancy disorder. The "Guests -> Ghosts -> Bonds -> Average" workflow is a reliable pattern for ensuring that final summary metrics are physically meaningful and accurate.
+This vignette has demonstrated how to leverage the `crystract` package to build a powerful, customized pipeline for a high-throughput analysis of complex crystal structures. By bundling example data and using `system.file()`, we have created a fully reproducible scientific workflow. The "Guests -> Ghosts -> Bonds -> Average" pattern is a reliable method for ensuring that final summary metrics are physically meaningful and robust against common real-world data challenges like site-occupancy disorder.
