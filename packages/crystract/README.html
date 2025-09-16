@@ -669,10 +669,6 @@ licensed under the <strong>GNU General Public License v3.0
 (GPL-3.0)</strong>. If you are developing other open-source software,
 you are free to use, modify, and distribute <code>crystract</code> under
 the terms of the GPL-3.0.</p></li>
-<li><p><strong>For Non-Commercial Use:</strong> For academic, research,
-personal, and other non-commercial purposes, the package is licensed
-under the <strong>PolyForm Noncommercial License 1.0.0</strong>
-(specified in the <code>LICENSE</code> file).</p></li>
 <li><p><strong>For Commercial Use:</strong> If you wish to use
 <code>crystract</code> in a commercial product, for commercial services,
 or for any other commercial purpose, you must obtain a separate
@@ -723,35 +719,25 @@ one-step workflow. It can process hundreds of files, but here we
 demonstrate it on a single example file included with the package.</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">library</span>(crystract)</span>
 <span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a></span>
-<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="co"># 1. Get the path to a sample CIF file</span></span>
-<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>cif_path <span class="ot">&lt;-</span> <span class="fu">system.file</span>(<span class="st">&quot;extdata&quot;</span>, <span class="st">&quot;ICSD422.cif&quot;</span>, <span class="at">package =</span> <span class="st">&quot;crystract&quot;</span>)</span>
-<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a></span>
-<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a><span class="co"># 2. Analyze the file(s)</span></span>
-<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a><span class="co"># This single function handles all extraction, calculation, and error propagation.</span></span>
-<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>analysis_results <span class="ot">&lt;-</span> <span class="fu">analyze_cif_files</span>(cif_path)</span>
-<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a></span>
-<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a><span class="co"># 3. Explore the high-level results</span></span>
-<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a><span class="co"># The output is a data.table with metadata and list-columns for detailed results.</span></span>
-<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a><span class="fu">print</span>(analysis_results[, .(database_code, chemical_formula, space_group_name)])</span>
-<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a><span class="co">#&gt;    database_code chemical_formula space_group_name</span></span>
-<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a><span class="co">#&gt;           &lt;char&gt;           &lt;char&gt;           &lt;char&gt;</span></span>
-<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a><span class="co">#&gt; 1:      ICSD 422          Si1 Sr2          P n m a</span></span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="co"># 1. Define the path to your CIF file</span></span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="co"># </span><span class="al">NOTE</span><span class="co">: The example file ICSD422.cif is not bundled with the package.</span></span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="co"># Please download it from the ICSD (see required_ICSD_files.csv in the</span></span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a><span class="co"># repository root) and update the path below.</span></span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>cif_path <span class="ot">&lt;-</span> <span class="st">&quot;path/to/your/ICSD422.cif&quot;</span></span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a></span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a><span class="co"># 2. Analyze the file(s)</span></span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a><span class="co"># This single function handles all extraction, calculation, and error propagation.</span></span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a>analysis_results <span class="ot">&lt;-</span> <span class="fu">analyze_cif_files</span>(cif_path)</span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a></span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a><span class="co"># 3. Explore the high-level results</span></span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a><span class="co"># The output is a data.table with metadata and list-columns for detailed results.</span></span>
+<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a><span class="fu">print</span>(analysis_results[, .(database_code, chemical_formula, space_group_name)])</span>
 <span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a></span>
 <span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a><span class="co"># 4. Access detailed calculated properties</span></span>
 <span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a><span class="co"># To get the bond angles table, we must extract the first element `[[1]]` </span></span>
 <span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a><span class="co"># from the list-column, then we can select the first 5 rows `[1:5, ]`.</span></span>
 <span id="cb3-20"><a href="#cb3-20" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;</span><span class="sc">\n</span><span class="st">First 5 calculated bond angles (with propagated errors):</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
-<span id="cb3-21"><a href="#cb3-21" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb3-22"><a href="#cb3-22" tabindex="-1"></a><span class="co">#&gt; First 5 calculated bond angles (with propagated errors):</span></span>
-<span id="cb3-23"><a href="#cb3-23" tabindex="-1"></a><span class="fu">print</span>(analysis_results<span class="sc">$</span>bond_angles[[<span class="dv">1</span>]][<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>, ])</span>
-<span id="cb3-24"><a href="#cb3-24" tabindex="-1"></a><span class="co">#&gt; Key: &lt;CentralAtom, Neighbor1, Neighbor2&gt;</span></span>
-<span id="cb3-25"><a href="#cb3-25" tabindex="-1"></a><span class="co">#&gt;    CentralAtom     Neighbor1     Neighbor2     Angle AngleError</span></span>
-<span id="cb3-26"><a href="#cb3-26" tabindex="-1"></a><span class="co">#&gt;         &lt;char&gt;        &lt;fctr&gt;        &lt;fctr&gt;     &lt;num&gt;      &lt;num&gt;</span></span>
-<span id="cb3-27"><a href="#cb3-27" tabindex="-1"></a><span class="co">#&gt; 1:         Si1 Sr1_4_0_-1_-1  Sr1_4_0_0_-1 107.92071  0.3991814</span></span>
-<span id="cb3-28"><a href="#cb3-28" tabindex="-1"></a><span class="co">#&gt; 2:         Si1 Sr1_4_0_-1_-1  Sr2_1_0_0_-1  72.62529  0.2625336</span></span>
-<span id="cb3-29"><a href="#cb3-29" tabindex="-1"></a><span class="co">#&gt; 3:         Si1 Sr1_4_0_-1_-1 Sr2_3_-1_-1_0  69.97350  0.1320523</span></span>
-<span id="cb3-30"><a href="#cb3-30" tabindex="-1"></a><span class="co">#&gt; 4:         Si1 Sr1_4_0_-1_-1  Sr2_3_-1_0_0 149.23688  0.4492550</span></span>
-<span id="cb3-31"><a href="#cb3-31" tabindex="-1"></a><span class="co">#&gt; 5:         Si1 Sr1_4_0_-1_-1   Sr1_1_0_0_0 125.55190  0.2121372</span></span></code></pre></div>
+<span id="cb3-21"><a href="#cb3-21" tabindex="-1"></a><span class="fu">print</span>(analysis_results<span class="sc">$</span>bond_angles[[<span class="dv">1</span>]][<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>, ])</span></code></pre></div>
 <h2 id="learning-more">Learning More</h2>
 <p>For a detailed, step-by-step guide explaining each function, the
 crystallographic principles, and the formulas used for calculations,

@@ -49,8 +49,6 @@ knitr::opts_chunk$set(
 
 *   **For Open-Source Projects:** The package is licensed under the **GNU General Public License v3.0 (GPL-3.0)**. If you are developing other open-source software, you are free to use, modify, and distribute `crystract` under the terms of the GPL-3.0.
 
-*   **For Non-Commercial Use:** For academic, research, personal, and other non-commercial purposes, the package is licensed under the **PolyForm Noncommercial License 1.0.0** (specified in the `LICENSE` file).
-
 *   **For Commercial Use:** If you wish to use `crystract` in a commercial product, for commercial services, or for any other commercial purpose, you must obtain a separate commercial license. Please contact the package maintainer to arrange the terms.
 
 ## Installation
@@ -98,7 +96,7 @@ If this command runs without any errors, the installation was successful.
 
 The `analyze_cif_files()` function provides a complete, one-step workflow. It can process hundreds of files, but here we demonstrate it on a single example file included with the package.
 
-```{r workflow, message=FALSE, warning=FALSE}
+```{r workflow, message=FALSE, warning=FALSE, eval=FALSE}
 library(crystract)
 
 # 1. Define the path to your CIF file

@@ -71,11 +71,6 @@ variety of use cases:
   open-source software, you are free to use, modify, and distribute
   `crystract` under the terms of the GPL-3.0.
 
-- **For Non-Commercial Use:** For academic, research, personal, and
-  other non-commercial purposes, the package is licensed under the
-  **PolyForm Noncommercial License 1.0.0** (specified in the `LICENSE`
-  file).
-
 - **For Commercial Use:** If you wish to use `crystract` in a commercial
   product, for commercial services, or for any other commercial purpose,
   you must obtain a separate commercial license. Please contact the
@@ -141,8 +136,11 @@ on a single example file included with the package.
 ``` r
 library(crystract)
 
-# 1. Get the path to a sample CIF file
-cif_path <- system.file("extdata", "ICSD422.cif", package = "crystract")
+# 1. Define the path to your CIF file
+# NOTE: The example file ICSD422.cif is not bundled with the package.
+# Please download it from the ICSD (see required_ICSD_files.csv in the
+# repository root) and update the path below.
+cif_path <- "path/to/your/ICSD422.cif"
 
 # 2. Analyze the file(s)
 # This single function handles all extraction, calculation, and error propagation.
@@ -151,25 +149,12 @@ analysis_results <- analyze_cif_files(cif_path)
 # 3. Explore the high-level results
 # The output is a data.table with metadata and list-columns for detailed results.
 print(analysis_results[, .(database_code, chemical_formula, space_group_name)])
-#>    database_code chemical_formula space_group_name
-#>           <char>           <char>           <char>
-#> 1:      ICSD 422          Si1 Sr2          P n m a
 
 # 4. Access detailed calculated properties
 # To get the bond angles table, we must extract the first element `[[1]]` 
 # from the list-column, then we can select the first 5 rows `[1:5, ]`.
 cat("\nFirst 5 calculated bond angles (with propagated errors):\n")
-#> 
-#> First 5 calculated bond angles (with propagated errors):
 print(analysis_results$bond_angles[[1]][1:5, ])
-#> Key: <CentralAtom, Neighbor1, Neighbor2>
-#>    CentralAtom     Neighbor1     Neighbor2     Angle AngleError
-#>         <char>        <fctr>        <fctr>     <num>      <num>
-#> 1:         Si1 Sr1_4_0_-1_-1  Sr1_4_0_0_-1 107.92071  0.3991814
-#> 2:         Si1 Sr1_4_0_-1_-1  Sr2_1_0_0_-1  72.62529  0.2625336
-#> 3:         Si1 Sr1_4_0_-1_-1 Sr2_3_-1_-1_0  69.97350  0.1320523
-#> 4:         Si1 Sr1_4_0_-1_-1  Sr2_3_-1_0_0 149.23688  0.4492550
-#> 5:         Si1 Sr1_4_0_-1_-1   Sr1_1_0_0_0 125.55190  0.2121372
 ```
 
 ## Learning More
