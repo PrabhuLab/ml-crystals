@@ -4,7 +4,8 @@ authors:
   - name: Don Ngo
     orcid: 0009-0001-2779-2146
     affiliation: 1
-  - name: Julia M. Huebner
+    corresponding: true
+  - name: Julia M. Hbner
     orcid: 0000-0003-2048-6629
     affiliation: 2
   - name: Marc Spitzner
@@ -15,6 +16,7 @@ authors:
   - name: Anirudh Prabhu
     orcid: 0000-0002-9921-6084
     affiliation: 1
+    corresponding: true 
 affiliations:
  - name: Earth and Planets Laboratory, Carnegie Institution for Science, Washington, DC, USA
    index: 1
@@ -86,5 +88,33 @@ Finally, as an open source package, "`crystract`" will be a community-driven, tr
 # Acknowledgements
 
 The authors would like to thank Michael Baitinger, Robert T. Downs, Jolyon Ralph, and Xiaogang Ma for their discussions on crystallography, and cyberinfrastructure development. D.N. has been supported by the Earth and Planetary Science Interdisciplinary Internship at Carnegie Science (a National Science Foundation REU). Additionally, funding and support for this project was provided by the Carnegie Institution for Science and a private foundation.
+
+# Author Contributions using the CRediT (Contribution Roles Taxonomy)
+
+Conceptualization – AP, JMH
+
+Data Curation – DN, JMH, AP
+
+Formal Analysis – DN, JMH, AP
+
+Funding Acquisition – AP
+
+Investigation – DN, JMH, AP
+
+Methodology – DN, JMH, AP
+
+Project Administrator – AP, JMH
+
+Resources – SMM, JMH, AP, MS
+
+Software – DN, JMH, AP
+
+Supervision – AP, JMH
+
+Validation – DN, JMH, SMM, AP, MS
+
+Writing (Original Draft Preparation) – DN, JMH, AP
+
+Writing (Review & Editing) – DN, JMH, AP, SMM, MS
 
 # References
