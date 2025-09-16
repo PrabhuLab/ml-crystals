@@ -5,7 +5,7 @@ authors:
     orcid: 0009-0001-2779-2146
     affiliation: 1
     corresponding: true
-  - name: Julia M. Hbner
+  - name: Julia M. Hübner
     orcid: 0000-0003-2048-6629
     affiliation: 2
   - name: Marc Spitzner
