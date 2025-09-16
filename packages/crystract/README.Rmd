@@ -101,8 +101,11 @@ The `analyze_cif_files()` function provides a complete, one-step workflow. It ca
 ```{r workflow, message=FALSE, warning=FALSE}
 library(crystract)
 
-# 1. Get the path to a sample CIF file
-cif_path <- system.file("extdata", "ICSD422.cif", package = "crystract")
+# 1. Define the path to your CIF file
+# NOTE: The example file ICSD422.cif is not bundled with the package.
+# Please download it from the ICSD (see required_ICSD_files.csv in the
+# repository root) and update the path below.
+cif_path <- "path/to/your/ICSD422.cif"
 
 # 2. Analyze the file(s)
 # This single function handles all extraction, calculation, and error propagation.

@@ -38,3 +38,13 @@ This directory contains the manuscript source files for the scientific publicati
 *   **Key Contents**:
     *   `paper.md`: The manuscript text written in Markdown.
     *   `paper.bib`: The bibliography and references in BibTeX format.
+
+## Data Availability
+
+Please note that due to licensing restrictions, the Crystallographic Information Files (.cif) obtained from the Inorganic Crystal Structure Database (ICSD) are not included in this repository.
+
+To reproduce the analyses presented in the the package examples, you must have access to the ICSD and download the required files yourself. A complete list of all necessary ICSD entry codes can be found in the file:
+
+-   **`required_ICSD_files.csv`**
+
+This file provides the ICSD codes and, for larger datasets, the subdirectory where each file should be placed to replicate the original analysis structure.

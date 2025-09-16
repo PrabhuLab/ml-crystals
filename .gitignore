@@ -1,4 +1,8 @@
-.Rproj.user
-.Rhistory
-.RData
-.Ruserdata
+/packages/crystract/.Rproj.user
+/packages/crystract/.Rhistory
+/packages/crystract/.RData
+/packages/crystract/.Ruserdata
+/packages/crystract/inst/
+/notebook/data/
+/packages/crystract/doc/
+/packages/crystract/Meta/
