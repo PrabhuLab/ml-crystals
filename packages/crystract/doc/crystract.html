@@ -1,0 +1,1190 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>crystract</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">crystract</h1>
+
+
+
+<div id="introduction" class="section level2">
+<h2>Introduction</h2>
+<p>This vignette demonstrates the core workflow for using the
+<code>crystract</code> package. The package is designed for the
+<strong>batch processing</strong> of Crystallographic Information Files
+(.cif) to extract structural and chemical information from the repeating
+atomic arrangement that defines a crystal. It calculates key geometric
+properties like bond lengths and angles and compiles the results into a
+structured format suitable for large-scale data analysis.</p>
+<p>We will first demonstrate the main batch-processing function,
+<code>analyze_cif_files</code>. Then, to illustrate how it works, we
+will walk through the analysis of a single file step-by-step, explaining
+the underlying functions, the crystallographic principles, and the
+mathematical formulas they employ.</p>
+<div id="setup-loading-the-package" class="section level3">
+<h3>Setup: Loading the Package</h3>
+<p>First, we load the <code>crystract</code> package.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(crystract)</span></code></pre></div>
+</div>
+</div>
+<div id="the-core-crystract-workflow" class="section level2">
+<h2>1. The Core <code>crystract</code> Workflow</h2>
+<p>The primary goal of <code>crystract</code> is to automate the
+analysis of many CIF files at once. While the package provides granular
+functions for each step of the crystallographic analysis, the most
+common use case is to leverage the main wrapper function for an
+end-to-end pipeline.</p>
+<div id="the-full-pipeline-for-batch-processing" class="section level3">
+<h3>1.1 The Full Pipeline for Batch Processing</h3>
+<p>The <code>analyze_cif_files()</code> function is the cornerstone of
+the package. It performs the entire sequence of operations—from reading
+files to calculating bond angles with error propagation—for one or more
+files. It takes a vector of file paths and returns a single
+<code>data.table</code> where each row corresponds to a processed CIF
+file. Complex results (like coordinates, distances, and angles) are
+stored in list-columns for easy access and analysis.</p>
+<p>This is the recommended function for batch processing. The code block
+below shows a commented-out example of how you would load all CIF files
+from the package’s example data directory. For this demonstration, we
+will proceed by analyzing just a single example file.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="co"># Find the path to the single example CIF file included in the package</span></span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>cif_path <span class="ot">&lt;-</span> <span class="fu">system.file</span>(<span class="st">&quot;extdata&quot;</span>, <span class="st">&quot;ICSD422.cif&quot;</span>, <span class="at">package =</span> <span class="st">&quot;crystract&quot;</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="co"># --- Example for batch processing a directory ---</span></span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="co"># To load all CIF files from the package&#39;s example directory, you would </span></span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a><span class="co"># uncomment and run this:</span></span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="co"># extdata_dir &lt;- system.file(&quot;extdata&quot;, package = &quot;crystract&quot;)</span></span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="co"># all_cif_paths &lt;- list.files(path = extdata_dir, pattern = &quot;\\.cif$&quot;, full.names = TRUE)</span></span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="co"># analysis_results_batch &lt;- analyze_cif_files(all_cif_paths)</span></span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a></span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a><span class="co"># For this vignette, we will run the pipeline on just our single example file</span></span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a>analysis_results <span class="ot">&lt;-</span> <span class="fu">analyze_cif_files</span>(cif_path)</span>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a></span>
+<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a><span class="co"># Let&#39;s inspect the structure of the output table.</span></span>
+<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a><span class="co"># It&#39;s a single row containing all our results in nested data.tables.</span></span>
+<span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a><span class="fu">str</span>(analysis_results, <span class="at">max.level =</span> <span class="dv">2</span>)</span>
+<span id="cb2-17"><a href="#cb2-17" tabindex="-1"></a><span class="co">#&gt; Classes &#39;data.table&#39; and &#39;data.frame&#39;:   1 obs. of  17 variables:</span></span>
+<span id="cb2-18"><a href="#cb2-18" tabindex="-1"></a><span class="co">#&gt;  $ file_name                    : chr &quot;ICSD422.cif&quot;</span></span>
+<span id="cb2-19"><a href="#cb2-19" tabindex="-1"></a><span class="co">#&gt;  $ database_code                : chr &quot;ICSD 422&quot;</span></span>
+<span id="cb2-20"><a href="#cb2-20" tabindex="-1"></a><span class="co">#&gt;  $ chemical_formula             : chr &quot;Si1 Sr2&quot;</span></span>
+<span id="cb2-21"><a href="#cb2-21" tabindex="-1"></a><span class="co">#&gt;  $ structure_type               : chr &quot;TiNiSi#MgSrSi&quot;</span></span>
+<span id="cb2-22"><a href="#cb2-22" tabindex="-1"></a><span class="co">#&gt;  $ space_group_name             : chr &quot;P n m a&quot;</span></span>
+<span id="cb2-23"><a href="#cb2-23" tabindex="-1"></a><span class="co">#&gt;  $ space_group_number           : chr &quot;62&quot;</span></span>
+<span id="cb2-24"><a href="#cb2-24" tabindex="-1"></a><span class="co">#&gt;  $ unit_cell_metrics            :List of 1</span></span>
+<span id="cb2-25"><a href="#cb2-25" tabindex="-1"></a><span class="co">#&gt;   ..$ :Classes &#39;data.table&#39; and &#39;data.frame&#39;:    1 obs. of  12 variables:</span></span>
+<span id="cb2-26"><a href="#cb2-26" tabindex="-1"></a><span class="co">#&gt;   .. ..- attr(*, &quot;.internal.selfref&quot;)=&lt;externalptr&gt; </span></span>
+<span id="cb2-27"><a href="#cb2-27" tabindex="-1"></a><span class="co">#&gt;  $ atomic_coordinates           :List of 1</span></span>
+<span id="cb2-28"><a href="#cb2-28" tabindex="-1"></a><span class="co">#&gt;   ..$ :Classes &#39;data.table&#39; and &#39;data.frame&#39;:    3 obs. of  11 variables:</span></span>
+<span id="cb2-29"><a href="#cb2-29" tabindex="-1"></a><span class="co">#&gt;   .. ..- attr(*, &quot;.internal.selfref&quot;)=&lt;externalptr&gt; </span></span>
+<span id="cb2-30"><a href="#cb2-30" tabindex="-1"></a><span class="co">#&gt;  $ symmetry_operations          :List of 1</span></span>
+<span id="cb2-31"><a href="#cb2-31" tabindex="-1"></a><span class="co">#&gt;   ..$ :Classes &#39;data.table&#39; and &#39;data.frame&#39;:    8 obs. of  3 variables:</span></span>
+<span id="cb2-32"><a href="#cb2-32" tabindex="-1"></a><span class="co">#&gt;   .. ..- attr(*, &quot;.internal.selfref&quot;)=&lt;externalptr&gt; </span></span>
+<span id="cb2-33"><a href="#cb2-33" tabindex="-1"></a><span class="co">#&gt;  $ transformed_coords           :List of 1</span></span>
+<span id="cb2-34"><a href="#cb2-34" tabindex="-1"></a><span class="co">#&gt;   ..$ :Classes &#39;data.table&#39; and &#39;data.frame&#39;:    12 obs. of  4 variables:</span></span>
+<span id="cb2-35"><a href="#cb2-35" tabindex="-1"></a><span class="co">#&gt;   .. ..- attr(*, &quot;.internal.selfref&quot;)=&lt;externalptr&gt; </span></span>
+<span id="cb2-36"><a href="#cb2-36" tabindex="-1"></a><span class="co">#&gt;  $ expanded_coords              :List of 1</span></span>
+<span id="cb2-37"><a href="#cb2-37" tabindex="-1"></a><span class="co">#&gt;   ..$ :Classes &#39;data.table&#39; and &#39;data.frame&#39;:    324 obs. of  4 variables:</span></span>
+<span id="cb2-38"><a href="#cb2-38" tabindex="-1"></a><span class="co">#&gt;   .. ..- attr(*, &quot;.internal.selfref&quot;)=&lt;externalptr&gt; </span></span>
+<span id="cb2-39"><a href="#cb2-39" tabindex="-1"></a><span class="co">#&gt;  $ distances                    :List of 1</span></span>
+<span id="cb2-40"><a href="#cb2-40" tabindex="-1"></a><span class="co">#&gt;   ..$ :Classes &#39;data.table&#39; and &#39;data.frame&#39;:    969 obs. of  6 variables:</span></span>
+<span id="cb2-41"><a href="#cb2-41" tabindex="-1"></a><span class="co">#&gt;   .. ..- attr(*, &quot;.internal.selfref&quot;)=&lt;externalptr&gt; </span></span>
+<span id="cb2-42"><a href="#cb2-42" tabindex="-1"></a><span class="co">#&gt;  $ bonded_pairs_minimum_distance:List of 1</span></span>
+<span id="cb2-43"><a href="#cb2-43" tabindex="-1"></a><span class="co">#&gt;   ..$ :Classes &#39;data.table&#39; and &#39;data.frame&#39;:    14 obs. of  9 variables:</span></span>
+<span id="cb2-44"><a href="#cb2-44" tabindex="-1"></a><span class="co">#&gt;   .. ..- attr(*, &quot;.internal.selfref&quot;)=&lt;externalptr&gt; </span></span>
+<span id="cb2-45"><a href="#cb2-45" tabindex="-1"></a><span class="co">#&gt;   .. ..- attr(*, &quot;sorted&quot;)= chr [1:3] &quot;Atom1&quot; &quot;Atom2&quot; &quot;Distance&quot;</span></span>
+<span id="cb2-46"><a href="#cb2-46" tabindex="-1"></a><span class="co">#&gt;  $ bonded_pairs_brunner         :List of 1</span></span>
+<span id="cb2-47"><a href="#cb2-47" tabindex="-1"></a><span class="co">#&gt;   ..$ : NULL</span></span>
+<span id="cb2-48"><a href="#cb2-48" tabindex="-1"></a><span class="co">#&gt;  $ bonded_pairs_hoppe           :List of 1</span></span>
+<span id="cb2-49"><a href="#cb2-49" tabindex="-1"></a><span class="co">#&gt;   ..$ : NULL</span></span>
+<span id="cb2-50"><a href="#cb2-50" tabindex="-1"></a><span class="co">#&gt;  $ neighbor_counts              :List of 1</span></span>
+<span id="cb2-51"><a href="#cb2-51" tabindex="-1"></a><span class="co">#&gt;   ..$ :Classes &#39;data.table&#39; and &#39;data.frame&#39;:    3 obs. of  2 variables:</span></span>
+<span id="cb2-52"><a href="#cb2-52" tabindex="-1"></a><span class="co">#&gt;   .. ..- attr(*, &quot;.internal.selfref&quot;)=&lt;externalptr&gt; </span></span>
+<span id="cb2-53"><a href="#cb2-53" tabindex="-1"></a><span class="co">#&gt;  $ bond_angles                  :List of 1</span></span>
+<span id="cb2-54"><a href="#cb2-54" tabindex="-1"></a><span class="co">#&gt;   ..$ :Classes &#39;data.table&#39; and &#39;data.frame&#39;:    30 obs. of  5 variables:</span></span>
+<span id="cb2-55"><a href="#cb2-55" tabindex="-1"></a><span class="co">#&gt;   .. ..- attr(*, &quot;.internal.selfref&quot;)=&lt;externalptr&gt; </span></span>
+<span id="cb2-56"><a href="#cb2-56" tabindex="-1"></a><span class="co">#&gt;   .. ..- attr(*, &quot;sorted&quot;)= chr [1:3] &quot;CentralAtom&quot; &quot;Neighbor1&quot; &quot;Neighbor2&quot;</span></span>
+<span id="cb2-57"><a href="#cb2-57" tabindex="-1"></a><span class="co">#&gt;  - attr(*, &quot;.internal.selfref&quot;)=&lt;externalptr&gt;</span></span></code></pre></div>
+<p>As shown in the structure output, the result is a tidy
+<code>data.table</code> containing all extracted and calculated
+information. We can easily access the nested data frames for further
+analysis. Note that the output includes results from multiple bonding
+algorithms, such as <code>bonded_pairs</code> (Minimum Distance),
+<code>brunner_pairs</code>, and <code>hoppe_pairs</code>, which are
+described later.</p>
+<p>To get the final <code>bonded_pairs</code> table (which includes
+propagated errors):</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="co"># The result is a list-column, so we access the element with [[1]]</span></span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>final_bonds <span class="ot">&lt;-</span> analysis_results<span class="sc">$</span>bonded_pairs[[<span class="dv">1</span>]]</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">head</span>(final_bonds))</span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="co">#&gt; NULL</span></span></code></pre></div>
+</div>
+<div id="a-step-by-step-walkthrough" class="section level3">
+<h3>1.2 A Step-by-Step Walkthrough</h3>
+<p>To understand what <code>analyze_cif_files()</code> does under the
+hood, this section breaks down the process. We will use a single CIF
+file to demonstrate each function individually, explaining the
+crystallographic concepts and the structure of the output at each
+stage.</p>
+<div id="loading-cif-data" class="section level4">
+<h4>1.2.1 Loading CIF Data</h4>
+<p>We use the package’s <code>read_cif_files()</code> function to load
+data into memory. For this demonstration, we use an example CIF file for
+Strontium Silicide (Sr<span class="math inline">\(_2\)</span>Si) from
+the Inorganic Crystal Structure Database (ICSD), specifically entry 422.
+This entry can be found online here:<span style="color: #0000FF;"> <a href="https://www.ccdc.cam.ac.uk/structures/search?pid=ccdc:422&amp;DatabaseToSearch=ICSD"><u>ICSD
+422</u></a></span>.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="co"># The path was defined in the previous section:</span></span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>cif_data_list <span class="ot">&lt;-</span> <span class="fu">read_cif_files</span>(cif_path)</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="co"># We&#39;ll work with the content of the first file</span></span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>cif_content <span class="ot">&lt;-</span> cif_data_list[[<span class="dv">1</span>]]</span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="co"># Let&#39;s look at the first few lines of the raw data</span></span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(</span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a>  <span class="fu">head</span>(cif_content),</span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a>  <span class="at">caption =</span> <span class="st">&quot;First 6 lines of the raw CIF data.&quot;</span></span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a>)</span></code></pre></div>
+<table>
+<caption>First 6 lines of the raw CIF data.</caption>
+<colgroup>
+<col width="100%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">V1</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">#(C) 2023 by FIZ Karlsruhe - Leibniz Institute for
+Information Infrastructure. All rights reserved.</td>
+</tr>
+<tr class="even">
+<td align="left">data_422-ICSD</td>
+</tr>
+<tr class="odd">
+<td align="left">_database_code_ICSD 422</td>
+</tr>
+<tr class="even">
+<td align="left">_audit_creation_date 1980-01-01</td>
+</tr>
+<tr class="odd">
+<td align="left">_audit_update_record 2000-07-15</td>
+</tr>
+<tr class="even">
+<td align="left">_chemical_name_common ‘Strontium silicide (2/1)’</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="extracting-metadata-and-unit-cell-parameters" class="section level4">
+<h4>1.2.2 Extracting Metadata and Unit Cell Parameters</h4>
+<p>A crystal structure is defined by its <strong>unit cell</strong>, the
+smallest repeating parallelepiped that can be used to build the entire
+crystal through translation, and the arrangement of atoms within it. We
+first extract this high-level information.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>database_code <span class="ot">&lt;-</span> <span class="fu">extract_database_code</span>(cif_content)</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>chemical_formula <span class="ot">&lt;-</span> <span class="fu">extract_chemical_formula</span>(cif_content)</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>space_group_name <span class="ot">&lt;-</span> <span class="fu">extract_space_group_name</span>(cif_content)</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>space_group_number <span class="ot">&lt;-</span> <span class="fu">extract_space_group_number</span>(cif_content)</span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a></span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Database Code:&quot;</span>, database_code, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a><span class="co">#&gt; Database Code: ICSD 422</span></span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Chemical Formula:&quot;</span>, chemical_formula, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a><span class="co">#&gt; Chemical Formula: Si1 Sr2</span></span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Space Group:&quot;</span>, space_group_name, <span class="st">&quot;(No.&quot;</span>, space_group_number, <span class="st">&quot;)</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a><span class="co">#&gt; Space Group: P n m a (No. 62 )</span></span></code></pre></div>
+<p>Next, <code>extract_unit_cell_metrics()</code> extracts the six
+parameters that define the shape and size of the unit cell: the lengths
+of its three axes (<span class="math inline">\(a\)</span>, <span class="math inline">\(b\)</span>, <span class="math inline">\(c\)</span>) and the angles between them (<span class="math inline">\(\alpha\)</span>, <span class="math inline">\(\beta\)</span>, <span class="math inline">\(\gamma\)</span>). Their experimental uncertainties
+(<span class="math inline">\(a_{err}\)</span>, etc.) are also
+extracted.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>unit_cell_metrics <span class="ot">&lt;-</span> <span class="fu">extract_unit_cell_metrics</span>(cif_content)</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="fu">print</span>(unit_cell_metrics)</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="co">#&gt;    _cell_length_a _cell_length_b _cell_length_c _cell_angle_alpha</span></span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="co">#&gt;             &lt;num&gt;          &lt;num&gt;          &lt;num&gt;             &lt;num&gt;</span></span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="co">#&gt; 1:           8.11           5.15           9.54                90</span></span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a><span class="co">#&gt;    _cell_angle_beta _cell_angle_gamma _cell_length_a_error _cell_length_b_error</span></span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a><span class="co">#&gt;               &lt;num&gt;             &lt;num&gt;                &lt;num&gt;                &lt;num&gt;</span></span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a><span class="co">#&gt; 1:               90                90                   NA                   NA</span></span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a><span class="co">#&gt;    _cell_length_c_error _cell_angle_alpha_error _cell_angle_beta_error</span></span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="co">#&gt;                   &lt;num&gt;                   &lt;num&gt;                  &lt;num&gt;</span></span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="co">#&gt; 1:                   NA                      NA                     NA</span></span>
+<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a><span class="co">#&gt;    _cell_angle_gamma_error</span></span>
+<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a><span class="co">#&gt;                      &lt;num&gt;</span></span>
+<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a><span class="co">#&gt; 1:                      NA</span></span></code></pre></div>
+</div>
+<div id="extracting-atomic-and-symmetry-data" class="section level4">
+<h4>1.2.3 Extracting Atomic and Symmetry Data</h4>
+<p>Instead of listing every atom in the unit cell, a CIF file
+efficiently describes the structure using only the <strong>asymmetric
+unit</strong>: the smallest set of unique atoms. All other atoms in the
+unit cell can be generated by applying the crystal’s <strong>symmetry
+operations</strong> to this unique set.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="co"># Extract the coordinates of the unique atoms in the asymmetric unit</span></span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>atomic_coordinates <span class="ot">&lt;-</span> <span class="fu">extract_atomic_coordinates</span>(cif_content)</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="fu">print</span>(<span class="st">&quot;Asymmetric Atomic Coordinates:&quot;</span>)</span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Asymmetric Atomic Coordinates:&quot;</span></span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="fu">print</span>(atomic_coordinates)</span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="co">#&gt;     Label WyckoffSymbol WyckoffMultiplicity Occupancy OccupancyError    x_a</span></span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a><span class="co">#&gt;    &lt;char&gt;        &lt;char&gt;               &lt;num&gt;     &lt;num&gt;          &lt;num&gt;  &lt;num&gt;</span></span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a><span class="co">#&gt; 1:    Sr1             c                   4         1             NA 0.6529</span></span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a><span class="co">#&gt; 2:    Sr2             c                   4         1             NA 0.5192</span></span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a><span class="co">#&gt; 3:    Si1             c                   4         1             NA 0.2539</span></span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a><span class="co">#&gt;      y_b    z_c x_error y_error z_error</span></span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a><span class="co">#&gt;    &lt;num&gt;  &lt;num&gt;   &lt;num&gt;   &lt;num&gt;   &lt;num&gt;</span></span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a><span class="co">#&gt; 1:  0.25 0.0769  0.0006      NA  0.0005</span></span>
+<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a><span class="co">#&gt; 2:  0.25 0.6748  0.0006      NA  0.0005</span></span>
+<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a><span class="co">#&gt; 3:  0.25 0.1028  0.0016      NA  0.0014</span></span>
+<span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a></span>
+<span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a><span class="co"># Extract the symmetry operations</span></span>
+<span id="cb7-18"><a href="#cb7-18" tabindex="-1"></a>symmetry_operations <span class="ot">&lt;-</span> <span class="fu">extract_symmetry_operations</span>(cif_content)</span>
+<span id="cb7-19"><a href="#cb7-19" tabindex="-1"></a><span class="fu">print</span>(<span class="st">&quot;Symmetry Operations (first 6 of 8):&quot;</span>)</span>
+<span id="cb7-20"><a href="#cb7-20" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Symmetry Operations (first 6 of 8):&quot;</span></span>
+<span id="cb7-21"><a href="#cb7-21" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">head</span>(symmetry_operations))</span>
+<span id="cb7-22"><a href="#cb7-22" tabindex="-1"></a><span class="co">#&gt;         x      y      z</span></span>
+<span id="cb7-23"><a href="#cb7-23" tabindex="-1"></a><span class="co">#&gt;    &lt;char&gt; &lt;char&gt; &lt;char&gt;</span></span>
+<span id="cb7-24"><a href="#cb7-24" tabindex="-1"></a><span class="co">#&gt; 1:  x+1/2      y -z+1/2</span></span>
+<span id="cb7-25"><a href="#cb7-25" tabindex="-1"></a><span class="co">#&gt; 2:      x -y+1/2      z</span></span>
+<span id="cb7-26"><a href="#cb7-26" tabindex="-1"></a><span class="co">#&gt; 3: -x+1/2  y+1/2  z+1/2</span></span>
+<span id="cb7-27"><a href="#cb7-27" tabindex="-1"></a><span class="co">#&gt; 4:     -x     -y     -z</span></span>
+<span id="cb7-28"><a href="#cb7-28" tabindex="-1"></a><span class="co">#&gt; 5: -x+1/2     -y  z+1/2</span></span>
+<span id="cb7-29"><a href="#cb7-29" tabindex="-1"></a><span class="co">#&gt; 6:     -x  y+1/2     -z</span></span></code></pre></div>
+<p><strong>Understanding the <code>atomic_coordinates</code>
+Table:</strong></p>
+<ul>
+<li><code>Label</code>: This is a unique identifier for each atom in the
+asymmetric unit. The number (e.g., <code>Sr1</code>, <code>Sr2</code>)
+distinguishes atoms of the same element that occupy crystallographically
+distinct sites (i.e., they have different local environments and cannot
+be transformed into one another by a symmetry operation).</li>
+<li><code>x_a</code>, <code>y_b</code>, <code>z_c</code>: These are the
+<strong>fractional coordinates</strong> of the atom. They describe the
+atom’s position as a fraction of the length of the unit cell axes <span class="math inline">\(a\)</span>, <span class="math inline">\(b\)</span>, and <span class="math inline">\(c\)</span>, respectively. A value of <span class="math inline">\((0.5, 0.5, 0.5)\)</span> represents the exact
+center of the unit cell.</li>
+<li><code>x_error</code>, <code>y_error</code>, <code>z_error</code>:
+The experimental standard uncertainties associated with each
+coordinate.</li>
+</ul>
+</div>
+<div id="generating-the-full-crystal-structure" class="section level4">
+<h4>1.2.4 Generating the Full Crystal Structure</h4>
+<p>Now we use the asymmetric atoms and symmetry operations to
+computationally build the full crystal structure. This is a two-step
+process.</p>
+<p><strong>Formula Context: Symmetry Operations</strong></p>
+<p>A symmetry operation is an affine transformation that maps an initial
+fractional coordinate <span class="math inline">\((x, y, z)\)</span> to
+a new coordinate <span class="math inline">\((x&#39;, y&#39;,
+z&#39;)\)</span>. It consists of a rotation/reflection matrix <span class="math inline">\(\mathbf{W}\)</span> and a translation vector <span class="math inline">\(\mathbf{w}\)</span>.</p>
+<p><span class="math display">\[
+\begin{pmatrix} x&#39; \\ y&#39; \\ z&#39; \end{pmatrix} =
+\begin{pmatrix} W_{11} &amp; W_{12} &amp; W_{13} \\ W_{21} &amp; W_{22}
+&amp; W_{23} \\ W_{31} &amp; W_{32} &amp; W_{33} \end{pmatrix}
+\begin{pmatrix} x \\ y \\ z \end{pmatrix} +
+\begin{pmatrix} w_1 \\ w_2 \\ w_3 \end{pmatrix}
+\quad \text{or} \quad \mathbf{x&#39;} = \mathbf{W}\mathbf{x} +
+\mathbf{w}
+\]</span></p>
+<p>The <code>apply_symmetry_operations</code> function applies all of
+the crystal’s symmetry operations to each atom in the asymmetric unit,
+generating the complete set of atoms within the primary unit cell.</p>
+<p><strong>Formula Context: Supercell Expansion</strong></p>
+<p>To find all nearest neighbors of an atom, we must also consider atoms
+in adjacent unit cells. The <code>expand_transformed_coords</code>
+function generates a <strong>supercell</strong> (in this case, 3x3x3) by
+translating the primary unit cell atoms by integer vectors <span class="math inline">\((i, j, k)\)</span>, where <span class="math inline">\(i, j, k\)</span> each range from -1 to 1. An atom
+at fractional coordinate <span class="math inline">\((x, y, z)\)</span>
+generates new coordinates: <span class="math display">\[
+(x_{exp}, y_{exp}, z_{exp}) = (x + i, y + j, z + k)
+\]</span></p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="co"># Apply symmetry to generate all atoms in the primary unit cell</span></span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>transformed_coords <span class="ot">&lt;-</span> <span class="fu">apply_symmetry_operations</span>(atomic_coordinates, symmetry_operations)</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="fu">print</span>(<span class="st">&quot;Unique atoms in full unit cell (first 6 of 12):&quot;</span>)</span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Unique atoms in full unit cell (first 6 of 12):&quot;</span></span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">head</span>(transformed_coords))</span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="co">#&gt;     Label    x_a   y_b    z_c</span></span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a><span class="co">#&gt;    &lt;char&gt;  &lt;num&gt; &lt;num&gt;  &lt;num&gt;</span></span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a><span class="co">#&gt; 1:  Sr1_1 0.1529  0.25 0.4231</span></span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="co">#&gt; 2:  Sr1_2 0.6529  0.25 0.0769</span></span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a><span class="co">#&gt; 3:  Sr1_3 0.8471  0.75 0.5769</span></span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a><span class="co">#&gt; 4:  Sr1_4 0.3471  0.75 0.9231</span></span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a><span class="co">#&gt; 5:  Sr2_1 0.0192  0.25 0.8252</span></span>
+<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a><span class="co">#&gt; 6:  Sr2_2 0.5192  0.25 0.6748</span></span>
+<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a></span>
+<span id="cb8-15"><a href="#cb8-15" tabindex="-1"></a><span class="co"># Expand into a 3x3x3 supercell for neighbor calculations</span></span>
+<span id="cb8-16"><a href="#cb8-16" tabindex="-1"></a>expanded_coords <span class="ot">&lt;-</span> <span class="fu">expand_transformed_coords</span>(transformed_coords)</span>
+<span id="cb8-17"><a href="#cb8-17" tabindex="-1"></a><span class="fu">print</span>(<span class="st">&quot;Atoms in supercell (first 6 of 324):&quot;</span>)</span>
+<span id="cb8-18"><a href="#cb8-18" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Atoms in supercell (first 6 of 324):&quot;</span></span>
+<span id="cb8-19"><a href="#cb8-19" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">head</span>(expanded_coords))</span>
+<span id="cb8-20"><a href="#cb8-20" tabindex="-1"></a><span class="co">#&gt;             Label     x_a   y_b     z_c</span></span>
+<span id="cb8-21"><a href="#cb8-21" tabindex="-1"></a><span class="co">#&gt;            &lt;char&gt;   &lt;num&gt; &lt;num&gt;   &lt;num&gt;</span></span>
+<span id="cb8-22"><a href="#cb8-22" tabindex="-1"></a><span class="co">#&gt; 1: Sr1_1_-1_-1_-1 -0.8471 -0.75 -0.5769</span></span>
+<span id="cb8-23"><a href="#cb8-23" tabindex="-1"></a><span class="co">#&gt; 2: Sr1_2_-1_-1_-1 -0.3471 -0.75 -0.9231</span></span>
+<span id="cb8-24"><a href="#cb8-24" tabindex="-1"></a><span class="co">#&gt; 3: Sr1_3_-1_-1_-1 -0.1529 -0.25 -0.4231</span></span>
+<span id="cb8-25"><a href="#cb8-25" tabindex="-1"></a><span class="co">#&gt; 4: Sr1_4_-1_-1_-1 -0.6529 -0.25 -0.0769</span></span>
+<span id="cb8-26"><a href="#cb8-26" tabindex="-1"></a><span class="co">#&gt; 5: Sr2_1_-1_-1_-1 -0.9808 -0.75 -0.1748</span></span>
+<span id="cb8-27"><a href="#cb8-27" tabindex="-1"></a><span class="co">#&gt; 6: Sr2_2_-1_-1_-1 -0.4808 -0.75 -0.3252</span></span></code></pre></div>
+<p><strong>Understanding the Generated Atom Labels:</strong></p>
+<ul>
+<li><strong><code>transformed_coords</code> Label (e.g.,
+<code>Sr1_1</code>)</strong>: The label <code>Sr1_1</code> means “the
+atom generated by applying the 1st symmetry operation to the asymmetric
+atom <code>Sr1</code>”. <code>Sr1_2</code> comes from the 2nd symmetry
+operation, and so on.</li>
+<li><strong><code>expanded_coords</code> Label (e.g.,
+<code>Sr1_1_-1_-1_-1</code>)</strong>: This label provides the full
+history. <code>Sr1_1_-1_-1_-1</code> is the atom that was generated from
+asymmetric atom <code>Sr1</code> via the 1st symmetry operation, and
+then translated by <span class="math inline">\(i=-1, j=-1, k=-1\)</span>
+(i.e., moved one unit cell length in the negative direction along all
+three axes <span class="math inline">\(a\)</span>, <span class="math inline">\(b\)</span>, and <span class="math inline">\(c\)</span>).</li>
+</ul>
+</div>
+<div id="calculating-interatomic-distances" class="section level4">
+<h4>1.2.5 Calculating Interatomic Distances</h4>
+<p><strong>Formula Context: Interatomic Distance in a Triclinic
+System</strong></p>
+<p>Because unit cell axes are not always orthogonal, the simple
+Pythagorean theorem is insufficient. The distance <span class="math inline">\(d\)</span> between two atoms at fractional
+coordinates <span class="math inline">\((x_{f1}, y_{f1},
+z_{f1})\)</span> and <span class="math inline">\((x_{f2}, y_{f2},
+z_{f2})\)</span> requires the full crystallographic distance formula,
+which accounts for the unit cell metric tensor:</p>
+<p><span class="math display">\[
+d = \left(
+\begin{aligned}
+&amp; a^2(x_{f1}-x_{f2})^2 + b^2(y_{f1}-y_{f2})^2 + c^2(z_{f1}-z_{f2})^2
+\\
+&amp; + 2ab(x_{f1}-x_{f2})(y_{f1}-y_{f2})\cos\gamma \\
+&amp; + 2ac(x_{f1}-x_{f2})(z_{f1}-z_{f2})\cos\beta \\
+&amp; + 2bc(y_{f1}-y_{f2})(z_{f1}-z_{f2})\cos\alpha
+\end{aligned}
+\right)^{1/2}
+\]</span></p>
+<p>The <code>calculate_distances</code> function computes the distances
+from each central atom (from the asymmetric unit) to all other atoms in
+the generated supercell.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>distances <span class="ot">&lt;-</span> <span class="fu">calculate_distances</span>(atomic_coordinates, expanded_coords, unit_cell_metrics)</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="fu">print</span>(<span class="st">&quot;Calculated Distances (shortest 6):&quot;</span>)</span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Calculated Distances (shortest 6):&quot;</span></span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">head</span>(distances[<span class="fu">order</span>(Distance)]))</span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a><span class="co">#&gt;     Atom1         Atom2 Distance  DeltaX DeltaY  DeltaZ</span></span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="co">#&gt;    &lt;fctr&gt;        &lt;fctr&gt;    &lt;num&gt;   &lt;num&gt;  &lt;num&gt;   &lt;num&gt;</span></span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a><span class="co">#&gt; 1:    Si1   Sr1_1_0_0_0 3.163544  0.1010    0.0 -0.3203</span></span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a><span class="co">#&gt; 2:    Sr1   Si1_1_0_0_0 3.163544 -0.1010    0.0 -0.3203</span></span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a><span class="co">#&gt; 3:    Sr1 Si1_4_0_-1_-1 3.184477 -0.0932    0.5  0.1797</span></span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a><span class="co">#&gt; 4:    Sr1  Si1_4_0_0_-1 3.184477 -0.0932   -0.5  0.1797</span></span>
+<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a><span class="co">#&gt; 5:    Si1 Sr1_4_0_-1_-1 3.184477 -0.0932    0.5  0.1797</span></span>
+<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a><span class="co">#&gt; 6:    Si1  Sr1_4_0_0_-1 3.184477 -0.0932   -0.5  0.1797</span></span></code></pre></div>
+<p><strong>Understanding the <code>distances</code> Table
+Columns:</strong></p>
+<ul>
+<li><code>Atom1</code>: The central atom from the original asymmetric
+unit (e.g., <code>Sr1</code>, <code>Si1</code>).</li>
+<li><code>Atom2</code>: The neighboring atom from the supercell,
+identified by its fully descriptive label.</li>
+<li><code>Distance</code>: The calculated interatomic distance in
+Angstroms (Å).</li>
+<li><code>DeltaX</code>, <code>DeltaY</code>, <code>DeltaZ</code>: The
+vector components <span class="math inline">\((x_{f1}-x_{f2})\)</span>,
+<span class="math inline">\((y_{f1}-y_{f2})\)</span>, etc., in
+fractional coordinates.</li>
+</ul>
+</div>
+<div id="identifying-bonds-and-neighbors" class="section level4">
+<h4>1.2.6 Identifying Bonds and Neighbors</h4>
+<p><strong>Formula Context: Bonding and Coordination Number</strong></p>
+<p>Identifying which atoms are “bonded” is key to determining the
+<strong>coordination number (CN)</strong>, the count of nearest
+neighbors. <code>crystract</code> implements several methods for this
+task:</p>
+<ul>
+<li><strong>Minimum Distance Method</strong>: The default method used
+here. It defines a custom distance cutoff for each central atom <span class="math inline">\(i\)</span>: <span class="math display">\[
+d_i^\text{cut} = (1+\delta) d_i^\text{min}
+\]</span> Here, <span class="math inline">\(d_i^\text{min}\)</span> is
+the shortest distance from atom <span class="math inline">\(i\)</span>
+to any other atom, and <span class="math inline">\(\delta\)</span> is a
+tolerance parameter (default is 0.1). It is robust and requires no
+element-specific presets.</li>
+<li><strong>Brunner’s Method</strong>: Uses modified ionic radii to
+determine cutoffs.</li>
+<li><strong>Hoppe’s Method (ECoN)</strong>: Weights neighbor
+contributions by distance, yielding a continuous, non-integer CN.</li>
+</ul>
+<p>The <code>minimum_distance</code> function filters the
+<code>distances</code> table to identify bonded pairs.
+<code>calculate_neighbor_counts</code> then summarizes these to find the
+integer CN for each central atom.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="co"># Identify bonded pairs using a tolerance of 10%</span></span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>bonded_pairs <span class="ot">&lt;-</span> <span class="fu">minimum_distance</span>(distances, <span class="at">delta =</span> <span class="fl">0.1</span>)</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a><span class="fu">print</span>(<span class="st">&quot;Bonded Pairs (first 6):&quot;</span>)</span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Bonded Pairs (first 6):&quot;</span></span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">head</span>(bonded_pairs))</span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a><span class="co">#&gt;     Atom1         Atom2 Distance  DeltaX DeltaY  DeltaZ     dcut     dmin</span></span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a><span class="co">#&gt;    &lt;fctr&gt;        &lt;fctr&gt;    &lt;num&gt;   &lt;num&gt;  &lt;num&gt;   &lt;num&gt;    &lt;num&gt;    &lt;num&gt;</span></span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a><span class="co">#&gt; 1:    Sr1 Si1_4_0_-1_-1 3.184477 -0.0932    0.5  0.1797 3.479899 3.163544</span></span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a><span class="co">#&gt; 2:    Sr1  Si1_4_0_0_-1 3.184477 -0.0932   -0.5  0.1797 3.479899 3.163544</span></span>
+<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a><span class="co">#&gt; 3:    Sr1   Si1_1_0_0_0 3.163544 -0.1010    0.0 -0.3203 3.479899 3.163544</span></span>
+<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a><span class="co">#&gt; 4:    Sr1   Si1_2_0_0_0 3.245310  0.3990    0.0 -0.0259 3.479899 3.163544</span></span>
+<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a><span class="co">#&gt; 5:    Sr2  Si1_3_0_-1_0 3.465249  0.2731    0.5  0.0720 3.587503 3.261366</span></span>
+<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a><span class="co">#&gt; 6:    Sr2   Si1_1_0_0_0 3.261366 -0.2347    0.0  0.2776 3.587503 3.261366</span></span>
+<span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a></span>
+<span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a><span class="co"># Calculate neighbor counts based on the bonded pairs</span></span>
+<span id="cb10-16"><a href="#cb10-16" tabindex="-1"></a>neighbor_counts <span class="ot">&lt;-</span> <span class="fu">calculate_neighbor_counts</span>(bonded_pairs)</span>
+<span id="cb10-17"><a href="#cb10-17" tabindex="-1"></a><span class="fu">print</span>(<span class="st">&quot;Neighbor Counts:&quot;</span>)</span>
+<span id="cb10-18"><a href="#cb10-18" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Neighbor Counts:&quot;</span></span>
+<span id="cb10-19"><a href="#cb10-19" tabindex="-1"></a><span class="fu">print</span>(neighbor_counts)</span>
+<span id="cb10-20"><a href="#cb10-20" tabindex="-1"></a><span class="co">#&gt;      Atom NeighborCount</span></span>
+<span id="cb10-21"><a href="#cb10-21" tabindex="-1"></a><span class="co">#&gt;    &lt;fctr&gt;         &lt;int&gt;</span></span>
+<span id="cb10-22"><a href="#cb10-22" tabindex="-1"></a><span class="co">#&gt; 1:    Sr1             4</span></span>
+<span id="cb10-23"><a href="#cb10-23" tabindex="-1"></a><span class="co">#&gt; 2:    Sr2             3</span></span>
+<span id="cb10-24"><a href="#cb10-24" tabindex="-1"></a><span class="co">#&gt; 3:    Si1             7</span></span></code></pre></div>
+</div>
+<div id="calculating-bond-angles" class="section level4">
+<h4>1.2.7 Calculating Bond Angles</h4>
+<p><strong>Formula Context: Bond Angle Calculation</strong></p>
+<p>To calculate a bond angle A-B-C (with B at the vertex), the
+fractional coordinates must first be converted to an orthogonal
+Cartesian system.</p>
+<ol style="list-style-type: decimal">
+<li><p><strong>Fractional to Cartesian Conversion:</strong> A fractional
+coordinate <span class="math inline">\((\mathbf{x}_f)\)</span> is
+converted to a Cartesian coordinate <span class="math inline">\((\mathbf{x}_c)\)</span> via a transformation
+matrix <span class="math inline">\(\mathbf{M}\)</span>: <span class="math display">\[
+\begin{pmatrix} x_c \\ y_c \\ z_c \end{pmatrix} = \mathbf{M} \cdot
+\begin{pmatrix} x_f \\ y_f \\ z_f \end{pmatrix} \quad \text{where} \quad
+\mathbf{M} = \begin{pmatrix}
+a &amp; b \cos\gamma &amp; c \cos\beta \\
+0 &amp; b \sin\gamma &amp; \frac{c(\cos\alpha - \cos\beta
+\cos\gamma)}{\sin\gamma} \\
+0 &amp; 0 &amp; \frac{V}{ab\sin\gamma}
+\end{pmatrix}
+\]</span> where <span class="math inline">\(V\)</span> is the unit cell
+volume.</p></li>
+<li><p><strong>Angle via Dot Product:</strong> With atoms in Cartesian
+space, the angle <span class="math inline">\(\theta\)</span> between
+vectors <span class="math inline">\(\vec{u}\)</span> (from B to A) and
+<span class="math inline">\(\vec{v}\)</span> (from B to C) is: <span class="math display">\[
+\theta = \arccos\left( \frac{\vec{u} \cdot \vec{v}}{|\vec{u}| |\vec{v}|}
+\right)
+\]</span></p></li>
+</ol>
+<p>The <code>calculate_angles</code> function implements this for all
+possible bond angles around each central atom.</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>bond_angles <span class="ot">&lt;-</span> <span class="fu">calculate_angles</span>(</span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a>  bonded_pairs,</span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a>  atomic_coordinates,</span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a>  expanded_coords,</span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a>  unit_cell_metrics</span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a>)</span>
+<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a><span class="fu">print</span>(<span class="st">&quot;Calculated Bond Angles (first 6):&quot;</span>)</span>
+<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Calculated Bond Angles (first 6):&quot;</span></span>
+<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">head</span>(bond_angles))</span>
+<span id="cb11-10"><a href="#cb11-10" tabindex="-1"></a><span class="co">#&gt;    CentralAtom     Neighbor1     Neighbor2     Angle</span></span>
+<span id="cb11-11"><a href="#cb11-11" tabindex="-1"></a><span class="co">#&gt;         &lt;char&gt;        &lt;fctr&gt;        &lt;fctr&gt;     &lt;num&gt;</span></span>
+<span id="cb11-12"><a href="#cb11-12" tabindex="-1"></a><span class="co">#&gt; 1:         Si1 Sr1_4_0_-1_-1  Sr1_4_0_0_-1 107.92071</span></span>
+<span id="cb11-13"><a href="#cb11-13" tabindex="-1"></a><span class="co">#&gt; 2:         Si1 Sr1_4_0_-1_-1  Sr2_1_0_0_-1  72.62529</span></span>
+<span id="cb11-14"><a href="#cb11-14" tabindex="-1"></a><span class="co">#&gt; 3:         Si1 Sr1_4_0_-1_-1 Sr2_3_-1_-1_0  69.97350</span></span>
+<span id="cb11-15"><a href="#cb11-15" tabindex="-1"></a><span class="co">#&gt; 4:         Si1 Sr1_4_0_-1_-1  Sr2_3_-1_0_0 149.23688</span></span>
+<span id="cb11-16"><a href="#cb11-16" tabindex="-1"></a><span class="co">#&gt; 5:         Si1 Sr1_4_0_-1_-1   Sr1_1_0_0_0 125.55190</span></span>
+<span id="cb11-17"><a href="#cb11-17" tabindex="-1"></a><span class="co">#&gt; 6:         Si1 Sr1_4_0_-1_-1   Sr1_2_0_0_0  73.87978</span></span></code></pre></div>
+</div>
+<div id="error-propagation" class="section level4">
+<h4>1.2.8 Error Propagation</h4>
+<p>Finally, <code>crystract</code> propagates the experimental
+uncertainties from cell parameters and atomic coordinates to the
+calculated distances and angles.</p>
+<p><strong>Formula Context: Error Propagation</strong></p>
+<p>The uncertainty, <span class="math inline">\(\sigma_f\)</span>, in a
+calculated value <span class="math inline">\(f\)</span> that depends on
+several variables <span class="math inline">\(p_i\)</span> (each with
+uncertainty <span class="math inline">\(\sigma_{p_i}\)</span>) is found
+using the sum of squares of the partial derivatives. A critical
+simplification made here is assuming the input variables (cell
+parameters, atomic coordinates) are uncorrelated. The general formula
+for the variance (<span class="math inline">\(\sigma_f^2\)</span>) is:
+<span class="math display">\[
+\sigma_f^2 = \sum_i \left( \frac{\partial f}{\partial p_i} \sigma_{p_i}
+\right)^2
+\]</span></p>
+<div id="uncertainty-in-interatomic-distance-sigma_d" class="section level5">
+<h5>Uncertainty in Interatomic Distance (<span class="math inline">\(\sigma_d\)</span>)</h5>
+<p>The uncertainty in the distance, <span class="math inline">\(\sigma_d\)</span>, is found by applying the
+general formula to the distance <span class="math inline">\(d\)</span>.
+The input parameters <span class="math inline">\(p_i\)</span> are the 12
+variables that define the distance: <span class="math inline">\(\{a, b,
+c, \alpha, \beta, \gamma, x_{f1}, y_{f1}, z_{f1}, x_{f2}, y_{f2},
+z_{f2}\}\)</span>. Letting <span class="math inline">\(\Delta x = x_{f1}
+- x_{f2}\)</span>, etc., the partial derivatives are, for example: <span class="math display">\[
+\frac{\partial d}{\partial a} = \frac{1}{2d} \left( 2a(\Delta x)^2 +
+2b(\Delta x)(\Delta y)\cos\gamma + 2c(\Delta x)(\Delta z)\cos\beta
+\right)
+\]</span></p>
+</div>
+<div id="uncertainty-in-bond-angle-sigma_theta" class="section level5">
+<h5>Uncertainty in Bond Angle (<span class="math inline">\(\sigma_\theta\)</span>)</h5>
+<p>Propagating error to the bond angle <span class="math inline">\(\theta\)</span> is a more complex, multi-step
+process involving propagating initial errors first to Cartesian
+coordinates, and then from those Cartesian uncertainties to the final
+angle via the chain rule.</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="co"># Propagate errors for interatomic distances</span></span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>bonded_pairs_with_error <span class="ot">&lt;-</span> <span class="fu">propagate_distance_error</span>(</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>  bonded_pairs,</span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a>  atomic_coordinates,</span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a>  unit_cell_metrics</span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a>)</span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a><span class="fu">print</span>(<span class="st">&quot;Bonded Pairs with Distance Error (first 6):&quot;</span>)</span>
+<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Bonded Pairs with Distance Error (first 6):&quot;</span></span>
+<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">head</span>(bonded_pairs_with_error))</span>
+<span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a><span class="co">#&gt; Key: &lt;Atom1, Atom2, Distance&gt;</span></span>
+<span id="cb12-11"><a href="#cb12-11" tabindex="-1"></a><span class="co">#&gt;     Atom1         Atom2 Distance  DeltaX DeltaY  DeltaZ     dcut     dmin</span></span>
+<span id="cb12-12"><a href="#cb12-12" tabindex="-1"></a><span class="co">#&gt;    &lt;char&gt;        &lt;fctr&gt;    &lt;num&gt;   &lt;num&gt;  &lt;num&gt;   &lt;num&gt;    &lt;num&gt;    &lt;num&gt;</span></span>
+<span id="cb12-13"><a href="#cb12-13" tabindex="-1"></a><span class="co">#&gt; 1:    Si1 Sr1_4_0_-1_-1 3.184477 -0.0932    0.5  0.1797 3.479899 3.163544</span></span>
+<span id="cb12-14"><a href="#cb12-14" tabindex="-1"></a><span class="co">#&gt; 2:    Si1  Sr1_4_0_0_-1 3.184477 -0.0932   -0.5  0.1797 3.479899 3.163544</span></span>
+<span id="cb12-15"><a href="#cb12-15" tabindex="-1"></a><span class="co">#&gt; 3:    Si1  Sr2_1_0_0_-1 3.261366  0.2347    0.0  0.2776 3.479899 3.163544</span></span>
+<span id="cb12-16"><a href="#cb12-16" tabindex="-1"></a><span class="co">#&gt; 4:    Si1 Sr2_3_-1_-1_0 3.465249  0.2731    0.5 -0.0720 3.479899 3.163544</span></span>
+<span id="cb12-17"><a href="#cb12-17" tabindex="-1"></a><span class="co">#&gt; 5:    Si1  Sr2_3_-1_0_0 3.465249  0.2731   -0.5 -0.0720 3.479899 3.163544</span></span>
+<span id="cb12-18"><a href="#cb12-18" tabindex="-1"></a><span class="co">#&gt; 6:    Si1   Sr1_1_0_0_0 3.163544  0.1010    0.0 -0.3203 3.479899 3.163544</span></span>
+<span id="cb12-19"><a href="#cb12-19" tabindex="-1"></a><span class="co">#&gt;    DistanceError</span></span>
+<span id="cb12-20"><a href="#cb12-20" tabindex="-1"></a><span class="co">#&gt;            &lt;num&gt;</span></span>
+<span id="cb12-21"><a href="#cb12-21" tabindex="-1"></a><span class="co">#&gt; 1:   0.008313329</span></span>
+<span id="cb12-22"><a href="#cb12-22" tabindex="-1"></a><span class="co">#&gt; 2:   0.008313329</span></span>
+<span id="cb12-23"><a href="#cb12-23" tabindex="-1"></a><span class="co">#&gt; 3:   0.014072755</span></span>
+<span id="cb12-24"><a href="#cb12-24" tabindex="-1"></a><span class="co">#&gt; 4:   0.009293087</span></span>
+<span id="cb12-25"><a href="#cb12-25" tabindex="-1"></a><span class="co">#&gt; 5:   0.009293087</span></span>
+<span id="cb12-26"><a href="#cb12-26" tabindex="-1"></a><span class="co">#&gt; 6:   0.014160750</span></span>
+<span id="cb12-27"><a href="#cb12-27" tabindex="-1"></a></span>
+<span id="cb12-28"><a href="#cb12-28" tabindex="-1"></a><span class="co"># Propagate errors for bond angles</span></span>
+<span id="cb12-29"><a href="#cb12-29" tabindex="-1"></a>bond_angles_with_error <span class="ot">&lt;-</span> <span class="fu">propagate_angle_error</span>(</span>
+<span id="cb12-30"><a href="#cb12-30" tabindex="-1"></a>  bond_angles,</span>
+<span id="cb12-31"><a href="#cb12-31" tabindex="-1"></a>  atomic_coordinates,</span>
+<span id="cb12-32"><a href="#cb12-32" tabindex="-1"></a>  expanded_coords,</span>
+<span id="cb12-33"><a href="#cb12-33" tabindex="-1"></a>  unit_cell_metrics</span>
+<span id="cb12-34"><a href="#cb12-34" tabindex="-1"></a>)</span>
+<span id="cb12-35"><a href="#cb12-35" tabindex="-1"></a><span class="fu">print</span>(<span class="st">&quot;Bond Angles with Angle Error (first 6):&quot;</span>)</span>
+<span id="cb12-36"><a href="#cb12-36" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Bond Angles with Angle Error (first 6):&quot;</span></span>
+<span id="cb12-37"><a href="#cb12-37" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">head</span>(bond_angles_with_error))</span>
+<span id="cb12-38"><a href="#cb12-38" tabindex="-1"></a><span class="co">#&gt; Key: &lt;CentralAtom, Neighbor1, Neighbor2&gt;</span></span>
+<span id="cb12-39"><a href="#cb12-39" tabindex="-1"></a><span class="co">#&gt;    CentralAtom     Neighbor1     Neighbor2     Angle AngleError</span></span>
+<span id="cb12-40"><a href="#cb12-40" tabindex="-1"></a><span class="co">#&gt;         &lt;char&gt;        &lt;fctr&gt;        &lt;fctr&gt;     &lt;num&gt;      &lt;num&gt;</span></span>
+<span id="cb12-41"><a href="#cb12-41" tabindex="-1"></a><span class="co">#&gt; 1:         Si1 Sr1_4_0_-1_-1  Sr1_4_0_0_-1 107.92071  0.3991814</span></span>
+<span id="cb12-42"><a href="#cb12-42" tabindex="-1"></a><span class="co">#&gt; 2:         Si1 Sr1_4_0_-1_-1  Sr2_1_0_0_-1  72.62529  0.2625336</span></span>
+<span id="cb12-43"><a href="#cb12-43" tabindex="-1"></a><span class="co">#&gt; 3:         Si1 Sr1_4_0_-1_-1 Sr2_3_-1_-1_0  69.97350  0.1320523</span></span>
+<span id="cb12-44"><a href="#cb12-44" tabindex="-1"></a><span class="co">#&gt; 4:         Si1 Sr1_4_0_-1_-1  Sr2_3_-1_0_0 149.23688  0.4492550</span></span>
+<span id="cb12-45"><a href="#cb12-45" tabindex="-1"></a><span class="co">#&gt; 5:         Si1 Sr1_4_0_-1_-1   Sr1_1_0_0_0 125.55190  0.2121372</span></span>
+<span id="cb12-46"><a href="#cb12-46" tabindex="-1"></a><span class="co">#&gt; 6:         Si1 Sr1_4_0_-1_-1   Sr1_2_0_0_0  73.87978  0.2610475</span></span></code></pre></div>
+</div>
+</div>
+</div>
+</div>
+<div id="tools-for-post-processing-and-analysis" class="section level2">
+<h2>2. Tools for Post-Processing and Analysis</h2>
+<p>After running the main analysis pipeline, <code>crystract</code>
+provides several helper functions to filter and refine the results,
+allowing you to isolate data based on chemical identity or key
+crystallographic properties.</p>
+<div id="filtering-by-chemical-identity" class="section level3">
+<h3>2.1 Filtering by Chemical Identity</h3>
+<p>The <code>filter_atoms_by_symbol()</code> function provides an
+interactive way to filter results (like bond or angle tables) to focus
+on the coordination environment around a specific type of element.</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="co"># In an interactive R session, you would run this:</span></span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>filtered_bonds <span class="ot">&lt;-</span> <span class="fu">filter_atoms_by_symbol</span>(</span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a>  <span class="at">data_table =</span> bonded_pairs_with_error,</span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a>  <span class="at">atom_col =</span> <span class="st">&quot;Atom1&quot;</span> <span class="co"># Filter based on the central atom</span></span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a>)</span></code></pre></div>
+<p>If you were to type <code>Si</code> and press Enter, the function
+would return a new <code>data.table</code> containing only the rows
+where the central atom (<code>Atom1</code>) is Silicon.</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="co"># Manually simulate the user typing &quot;Si&quot; at the prompt</span></span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a>user_input <span class="ot">&lt;-</span> <span class="st">&quot;Si&quot;</span></span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a>symbols_to_keep <span class="ot">&lt;-</span> <span class="fu">trimws</span>(<span class="fu">strsplit</span>(user_input, <span class="st">&quot;,&quot;</span>)[[<span class="dv">1</span>]])</span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a>patterns <span class="ot">&lt;-</span> <span class="fu">sapply</span>(symbols_to_keep, <span class="cf">function</span>(sym) <span class="fu">paste0</span>(<span class="st">&quot;(^&quot;</span>, sym, <span class="st">&quot;$)|(^&quot;</span>, sym, <span class="st">&quot;[^A-Za-z])&quot;</span>))</span>
+<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a>full_pattern <span class="ot">&lt;-</span> <span class="fu">paste</span>(patterns, <span class="at">collapse =</span> <span class="st">&quot;|&quot;</span>)</span>
+<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a>filtered_bonds_by_symbol <span class="ot">&lt;-</span> bonded_pairs_with_error[<span class="fu">grepl</span>(full_pattern, <span class="fu">get</span>(<span class="st">&quot;Atom1&quot;</span>))]</span>
+<span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a></span>
+<span id="cb14-8"><a href="#cb14-8" tabindex="-1"></a><span class="fu">print</span>(<span class="st">&quot;Original table contains bonds centered on both Sr and Si atoms:&quot;</span>)</span>
+<span id="cb14-9"><a href="#cb14-9" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Original table contains bonds centered on both Sr and Si atoms:&quot;</span></span>
+<span id="cb14-10"><a href="#cb14-10" tabindex="-1"></a><span class="fu">print</span>(bonded_pairs_with_error<span class="sc">$</span>Atom1)</span>
+<span id="cb14-11"><a href="#cb14-11" tabindex="-1"></a><span class="co">#&gt;  [1] &quot;Si1&quot; &quot;Si1&quot; &quot;Si1&quot; &quot;Si1&quot; &quot;Si1&quot; &quot;Si1&quot; &quot;Si1&quot; &quot;Sr1&quot; &quot;Sr1&quot; &quot;Sr1&quot; &quot;Sr1&quot; &quot;Sr2&quot;</span></span>
+<span id="cb14-12"><a href="#cb14-12" tabindex="-1"></a><span class="co">#&gt; [13] &quot;Sr2&quot; &quot;Sr2&quot;</span></span>
+<span id="cb14-13"><a href="#cb14-13" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb14-14"><a href="#cb14-14" tabindex="-1"></a><span class="fu">print</span>(<span class="st">&quot;Filtered table now only contains bonds centered on &#39;Si1&#39;:&quot;</span>)</span>
+<span id="cb14-15"><a href="#cb14-15" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Filtered table now only contains bonds centered on &#39;Si1&#39;:&quot;</span></span>
+<span id="cb14-16"><a href="#cb14-16" tabindex="-1"></a><span class="fu">print</span>(filtered_bonds_by_symbol<span class="sc">$</span>Atom1)</span>
+<span id="cb14-17"><a href="#cb14-17" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Si1&quot; &quot;Si1&quot; &quot;Si1&quot; &quot;Si1&quot; &quot;Si1&quot; &quot;Si1&quot; &quot;Si1&quot;</span></span></code></pre></div>
+</div>
+<div id="filtering-by-wyckoff-position" class="section level3">
+<h3>2.2 Filtering by Wyckoff Position</h3>
+<p>For many crystallographic studies, it is crucial to analyze atoms
+based on their specific site symmetry, described by their
+<strong>Wyckoff position</strong> (e.g., “2a”, “6c”). The
+<code>filter_by_wyckoff_symbol()</code> function is designed for this
+purpose.</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a><span class="co"># 1. In our example, all asymmetric atoms occupy the Wyckoff site &#39;c&#39; with multiplicity 4 (&quot;4c&quot;).</span></span>
+<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a><span class="fu">print</span>(<span class="st">&quot;Atomic coordinates showing Wyckoff information:&quot;</span>)</span>
+<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Atomic coordinates showing Wyckoff information:&quot;</span></span>
+<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a><span class="fu">print</span>(atomic_coordinates[, .(Label, WyckoffSymbol, WyckoffMultiplicity)])</span>
+<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a><span class="co">#&gt;     Label WyckoffSymbol WyckoffMultiplicity</span></span>
+<span id="cb15-6"><a href="#cb15-6" tabindex="-1"></a><span class="co">#&gt;    &lt;char&gt;        &lt;char&gt;               &lt;num&gt;</span></span>
+<span id="cb15-7"><a href="#cb15-7" tabindex="-1"></a><span class="co">#&gt; 1:    Sr1             c                   4</span></span>
+<span id="cb15-8"><a href="#cb15-8" tabindex="-1"></a><span class="co">#&gt; 2:    Sr2             c                   4</span></span>
+<span id="cb15-9"><a href="#cb15-9" tabindex="-1"></a><span class="co">#&gt; 3:    Si1             c                   4</span></span>
+<span id="cb15-10"><a href="#cb15-10" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb15-11"><a href="#cb15-11" tabindex="-1"></a></span>
+<span id="cb15-12"><a href="#cb15-12" tabindex="-1"></a><span class="co"># 2. Filter bonds where the central atom is on the &quot;4c&quot; Wyckoff site.</span></span>
+<span id="cb15-13"><a href="#cb15-13" tabindex="-1"></a>bonds_from_4c_site <span class="ot">&lt;-</span> <span class="fu">filter_by_wyckoff_symbol</span>(</span>
+<span id="cb15-14"><a href="#cb15-14" tabindex="-1"></a>  <span class="at">data_table =</span> bonded_pairs_with_error,</span>
+<span id="cb15-15"><a href="#cb15-15" tabindex="-1"></a>  <span class="at">atomic_coordinates =</span> atomic_coordinates,</span>
+<span id="cb15-16"><a href="#cb15-16" tabindex="-1"></a>  <span class="at">atom_col =</span> <span class="st">&quot;Atom1&quot;</span>,</span>
+<span id="cb15-17"><a href="#cb15-17" tabindex="-1"></a>  <span class="at">wyckoff_symbols =</span> <span class="st">&quot;4c&quot;</span></span>
+<span id="cb15-18"><a href="#cb15-18" tabindex="-1"></a>)</span>
+<span id="cb15-19"><a href="#cb15-19" tabindex="-1"></a></span>
+<span id="cb15-20"><a href="#cb15-20" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">paste</span>(<span class="st">&quot;Number of rows in original bond table:&quot;</span>, <span class="fu">nrow</span>(bonded_pairs_with_error)))</span>
+<span id="cb15-21"><a href="#cb15-21" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Number of rows in original bond table: 14&quot;</span></span>
+<span id="cb15-22"><a href="#cb15-22" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">paste</span>(<span class="st">&quot;Number of rows after filtering for site &#39;4c&#39;:&quot;</span>, <span class="fu">nrow</span>(bonds_from_4c_site)))</span>
+<span id="cb15-23"><a href="#cb15-23" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Number of rows after filtering for site &#39;4c&#39;: 14&quot;</span></span></code></pre></div>
+</div>
+<div id="filtering-ghost-distances-using-atomic-radii" class="section level3">
+<h3>2.3 Filtering Ghost Distances Using Atomic Radii</h3>
+<p>A common issue in crystallography is <strong>site-occupancy
+disorder</strong>, where a single crystallographic site is statistically
+co-occupied by different atoms (e.g., a mix of small Boron and larger
+Silicon atoms). Standard calculations can produce physically
+meaningless, short “ghost” distances between atoms that never exist in
+that configuration simultaneously.</p>
+<p>The <code>filter_ghost_distances()</code> function cleans the
+distance table by removing these artifacts. It uses a built-in table of
+covalent radii to establish a minimum plausible bond length. Any
+calculated distance falling below this physical threshold (multiplied by
+a tolerance factor) is filtered out.</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a><span class="co"># We use the full, unfiltered distance table for this demonstration.</span></span>
+<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a><span class="co"># The function returns a list with two tables: &#39;kept&#39; and &#39;removed&#39;.</span></span>
+<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a><span class="co"># A distance is kept if: Distance &gt; (Radius1 + Radius2) * tolerance</span></span>
+<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a>filtered_result <span class="ot">&lt;-</span> <span class="fu">filter_ghost_distances</span>(</span>
+<span id="cb16-5"><a href="#cb16-5" tabindex="-1"></a>    <span class="at">distances =</span> distances,</span>
+<span id="cb16-6"><a href="#cb16-6" tabindex="-1"></a>    <span class="at">atomic_coordinates =</span> atomic_coordinates,</span>
+<span id="cb16-7"><a href="#cb16-7" tabindex="-1"></a>    <span class="at">tolerance =</span> <span class="fl">0.4</span> <span class="co"># Default tolerance</span></span>
+<span id="cb16-8"><a href="#cb16-8" tabindex="-1"></a>)</span>
+<span id="cb16-9"><a href="#cb16-9" tabindex="-1"></a></span>
+<span id="cb16-10"><a href="#cb16-10" tabindex="-1"></a>kept_distances <span class="ot">&lt;-</span> filtered_result<span class="sc">$</span>kept</span>
+<span id="cb16-11"><a href="#cb16-11" tabindex="-1"></a>removed_distances <span class="ot">&lt;-</span> filtered_result<span class="sc">$</span>removed</span>
+<span id="cb16-12"><a href="#cb16-12" tabindex="-1"></a></span>
+<span id="cb16-13"><a href="#cb16-13" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Total distances calculated:&quot;</span>, <span class="fu">nrow</span>(distances), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb16-14"><a href="#cb16-14" tabindex="-1"></a><span class="co">#&gt; Total distances calculated: 969</span></span>
+<span id="cb16-15"><a href="#cb16-15" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Distances kept after filtering:&quot;</span>, <span class="fu">nrow</span>(kept_distances), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb16-16"><a href="#cb16-16" tabindex="-1"></a><span class="co">#&gt; Distances kept after filtering: 969</span></span>
+<span id="cb16-17"><a href="#cb16-17" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Ghost distances removed:&quot;</span>, <span class="fu">nrow</span>(removed_distances), <span class="st">&quot;</span><span class="sc">\n\n</span><span class="st">&quot;</span>)</span>
+<span id="cb16-18"><a href="#cb16-18" tabindex="-1"></a><span class="co">#&gt; Ghost distances removed: 0</span></span>
+<span id="cb16-19"><a href="#cb16-19" tabindex="-1"></a></span>
+<span id="cb16-20"><a href="#cb16-20" tabindex="-1"></a><span class="co"># For a well-ordered structure like Sr2Si, no ghost bonds are expected.</span></span>
+<span id="cb16-21"><a href="#cb16-21" tabindex="-1"></a><span class="co"># The &#39;removed&#39; table should be empty, confirming the filter&#39;s behavior.</span></span>
+<span id="cb16-22"><a href="#cb16-22" tabindex="-1"></a><span class="fu">print</span>(<span class="st">&quot;Removed ghost distances (should be empty for this well-ordered example):&quot;</span>)</span>
+<span id="cb16-23"><a href="#cb16-23" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Removed ghost distances (should be empty for this well-ordered example):&quot;</span></span>
+<span id="cb16-24"><a href="#cb16-24" tabindex="-1"></a><span class="fu">print</span>(removed_distances)</span>
+<span id="cb16-25"><a href="#cb16-25" tabindex="-1"></a><span class="co">#&gt; Empty data.table (0 rows and 4 cols): Atom1,Atom2,Distance,min_allowed_dist</span></span></code></pre></div>
+</div>
+<div id="filtering-by-element-exclusion" class="section level3">
+<h3>2.4 Filtering by Element Exclusion</h3>
+<p>To focus an analysis on a specific part of a structure (e.g., a host
+framework without guest atoms), <code>filter_by_elements()</code> allows
+for the complete removal of bonds involving certain elements.</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a><span class="co"># Let&#39;s filter our bond table to exclude any bonds involving Strontium (&quot;Sr&quot;).</span></span>
+<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a><span class="co"># Since all bonds in this structure are Si-Sr, the result should be an empty table.</span></span>
+<span id="cb17-3"><a href="#cb17-3" tabindex="-1"></a>bonds_without_sr <span class="ot">&lt;-</span> <span class="fu">filter_by_elements</span>(</span>
+<span id="cb17-4"><a href="#cb17-4" tabindex="-1"></a>    <span class="at">distances =</span> bonded_pairs_with_error,</span>
+<span id="cb17-5"><a href="#cb17-5" tabindex="-1"></a>    <span class="at">atomic_coordinates =</span> atomic_coordinates,</span>
+<span id="cb17-6"><a href="#cb17-6" tabindex="-1"></a>    <span class="at">elements_to_exclude =</span> <span class="st">&quot;Sr&quot;</span></span>
+<span id="cb17-7"><a href="#cb17-7" tabindex="-1"></a>)</span>
+<span id="cb17-8"><a href="#cb17-8" tabindex="-1"></a></span>
+<span id="cb17-9"><a href="#cb17-9" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Number of bonds in original table:&quot;</span>, <span class="fu">nrow</span>(bonded_pairs_with_error), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb17-10"><a href="#cb17-10" tabindex="-1"></a><span class="co">#&gt; Number of bonds in original table: 14</span></span>
+<span id="cb17-11"><a href="#cb17-11" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Number of bonds after excluding &#39;Sr&#39;:&quot;</span>, <span class="fu">nrow</span>(bonds_without_sr), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb17-12"><a href="#cb17-12" tabindex="-1"></a><span class="co">#&gt; Number of bonds after excluding &#39;Sr&#39;: 0</span></span></code></pre></div>
+</div>
+<div id="calculating-weighted-average-network-distance" class="section level3">
+<h3>2.5 Calculating Weighted Average Network Distance</h3>
+<p>After filtering the data, a common goal is to compute a single
+summary statistic that represents the structure. The
+<code>calculate_weighted_average_network_distance()</code> function
+calculates a representative bond length for a specified atomic network
+(defined by a set of Wyckoff sites).</p>
+<div id="formula-context-site-centric-weighted-average-distance" class="section level4">
+<h4>Formula Context: Site-Centric Weighted Average Distance</h4>
+<p>The function first calculates the simple average bond length for each
+unique crystallographic site <code>j</code> in the network. Then, it
+computes the final network average, <code>d-bar</code>, by taking a
+weighted mean of these per-site averages. The weight for each site is
+its effective multiplicity in the unit cell (Wyckoff multiplicity
+multiplied by the site’s total occupancy), ensuring that more abundant
+sites contribute more to the final value. The formula is:</p>
+<p><span class="math display">\[
+\bar{d} = \frac{\sum_j m_j \text{occ}_j \left( \frac{1}{n_j} \sum_i
+d_{ij} \right)}{\sum_j m_j \text{occ}_j}
+\]</span></p>
+<p>In this formula: - <code>j</code> indexes the unique crystallographic
+sites in the network. - The term in parentheses, <span class="math inline">\((\frac{1}{n_j} \sum_i d_{ij})\)</span>, is the
+simple average of the <code>n_j</code> bond distances for site
+<code>j</code>. - <code>m_j</code> is the Wyckoff multiplicity of site
+<code>j</code>. - <code>occ_j</code> is the <strong>total
+occupancy</strong> of site <code>j</code> (the sum of the occupancies of
+all atoms on that site, which is 1.0 for an ordered, fully-occupied
+site). - The product <code>m_j * occ_j</code> is the weight,
+representing the total number of atoms on site <code>j</code> in the
+unit cell.</p>
+<p>This site-centric method correctly handles disordered or partially
+occupied structures.</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a><span class="co"># Calculate the weighted average distance for the entire Sr2Si network.</span></span>
+<span id="cb18-2"><a href="#cb18-2" tabindex="-1"></a><span class="co"># First, we define the Wyckoff sites belonging to the network. Here, it&#39;s just &quot;4c&quot;.</span></span>
+<span id="cb18-3"><a href="#cb18-3" tabindex="-1"></a>network_wyckoff_sites <span class="ot">&lt;-</span> <span class="st">&quot;4c&quot;</span></span>
+<span id="cb18-4"><a href="#cb18-4" tabindex="-1"></a></span>
+<span id="cb18-5"><a href="#cb18-5" tabindex="-1"></a><span class="co"># The function uses the full distance table and coordinate info.</span></span>
+<span id="cb18-6"><a href="#cb18-6" tabindex="-1"></a><span class="co"># Note: For this ordered structure, occ_j = 1.0, so the result is the same</span></span>
+<span id="cb18-7"><a href="#cb18-7" tabindex="-1"></a><span class="co"># as a multiplicity-only weighted average. The difference would appear in a</span></span>
+<span id="cb18-8"><a href="#cb18-8" tabindex="-1"></a><span class="co"># disordered or vacancy-containing structure.</span></span>
+<span id="cb18-9"><a href="#cb18-9" tabindex="-1"></a>weighted_avg_dist <span class="ot">&lt;-</span> <span class="fu">calculate_weighted_average_network_distance</span>(</span>
+<span id="cb18-10"><a href="#cb18-10" tabindex="-1"></a>    <span class="at">distances =</span> distances,</span>
+<span id="cb18-11"><a href="#cb18-11" tabindex="-1"></a>    <span class="at">atomic_coordinates =</span> atomic_coordinates,</span>
+<span id="cb18-12"><a href="#cb18-12" tabindex="-1"></a>    <span class="at">wyckoff_symbols =</span> network_wyckoff_sites</span>
+<span id="cb18-13"><a href="#cb18-13" tabindex="-1"></a>)</span>
+<span id="cb18-14"><a href="#cb18-14" tabindex="-1"></a></span>
+<span id="cb18-15"><a href="#cb18-15" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Weighted average network distance for the &#39;4c&#39; sites:&quot;</span>, weighted_avg_dist, <span class="st">&quot;Å</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb18-16"><a href="#cb18-16" tabindex="-1"></a><span class="co">#&gt; Weighted average network distance for the &#39;4c&#39; sites: 11.57652 Å</span></span></code></pre></div>
+</div>
+</div>
+</div>
+<div id="exporting-results-to-files" class="section level2">
+<h2>3. Exporting Results to Files</h2>
+<p>While working with the results <code>data.table</code> in R is
+powerful, it is often necessary to export the data for use in other
+programs, for sharing, or for archiving. The
+<code>export_analysis_to_csv()</code> function is designed for this
+purpose. It unpacks the main results table with its nested list-columns
+into a structured, human-readable directory of CSV files.</p>
+<div id="using-export_analysis_to_csv" class="section level3">
+<h3>3.1 Using <code>export_analysis_to_csv</code></h3>
+<p>The function creates a main output folder and, within it, organizes
+the data as follows:</p>
+<ul>
+<li>A <code>meta</code> folder containing a single
+<code>meta_summary.csv</code> with all the top-level data (one row per
+analyzed CIF file).</li>
+<li>A separate folder for each calculated property (e.g.,
+<code>unit_cell_metrics</code>, <code>atomic_coordinates</code>,
+<code>bond_angles</code>).</li>
+<li>Inside each of these folders, a separate CSV file is saved for each
+original CIF file, named after that file (e.g.,
+<code>ICSD422.csv</code>).</li>
+</ul>
+<p>This creates a clean, organized, and easily navigable data
+archive.</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" tabindex="-1"></a><span class="co"># We will use the &#39;analysis_results&#39; table from the previous sections.</span></span>
+<span id="cb19-2"><a href="#cb19-2" tabindex="-1"></a></span>
+<span id="cb19-3"><a href="#cb19-3" tabindex="-1"></a><span class="co"># 1. Define a path for our export. We use a temporary directory for this example.</span></span>
+<span id="cb19-4"><a href="#cb19-4" tabindex="-1"></a>export_path <span class="ot">&lt;-</span> <span class="fu">file.path</span>(<span class="fu">tempdir</span>(), <span class="st">&quot;crysmal_export_demo&quot;</span>)</span>
+<span id="cb19-5"><a href="#cb19-5" tabindex="-1"></a></span>
+<span id="cb19-6"><a href="#cb19-6" tabindex="-1"></a><span class="co"># 2. Run the export function. </span></span>
+<span id="cb19-7"><a href="#cb19-7" tabindex="-1"></a><span class="co"># We use overwrite = TRUE to ensure the example runs cleanly every time.</span></span>
+<span id="cb19-8"><a href="#cb19-8" tabindex="-1"></a><span class="fu">export_analysis_to_csv</span>(</span>
+<span id="cb19-9"><a href="#cb19-9" tabindex="-1"></a>  <span class="at">analysis_results =</span> analysis_results,</span>
+<span id="cb19-10"><a href="#cb19-10" tabindex="-1"></a>  <span class="at">output_dir =</span> export_path,</span>
+<span id="cb19-11"><a href="#cb19-11" tabindex="-1"></a>  <span class="at">overwrite =</span> <span class="cn">TRUE</span></span>
+<span id="cb19-12"><a href="#cb19-12" tabindex="-1"></a>)</span>
+<span id="cb19-13"><a href="#cb19-13" tabindex="-1"></a><span class="co">#&gt; Analysis successfully exported to: /private/var/folders/b9/kfwnx8ps2jv7msmszzg0r_1r0000gp/T/RtmpPwR6T7/crysmal_export_demo</span></span>
+<span id="cb19-14"><a href="#cb19-14" tabindex="-1"></a></span>
+<span id="cb19-15"><a href="#cb19-15" tabindex="-1"></a><span class="co"># 3. We can list the files to see the created directory structure.</span></span>
+<span id="cb19-16"><a href="#cb19-16" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;</span><span class="sc">\n</span><span class="st">Generated file structure:</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb19-17"><a href="#cb19-17" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb19-18"><a href="#cb19-18" tabindex="-1"></a><span class="co">#&gt; Generated file structure:</span></span>
+<span id="cb19-19"><a href="#cb19-19" tabindex="-1"></a><span class="fu">list.files</span>(export_path, <span class="at">recursive =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb19-20"><a href="#cb19-20" tabindex="-1"></a><span class="co">#&gt;  [1] &quot;atomic_coordinates/ICSD422.csv&quot;           </span></span>
+<span id="cb19-21"><a href="#cb19-21" tabindex="-1"></a><span class="co">#&gt;  [2] &quot;bond_angles/ICSD422.csv&quot;                  </span></span>
+<span id="cb19-22"><a href="#cb19-22" tabindex="-1"></a><span class="co">#&gt;  [3] &quot;bonded_pairs_minimum_distance/ICSD422.csv&quot;</span></span>
+<span id="cb19-23"><a href="#cb19-23" tabindex="-1"></a><span class="co">#&gt;  [4] &quot;distances/ICSD422.csv&quot;                    </span></span>
+<span id="cb19-24"><a href="#cb19-24" tabindex="-1"></a><span class="co">#&gt;  [5] &quot;expanded_coords/ICSD422.csv&quot;              </span></span>
+<span id="cb19-25"><a href="#cb19-25" tabindex="-1"></a><span class="co">#&gt;  [6] &quot;meta/meta_summary.csv&quot;                    </span></span>
+<span id="cb19-26"><a href="#cb19-26" tabindex="-1"></a><span class="co">#&gt;  [7] &quot;neighbor_counts/ICSD422.csv&quot;              </span></span>
+<span id="cb19-27"><a href="#cb19-27" tabindex="-1"></a><span class="co">#&gt;  [8] &quot;symmetry_operations/ICSD422.csv&quot;          </span></span>
+<span id="cb19-28"><a href="#cb19-28" tabindex="-1"></a><span class="co">#&gt;  [9] &quot;transformed_coords/ICSD422.csv&quot;           </span></span>
+<span id="cb19-29"><a href="#cb19-29" tabindex="-1"></a><span class="co">#&gt; [10] &quot;unit_cell_metrics/ICSD422.csv&quot;</span></span>
+<span id="cb19-30"><a href="#cb19-30" tabindex="-1"></a></span>
+<span id="cb19-31"><a href="#cb19-31" tabindex="-1"></a><span class="co"># Clean up the temporary directory after the demonstration</span></span>
+<span id="cb19-32"><a href="#cb19-32" tabindex="-1"></a><span class="fu">unlink</span>(export_path, <span class="at">recursive =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
+</div>
+</div>
+<div id="conclusion" class="section level2">
+<h2>Conclusion</h2>
+<p>This vignette has demonstrated the core workflow of the
+<code>crystract</code> package, from the high-level, automated
+processing of multiple CIF files with <code>analyze_cif_files</code> to
+a detailed, step-by-step breakdown of the underlying calculations. We
+have seen how the package extracts fundamental data, builds a complete
+crystal model, calculates key geometric properties like bond distances
+and angles, and rigorously propagates experimental uncertainties into
+these final results.</p>
+<p>Furthermore, with a powerful suite of post-processing tools such as
+<code>filter_atoms_by_symbol</code>,
+<code>filter_by_wyckoff_symbol</code>,
+<code>filter_ghost_distances</code>, and
+<code>calculate_weighted_average_network_distance</code>, you can easily
+refine, clean, and analyze the generated datasets to focus on the
+specific chemical or crystallographic features of interest.</p>
+<p>The goal of <code>crystract</code> is to provide a robust and
+accessible platform for crystallographic data mining in R. We encourage
+you to apply this workflow to your own CIF files and explore the rich
+structural information that can be uncovered.</p>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

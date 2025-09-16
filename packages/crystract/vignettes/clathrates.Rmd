@@ -49,16 +49,32 @@ This **Guests -> Ghosts -> Bonds -> Average** sequence ensures the final metric 
 
 ## 2. Preparing the Data
 
-### 2.1. Loading the Bundled Example Data
+### 2.1. Obtaining the Required CIF Files
+
+Due to licensing restrictions, the large dataset of clathrate CIF files from the ICSD is not bundled with the package. To reproduce this advanced workflow, you must download the required data yourself.
+
+1.  **Find Required Files**: A complete list of all necessary ICSD entry codes and the structural category (subdirectory) they belong to can be found in the `required_ICSD_files.csv` file at the root of the `ml-crystals` repository.
+
+2.  **Download Data**: Using a licensed copy of the [ICSD database](https://icsd.fiz-karlsruhe.de/), download the `.cif` file for each entry listed in the CSV.
+
+3.  **Recreate the Directory Structure**: This is a critical step.
+    *   Create a main directory on your computer, for example, `C:/my_clathrate_data/`.
+    *   Inside this main directory, create the subdirectories exactly as named in the `category` column of the CSV file (e.g., `6c-16i-24k`, `2a-6d`, etc.).
+    *   Place each downloaded `.cif` file into its corresponding category subdirectory.
+
+4.  **Update Path in the Script**: In the code chunk below, you must change the `cif_root_dir` variable to point to the main directory you created (e.g., `C:/my_clathrate_data/`).
+
+**To run the analysis yourself, you must also remove the `eval=FALSE` option from the R code chunk headers in the following sections.**
+
+### 2.2 Loading the Bundled Example Data
 
 The CIF files for this analysis are included with the package in the `inst/extdata/Verified` directory. We use `system.file()` to find this directory in a portable way, ensuring the vignette is reproducible.
 
 The files are organized into subdirectories whose names define the structural category (e.g., `6c-16i-24k`). The code recursively finds all CIF files and maps each one to its category.
 
-```{r load-files, echo=TRUE}
-# Use system.file() to locate the example data directory within the installed package.
-# The case ("Verified") must exactly match the directory name in inst/extdata/.
-cif_root_dir <- system.file("extdata", "Verified", package = "crystract")
+```{r load-files, echo=TRUE, eval=FALSE}
+# IMPORTANT: Update this path to point to your main data directory
+cif_root_dir <- "path/to/your/clathrate_data_folder"
 
 # Check if the directory was found. If not, stop with a helpful message.
 if (nchar(cif_root_dir) == 0 || !dir.exists(cif_root_dir)) {
@@ -88,7 +104,7 @@ if (length(all_cif_paths) == 0) {
 
 We first run `analyze_cif_files()`. For efficiency and to enable our custom pipeline, we disable the built-in bonding calculations (`bonding_algorithms = "none"`). This performs the most intensive step—calculating all interatomic distances—just once.
 
-```{r run-batch-analysis-optimized, echo=TRUE}
+```{r run-batch-analysis-optimized, echo=TRUE, eval=FALSE}
 analysis_results <- analyze_cif_files(
   file_paths = all_cif_paths,
   perform_extraction = TRUE,
@@ -104,7 +120,7 @@ cat("Optimized analysis complete. Raw results table has", nrow(analysis_results)
 
 Now, we apply our core filtering logic by looping through the results for each file.
 
-```{r process-data, echo=TRUE}
+```{r process-data, echo=TRUE, eval=FALSE}
 # --- Timing Start ---
 timing_processing <- system.time({
   
@@ -175,7 +191,7 @@ if (exists("removed_ghosts_summary") && nrow(removed_ghosts_summary) > 0) {
 
 A key advantage of this workflow is the ability to inspect the distances that `filter_ghost_distances()` removed. This is crucial for validating the filtering logic and understanding the nature of disorder in the dataset.
 
-```{r show-removed-distances, echo=TRUE}
+```{r show-removed-distances, echo=TRUE, eval=FALSE}
 export_dir <- tempfile(pattern = "interactive_report_files")
 dir.create(export_dir, showWarnings = FALSE)
 
@@ -201,7 +217,7 @@ After applying the robust pipeline, we can now visualize the cleaned data.
 
 ### 5.1. Interactive Plot
 
-```{r generate-plot, echo=TRUE}
+```{r generate-plot, echo=TRUE, eval=FALSE}
 # Only generate the plot if the data processing was successful
 if (exists("plot_data") && nrow(plot_data) > 0) {
   p <- ggplot(plot_data, aes(x = lattice_parameter_a, y = weighted_distance, color = category, shape = category, text = file)) +
@@ -228,7 +244,7 @@ if (exists("plot_data") && nrow(plot_data) > 0) {
 
 The final, cleaned data used for the plot is provided below in a searchable and exportable table.
 
-```{r show-final-data-table, echo=TRUE}
+```{r show-final-data-table, echo=TRUE, eval=FALSE}
 if (exists("plot_data") && nrow(plot_data) > 0) {
   datatable(
     plot_data,
