@@ -16,18 +16,16 @@ This directory contains the core software developed for this project: the **`cry
     *   `DESCRIPTION`: The package metadata, including dependencies.
     *   `vignettes/`: Detailed documentation and tutorials on how to use `crystract`.
     *   `tests/`: A suite of unit tests to ensure the code is working correctly.
-*   **How to Use**: This package is the engine for the analysis performed in the `notebook` directory. For detailed installation and usage instructions, please see the **[crystract README](./packages/crystract/README.md)**.
+*   *    For detailed installation and usage instructions, please see the **[crystract README](./packages/crystract/README.md)**.
 
 ### 2. `notebook/`
 
-This directory contains the main research and analysis workflow. **If you want to understand or reproduce the scientific findings, this is the best place to start.**
+This directory contains the main research and analysis workflow. 
 
 *   **Purpose**: To document the entire research process, from raw data to final results and visualizations.
 *   **Key Contents**:
-    *   `ml-crystals.Rproj`: The RStudio Project file. Open this to work on the analysis.
     *   `project.Rmd`: The main R Markdown notebook showing preliminary work on the development of the functions.
-    *   `data/`: Contains the processed data used in the analysis.
-    *   `workflow/`: Contains the primary analysis scripts, raw data, and supplementary materials.
+    *   `workflow/`: Contains the primary analysis scripts, and supplementary materials.
         *   `workflow.Rmd`: A detailed R Markdown document (`.html` and `.pdf` renders are also available) that demonstrates the step-by-step application of the `crystract` package.
 
 ### 3. `paper/`
