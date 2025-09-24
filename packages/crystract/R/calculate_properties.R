@@ -574,23 +574,56 @@ minimum_distance <- function(distances, delta = 0.1) {
 #' @family bonding algorithms
 #' @export
 brunner <- function(distances, delta = 0.0001) {
-  bonds <- list()
-  unique_atoms <- unique(distances$Atom1)
-  for (atom in unique_atoms) {
-    atom_distances <- distances[Atom1 == atom][order(Distance)]
-    largest_gap <- -Inf
-    j_max <- NA
-    for (j in 1:(nrow(atom_distances) - 1)) {
-      reciprocal_gap <- 1 / atom_distances$Distance[j] - 1 / atom_distances$Distance[j + 1]
-      if (reciprocal_gap > largest_gap) {
-        largest_gap <- reciprocal_gap
-        j_max <- j
-      }
-    }
-    d_cut <- atom_distances$Distance[j_max] + delta
-    bonds[[atom]] <- atom_distances[Distance <= d_cut]
+  if (nrow(distances) == 0) {
+    return(
+      data.table(
+        Atom1 = character(),
+        Atom2 = character(),
+        Distance = numeric(),
+        DeltaX = numeric(),
+        DeltaY = numeric(),
+        DeltaZ = numeric()
+      )
+    )
   }
-  return(rbindlist(bonds, fill = TRUE))
+
+  bonds_list <- lapply(split(distances, by = "Atom1"), function(atom_distances_sub_dt) {
+    # Sort by Distance within each atom group
+    atom_distances_sub_dt <- atom_distances_sub_dt[order(Distance)]
+
+    if (nrow(atom_distances_sub_dt) < 2) {
+      return(NULL) # Need at least two distances to form a gap
+    }
+
+    # Calculate reciprocal gaps in a vectorized manner
+    reciprocal_gaps <- 1 / atom_distances_sub_dt$Distance[1:(nrow(atom_distances_sub_dt) - 1)] -
+      1 / atom_distances_sub_dt$Distance[2:nrow(atom_distances_sub_dt)]
+
+    # Find the index of the largest gap
+    j_max <- which.max(reciprocal_gaps)
+
+    # Determine cutoff distance
+    d_cut <- atom_distances_sub_dt$Distance[j_max] + delta
+
+    # Filter for bonds and return relevant columns (including DeltaX, DeltaY, DeltaZ)
+    atom_distances_sub_dt[Distance <= d_cut, .(Atom1, Atom2, Distance, DeltaX, DeltaY, DeltaZ)]
+  })
+
+  # Combine results
+  if (length(bonds_list) > 0) {
+    return(rbindlist(bonds_list, fill = TRUE))
+  } else {
+    return(
+      data.table(
+        Atom1 = character(),
+        Atom2 = character(),
+        Distance = numeric(),
+        DeltaX = numeric(),
+        DeltaY = numeric(),
+        DeltaZ = numeric()
+      )
+    )
+  }
 }
 
 #' @title Identify Atomic Bonds using Hoppe's Method
@@ -605,29 +638,70 @@ brunner <- function(distances, delta = 0.0001) {
 hoppe <- function(distances,
                   delta = 0.5,
                   tolerance = 0.001) {
-  bonded_pairs <- list()
-  unique_atoms <- unique(distances$Atom1)
-  for (atom in unique_atoms) {
-    atom_distances <- distances[Atom1 == atom]
-    dmin <- min(atom_distances$Distance)
-    davg <- sum(atom_distances$Distance * exp(1 - (atom_distances$Distance /
-                                                     dmin)^6)) / sum(exp(1 - (atom_distances$Distance / dmin)^6))
+  if (nrow(distances) == 0) {
+    return(
+      data.table(
+        Atom1 = character(),
+        Atom2 = character(),
+        Distance = numeric(),
+        DeltaX = numeric(),
+        DeltaY = numeric(),
+        DeltaZ = numeric()
+      )
+    )
+  }
+
+  bonded_pairs_list <- lapply(split(distances, by = "Atom1"), function(atom_distances_sub_dt) {
+    if (nrow(atom_distances_sub_dt) == 0)
+      return(NULL)
+
+    dmin <- min(atom_distances_sub_dt$Distance)
+    if (dmin == 0)
+      return(NULL) # Avoid division by zero if an atom is its own neighbor (should be filtered earlier with Distance > 1e-6)
+
+    # Initial davg calculation
+    exp_term_initial <- exp(1 - (atom_distances_sub_dt$Distance / dmin)^6)
+    davg <- sum(atom_distances_sub_dt$Distance * exp_term_initial) / sum(exp_term_initial)
+
+    # Iterative refinement of davg
     while (TRUE) {
       prev_davg <- davg
-      davg <- sum(atom_distances$Distance * exp(1 - (
-        atom_distances$Distance / prev_davg
-      )^6)) / sum(exp(1 - (
-        atom_distances$Distance / prev_davg
-      )^6))
+      if (prev_davg == 0)
+        break # Avoid division by zero if davg collapses to zero
+
+      exp_term <- exp(1 - (atom_distances_sub_dt$Distance / prev_davg)^6)
+      denom_sum <- sum(exp_term)
+
+      if (denom_sum == 0) {
+        # All exp_term are ~0, division by zero likely
+        davg <- prev_davg # Cannot refine further, keep last davg
+        break
+      }
+      davg <- sum(atom_distances_sub_dt$Distance * exp_term) / denom_sum
       if (abs(davg - prev_davg) <= tolerance)
         break
     }
-    atom_distances[, BondStrength := exp(1 - (Distance / davg)^6)]
-    bonded_pairs[[atom]] <- atom_distances[BondStrength >= delta, .(Atom1, Atom2, Distance)]
-  }
-  return(rbindlist(bonded_pairs, fill = TRUE))
-}
 
+    atom_distances_sub_dt[, BondStrength := exp(1 - (Distance / davg)^6)]
+    # Return all necessary columns for subsequent error propagation
+    atom_distances_sub_dt[BondStrength >= delta, .(Atom1, Atom2, Distance, DeltaX, DeltaY, DeltaZ)]
+  })
+
+  if (length(bonded_pairs_list) > 0) {
+    return(rbindlist(bonded_pairs_list, fill = TRUE))
+  } else {
+    return(
+      data.table(
+        Atom1 = character(),
+        Atom2 = character(),
+        Distance = numeric(),
+        DeltaX = numeric(),
+        DeltaY = numeric(),
+        DeltaZ = numeric()
+      )
+    )
+  }
+}
 #' @title Filter Data by Atom Symbol Interactively
 #' @description Prompts the user to select chemical elements to keep in a data table
 #'   of bonds or angles. Filtering is based on matching the base chemical symbol
