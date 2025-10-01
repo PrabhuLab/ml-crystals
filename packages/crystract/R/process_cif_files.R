@@ -224,6 +224,9 @@ analyze_single_cif <- function(cif_content,
 #' @description A high-level wrapper function that reads and analyzes one or more
 #'   CIF files in batch. It calls `analyze_single_cif` for each file.
 #' @param file_paths A character vector of paths to the CIF files to be analyzed.
+#' @param workers An integer specifying the number of parallel workers to use.
+#'   Defaults to `1` (sequential processing). If `workers > 1`, the analysis
+#'   is parallelized across the specified number of cores.
 #' @param perform_extraction Logical. If `TRUE` (default), extracts all metadata
 #'   and base crystallographic data.
 #' @param perform_calcs_and_transforms Logical. If `TRUE` (default), generates
@@ -240,15 +243,32 @@ analyze_single_cif <- function(cif_content,
 #' @return A `data.table` where each row summarizes the analysis of one CIF file.
 #'   Files with missing essential data will generate warnings and have `NULL`
 #'   values in the calculated columns.
+#' @details
+#'   For parallel processing (`workers > 1`), this function uses the `future`
+#'   and `future.apply` packages. It is highly recommended that the user set a
+#'   parallel plan *before* calling this function. For example, to use 4 cores
+#'   on your local machine, run: `future::plan(future::multisession, workers = 4)`.
 #' @export
 #' @examples
 #' cif_file <- system.file("extdata", "ICSD422.cif", package = "crystract")
 #' if (file.exists(cif_file)) {
-#'   # This will run the full analysis on all specified files.
-#'   analysis_results <- analyze_cif_files(cif_file)
+#'   # This will run the full analysis on all specified files sequentially.
+#'   analysis_results <- analyze_cif_files(cif_file, workers = 1)
 #'   print(analysis_results[, .(file_name, database_code, chemical_formula)])
+#'
+#'   # To run in parallel (example for an interactive session):
+#'   if (interactive() && requireNamespace("future", quietly = TRUE)) {
+#'     # Set a plan to use 2 workers
+#'     future::plan(future::multisession, workers = 2)
+#'     # The following call will now run across 2 cores
+#'     parallel_results <- analyze_cif_files(c(cif_file, cif_file), workers = 2)
+#'     print(parallel_results[, .(file_name, database_code)])
+#'     # It's good practice to reset the plan when done
+#'     future::plan(future::sequential)
+#'   }
 #' }
 analyze_cif_files <- function(file_paths,
+                              workers = 1,
                               perform_extraction = TRUE,
                               perform_calcs_and_transforms = TRUE,
                               bonding_algorithms = c("minimum_distance"),
@@ -256,7 +276,7 @@ analyze_cif_files <- function(file_paths,
                               perform_error_propagation = TRUE) {
   cif_contents_list <- read_cif_files(file_paths)
 
-  results_list <- mapply(function(cif_content, file_name) {
+  analysis_function <- function(cif_content, file_name) {
     tryCatch({
       # Call the single-file worker function
       analyze_single_cif(
@@ -280,10 +300,33 @@ analyze_cif_files <- function(file_paths,
       )
       return(NULL)
     })
-  },
-  cif_contents_list,
-  names(cif_contents_list),
-  SIMPLIFY = FALSE)
+  }
+
+  if (workers > 1) {
+    if (!requireNamespace("future.apply", quietly = TRUE)) {
+      stop("The 'future.apply' package is required for parallel processing. Please install it.", call. = FALSE)
+    }
+    # Set the number of workers for the future plan if not already set by the user
+    if (workers != future::nbrOfWorkers()) {
+      message(paste0("Setting parallel plan to use ", workers, " workers."))
+      future::plan(future::multisession, workers = workers)
+    }
+
+    results_list <- future.apply::future_mapply(
+      FUN = analysis_function,
+      cif_contents_list,
+      names(cif_contents_list),
+      SIMPLIFY = FALSE,
+      future.seed = TRUE # Ensures reproducibility
+    )
+  } else {
+    results_list <- mapply(
+      FUN = analysis_function,
+      cif_contents_list,
+      names(cif_contents_list),
+      SIMPLIFY = FALSE
+    )
+  }
 
   successful_results <- results_list[!sapply(results_list, is.null)]
 

@@ -21,7 +21,9 @@ Depends:
 Imports:
     data.table,
     dplyr,
-    stringr
+    stringr,
+    future,
+    future.apply
 Suggests:
     DT,
     ggplot2,
