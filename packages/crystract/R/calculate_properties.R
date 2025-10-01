@@ -101,6 +101,18 @@ calculate_angles <- function(bonded_pairs,
                              atomic_coordinates,
                              expanded_coords,
                              unit_cell_metrics) {
+  if (is.null(bonded_pairs) || nrow(bonded_pairs) == 0) {
+    return(
+      data.table(
+        CentralAtom = character(),
+        Neighbor1 = character(),
+        Neighbor2 = character(),
+        Angle = numeric()
+      )
+    )
+  }
+
+  # Extract unit cell parameters
   a <- unit_cell_metrics$`_cell_length_a`
   b <- unit_cell_metrics$`_cell_length_b`
   c <- unit_cell_metrics$`_cell_length_c`
@@ -112,86 +124,97 @@ calculate_angles <- function(bonded_pairs,
   cos_beta <- cos(beta_rad)
   cos_gamma <- cos(gamma_rad)
 
+  # Combine all unique atomic coordinates and set key for fast lookup
+  # (Including expanded_coords ensures all possible neighbors are available)
   all_coords <- unique(rbind(atomic_coordinates[, .(Label, x_a, y_b, z_c)], expanded_coords[, .(Label, x_a, y_b, z_c)], fill = TRUE),
                        by = "Label")
   setkey(all_coords, Label)
 
-  calculate_angle_metric <- function(atom1_label, atom2_label, atom3_label) {
-    coord1 <- all_coords[atom1_label, .(x_a, y_b, z_c)]
-    coord2 <- all_coords[atom2_label, .(x_a, y_b, z_c)]
-    coord3 <- all_coords[atom3_label, .(x_a, y_b, z_c)]
+  # Generate all unique (CentralAtom, Neighbor1, Neighbor2) triplets
+  # Start with central atoms and their first neighbors
+  angle_triplets <- bonded_pairs[, .(CentralAtom = Atom1, Neighbor1 = Atom2)]
 
-    if (anyNA(coord1) ||
-        anyNA(coord2) || anyNA(coord3))
-      return(NA_real_)
+  # Self-join to find all pairs of neighbors for each CentralAtom
+  angle_triplets <- merge(
+    angle_triplets,
+    bonded_pairs[, .(CentralAtom = Atom1, Neighbor2 = Atom2)],
+    by = "CentralAtom",
+    allow.cartesian = TRUE # Needed to get all combinations
+  )
 
-    v1_frac <- as.numeric(coord2 - coord1)
-    v2_frac <- as.numeric(coord3 - coord1)
-    xf1 <- v1_frac[1]
-    yf1 <- v1_frac[2]
-    zf1 <- v1_frac[3]
-    xf2 <- v2_frac[1]
-    yf2 <- v2_frac[2]
-    zf2 <- v2_frac[3]
+  # Filter out cases where Neighbor1 is the same as Neighbor2
+  angle_triplets <- angle_triplets[Neighbor1 != Neighbor2]
 
-    dot_product <- (
-      xf1 * xf2 * a^2 + yf1 * yf2 * b^2 + zf1 * zf2 * c^2 + (xf1 * yf2 + yf1 *
-                                                               xf2) * a * b * cos_gamma + (xf1 * zf2 + zf1 * xf2) * a * c * cos_beta + (yf1 *
-                                                                                                                                          zf2 + zf1 * yf2) * b * c * cos_alpha
-    )
+  # Ensure consistent ordering of Neighbor1 and Neighbor2 to avoid duplicate angles
+  # (e.g., A-B-C is the same as C-B-A when B is central)
+  angle_triplets[, `:=`(
+    Neighbor1_sorted = pmin(Neighbor1, Neighbor2),
+    Neighbor2_sorted = pmax(Neighbor1, Neighbor2)
+  )]
+  angle_triplets <- unique(angle_triplets,
+                           by = c("CentralAtom", "Neighbor1_sorted", "Neighbor2_sorted"))
 
-    mag_sq1 <- (
-      xf1^2 * a^2 + yf1^2 * b^2 + zf1^2 * c^2 + 2 * xf1 * yf1 * a * b * cos_gamma + 2 *
-        xf1 * zf1 * a * c * cos_beta + 2 * yf1 * zf1 * b * c * cos_alpha
-    )
-    mag_sq2 <- (
-      xf2^2 * a^2 + yf2^2 * b^2 + zf2^2 * c^2 + 2 * xf2 * yf2 * a * b * cos_gamma + 2 *
-        xf2 * zf2 * a * c * cos_beta + 2 * yf2 * zf2 * b * c * cos_alpha
-    )
+  # Merge fractional coordinates for all three atoms involved in each angle
+  angle_triplets[all_coords, on = .(CentralAtom = Label), `:=`(cx = i.x_a, cy = i.y_b, cz = i.z_c)]
+  angle_triplets[all_coords, on = .(Neighbor1_sorted = Label), `:=`(n1x = i.x_a, n1y = i.y_b, n1z = i.z_c)]
+  angle_triplets[all_coords, on = .(Neighbor2_sorted = Label), `:=`(n2x = i.x_a, n2y = i.y_b, n2z = i.z_c)]
 
-    if (mag_sq1 <= 1e-10 || mag_sq2 <= 1e-10)
-      return(NA_real_)
+  # Calculate vectors v1 (CentralAtom -> Neighbor1) and v2 (CentralAtom -> Neighbor2)
+  angle_triplets[, `:=`(
+    xf1 = n1x - cx,
+    yf1 = n1y - cy,
+    zf1 = n1z - cz,
+    xf2 = n2x - cx,
+    yf2 = n2y - cy,
+    zf2 = n2z - cz
+  )]
 
-    mag1 <- sqrt(mag_sq1)
-    mag2 <- sqrt(mag_sq2)
-    cos_theta <- min(max(dot_product / (mag1 * mag2), -1.0), 1.0)
-    return(acos(cos_theta) * 180 / pi)
-  }
+  # Vectorized calculation of dot product using metric tensor
+  angle_triplets[, dot_product := (
+    xf1 * xf2 * a^2 + yf1 * yf2 * b^2 + zf1 * zf2 * c^2 +
+      (xf1 * yf2 + yf1 * xf2) * a * b * cos_gamma +
+      (xf1 * zf2 + zf1 * xf2) * a * c * cos_beta +
+      (yf1 * zf2 + zf1 * yf2) * b * c * cos_alpha
+  )]
 
-  angle_list <- list()
-  unique_central_atoms <- unique(bonded_pairs$Atom1)
+  # Vectorized calculation of squared magnitudes for both vectors
+  angle_triplets[, mag_sq1 := (
+    xf1^2 * a^2 + yf1^2 * b^2 + zf1^2 * c^2 +
+      2 * xf1 * yf1 * a * b * cos_gamma +
+      2 * xf1 * zf1 * a * c * cos_beta +
+      2 * yf1 * zf1 * b * c * cos_alpha
+  )]
+  angle_triplets[, mag_sq2 := (
+    xf2^2 * a^2 + yf2^2 * b^2 + zf2^2 * c^2 +
+      2 * xf2 * yf2 * a * b * cos_gamma +
+      2 * xf2 * zf2 * a * c * cos_beta +
+      2 * yf2 * zf2 * b * c * cos_alpha
+  )]
 
-  for (central_atom in unique_central_atoms) {
-    bonded_neighbors <- bonded_pairs[Atom1 == central_atom, Atom2]
-    if (length(bonded_neighbors) >= 2) {
-      neighbor_combinations <- combn(bonded_neighbors, 2, simplify = FALSE)
-      for (pair in neighbor_combinations) {
-        angle <- calculate_angle_metric(central_atom, pair[1], pair[2])
-        if (!is.na(angle)) {
-          angle_list[[length(angle_list) + 1]] <- data.table(
-            CentralAtom = central_atom,
-            Neighbor1 = pair[1],
-            Neighbor2 = pair[2],
-            Angle = angle
-          )
-        }
-      }
-    }
-  }
+  # Calculate magnitudes, guarding against division by zero for very small lengths
+  angle_triplets[, `:=`(
+    mag1 = sqrt(pmax(mag_sq1, 0)),
+    # pmax(...,0) to handle potential negative due to FP error
+    mag2 = sqrt(pmax(mag_sq2, 0))
+  )]
 
-  if (length(angle_list) > 0) {
-    angle_results <- rbindlist(angle_list)
-    return(angle_results[order(CentralAtom, Neighbor1, Neighbor2)])
-  } else {
-    return(
-      data.table(
-        CentralAtom = character(),
-        Neighbor1 = character(),
-        Neighbor2 = character(),
-        Angle = numeric()
-      )
-    )
-  }
+  # Calculate cos_theta, guarding against division by zero or invalid acos input range [-1, 1]
+  angle_triplets[, cos_theta := pmin(pmax(dot_product / (mag1 * mag2), -1.0), 1.0)]
+  angle_triplets[mag1 <= 1e-10 |
+                   mag2 <= 1e-10, cos_theta := NA_real_] # Set to NA if magnitudes are too small
+
+  # Calculate angle in degrees
+  angle_triplets[, Angle := acos(cos_theta) * 180 / pi]
+
+  # Filter out NA angles (if any, due to impossible geometry) and select final columns
+  result_angles <- angle_triplets[!is.na(Angle), .(
+    CentralAtom = CentralAtom,
+    Neighbor1 = Neighbor1_sorted,
+    Neighbor2 = Neighbor2_sorted,
+    Angle
+  )]
+
+  return(result_angles[order(CentralAtom, Neighbor1, Neighbor2)])
 }
 
 #' @title Propagate Distance Error
@@ -420,9 +443,10 @@ propagate_angle_error <- function(bond_angles,
                                                                     s_c)^2 + (p_yc_alpha * s_alpha_rad)^2 + (p_yc_beta * s_beta_rad)^2 + (p_yc_gamma *
                                                                                                                                             s_gamma_rad)^2 + (p_yc_xf * x_error)^2 + (p_yc_yf * y_error)^2 + (p_yc_zf *
                                                                                                                                                                                                                 z_error)^2]
+
   cart_errors[, s_zc_sq := (p_zc_a * s_a)^2 + (p_zc_b * s_b)^2 + (p_zc_c *
-                                                                    s_c)^2 + (p_zc_alpha * s_alpha_rad)^2 + (p_yc_beta * s_beta_rad)^2 + (p_yc_gamma *
-                                                                                                                                            s_gamma_rad)^2 + (p_zc_xf * x_error)^2 + (p_yc_yf * y_error)^2 + (p_zc_zf *
+                                                                    s_c)^2 + (p_zc_alpha * s_alpha_rad)^2 + (p_zc_beta * s_beta_rad)^2 + (p_zc_gamma *
+                                                                                                                                            s_gamma_rad)^2 + (p_zc_xf * x_error)^2 + (p_zc_yf * y_error)^2 + (p_zc_zf *
                                                                                                                                                                                                                 z_error)^2]
   all_frac_coords <- unique(rbind(atomic_coordinates[, .(Label, x_a, y_b, z_c)], expanded_coords), by =
                               "Label")
@@ -550,23 +574,56 @@ minimum_distance <- function(distances, delta = 0.1) {
 #' @family bonding algorithms
 #' @export
 brunner <- function(distances, delta = 0.0001) {
-  bonds <- list()
-  unique_atoms <- unique(distances$Atom1)
-  for (atom in unique_atoms) {
-    atom_distances <- distances[Atom1 == atom][order(Distance)]
-    largest_gap <- -Inf
-    j_max <- NA
-    for (j in 1:(nrow(atom_distances) - 1)) {
-      reciprocal_gap <- 1 / atom_distances$Distance[j] - 1 / atom_distances$Distance[j + 1]
-      if (reciprocal_gap > largest_gap) {
-        largest_gap <- reciprocal_gap
-        j_max <- j
-      }
-    }
-    d_cut <- atom_distances$Distance[j_max] + delta
-    bonds[[atom]] <- atom_distances[Distance <= d_cut]
+  if (nrow(distances) == 0) {
+    return(
+      data.table(
+        Atom1 = character(),
+        Atom2 = character(),
+        Distance = numeric(),
+        DeltaX = numeric(),
+        DeltaY = numeric(),
+        DeltaZ = numeric()
+      )
+    )
   }
-  return(rbindlist(bonds, fill = TRUE))
+
+  bonds_list <- lapply(split(distances, by = "Atom1"), function(atom_distances_sub_dt) {
+    # Sort by Distance within each atom group
+    atom_distances_sub_dt <- atom_distances_sub_dt[order(Distance)]
+
+    if (nrow(atom_distances_sub_dt) < 2) {
+      return(NULL) # Need at least two distances to form a gap
+    }
+
+    # Calculate reciprocal gaps in a vectorized manner
+    reciprocal_gaps <- 1 / atom_distances_sub_dt$Distance[1:(nrow(atom_distances_sub_dt) - 1)] -
+      1 / atom_distances_sub_dt$Distance[2:nrow(atom_distances_sub_dt)]
+
+    # Find the index of the largest gap
+    j_max <- which.max(reciprocal_gaps)
+
+    # Determine cutoff distance
+    d_cut <- atom_distances_sub_dt$Distance[j_max] + delta
+
+    # Filter for bonds and return relevant columns (including DeltaX, DeltaY, DeltaZ)
+    atom_distances_sub_dt[Distance <= d_cut, .(Atom1, Atom2, Distance, DeltaX, DeltaY, DeltaZ)]
+  })
+
+  # Combine results
+  if (length(bonds_list) > 0) {
+    return(rbindlist(bonds_list, fill = TRUE))
+  } else {
+    return(
+      data.table(
+        Atom1 = character(),
+        Atom2 = character(),
+        Distance = numeric(),
+        DeltaX = numeric(),
+        DeltaY = numeric(),
+        DeltaZ = numeric()
+      )
+    )
+  }
 }
 
 #' @title Identify Atomic Bonds using Hoppe's Method
@@ -581,29 +638,70 @@ brunner <- function(distances, delta = 0.0001) {
 hoppe <- function(distances,
                   delta = 0.5,
                   tolerance = 0.001) {
-  bonded_pairs <- list()
-  unique_atoms <- unique(distances$Atom1)
-  for (atom in unique_atoms) {
-    atom_distances <- distances[Atom1 == atom]
-    dmin <- min(atom_distances$Distance)
-    davg <- sum(atom_distances$Distance * exp(1 - (atom_distances$Distance /
-                                                     dmin)^6)) / sum(exp(1 - (atom_distances$Distance / dmin)^6))
+  if (nrow(distances) == 0) {
+    return(
+      data.table(
+        Atom1 = character(),
+        Atom2 = character(),
+        Distance = numeric(),
+        DeltaX = numeric(),
+        DeltaY = numeric(),
+        DeltaZ = numeric()
+      )
+    )
+  }
+
+  bonded_pairs_list <- lapply(split(distances, by = "Atom1"), function(atom_distances_sub_dt) {
+    if (nrow(atom_distances_sub_dt) == 0)
+      return(NULL)
+
+    dmin <- min(atom_distances_sub_dt$Distance)
+    if (dmin == 0)
+      return(NULL) # Avoid division by zero if an atom is its own neighbor (should be filtered earlier with Distance > 1e-6)
+
+    # Initial davg calculation
+    exp_term_initial <- exp(1 - (atom_distances_sub_dt$Distance / dmin)^6)
+    davg <- sum(atom_distances_sub_dt$Distance * exp_term_initial) / sum(exp_term_initial)
+
+    # Iterative refinement of davg
     while (TRUE) {
       prev_davg <- davg
-      davg <- sum(atom_distances$Distance * exp(1 - (
-        atom_distances$Distance / prev_davg
-      )^6)) / sum(exp(1 - (
-        atom_distances$Distance / prev_davg
-      )^6))
+      if (prev_davg == 0)
+        break # Avoid division by zero if davg collapses to zero
+
+      exp_term <- exp(1 - (atom_distances_sub_dt$Distance / prev_davg)^6)
+      denom_sum <- sum(exp_term)
+
+      if (denom_sum == 0) {
+        # All exp_term are ~0, division by zero likely
+        davg <- prev_davg # Cannot refine further, keep last davg
+        break
+      }
+      davg <- sum(atom_distances_sub_dt$Distance * exp_term) / denom_sum
       if (abs(davg - prev_davg) <= tolerance)
         break
     }
-    atom_distances[, BondStrength := exp(1 - (Distance / davg)^6)]
-    bonded_pairs[[atom]] <- atom_distances[BondStrength >= delta, .(Atom1, Atom2, Distance)]
-  }
-  return(rbindlist(bonded_pairs, fill = TRUE))
-}
 
+    atom_distances_sub_dt[, BondStrength := exp(1 - (Distance / davg)^6)]
+    # Return all necessary columns for subsequent error propagation
+    atom_distances_sub_dt[BondStrength >= delta, .(Atom1, Atom2, Distance, DeltaX, DeltaY, DeltaZ)]
+  })
+
+  if (length(bonded_pairs_list) > 0) {
+    return(rbindlist(bonded_pairs_list, fill = TRUE))
+  } else {
+    return(
+      data.table(
+        Atom1 = character(),
+        Atom2 = character(),
+        Distance = numeric(),
+        DeltaX = numeric(),
+        DeltaY = numeric(),
+        DeltaZ = numeric()
+      )
+    )
+  }
+}
 #' @title Filter Data by Atom Symbol Interactively
 #' @description Prompts the user to select chemical elements to keep in a data table
 #'   of bonds or angles. Filtering is based on matching the base chemical symbol

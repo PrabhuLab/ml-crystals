@@ -6,6 +6,7 @@
 \usage{
 analyze_cif_files(
   file_paths,
+  workers = 1,
   perform_extraction = TRUE,
   perform_calcs_and_transforms = TRUE,
   bonding_algorithms = c("minimum_distance"),
@@ -15,6 +16,10 @@ analyze_cif_files(
 }
 \arguments{
 \item{file_paths}{A character vector of paths to the CIF files to be analyzed.}
+
+\item{workers}{An integer specifying the number of parallel workers to use.
+Defaults to \code{1} (sequential processing). If \code{workers > 1}, the analysis
+is parallelized across the specified number of cores.}
 
 \item{perform_extraction}{Logical. If \code{TRUE} (default), extracts all metadata
 and base crystallographic data.}
@@ -43,11 +48,28 @@ values in the calculated columns.
 A high-level wrapper function that reads and analyzes one or more
 CIF files in batch. It calls \code{analyze_single_cif} for each file.
 }
+\details{
+For parallel processing (\code{workers > 1}), this function uses the \code{future}
+and \code{future.apply} packages. It is highly recommended that the user set a
+parallel plan \emph{before} calling this function. For example, to use 4 cores
+on your local machine, run: \code{future::plan(future::multisession, workers = 4)}.
+}
 \examples{
 cif_file <- system.file("extdata", "ICSD422.cif", package = "crystract")
 if (file.exists(cif_file)) {
-  # This will run the full analysis on all specified files.
-  analysis_results <- analyze_cif_files(cif_file)
+  # This will run the full analysis on all specified files sequentially.
+  analysis_results <- analyze_cif_files(cif_file, workers = 1)
   print(analysis_results[, .(file_name, database_code, chemical_formula)])
+
+  # To run in parallel (example for an interactive session):
+  if (interactive() && requireNamespace("future", quietly = TRUE)) {
+    # Set a plan to use 2 workers
+    future::plan(future::multisession, workers = 2)
+    # The following call will now run across 2 cores
+    parallel_results <- analyze_cif_files(c(cif_file, cif_file), workers = 2)
+    print(parallel_results[, .(file_name, database_code)])
+    # It's good practice to reset the plan when done
+    future::plan(future::sequential)
+  }
 }
 }

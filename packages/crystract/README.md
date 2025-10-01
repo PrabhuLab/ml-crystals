@@ -154,22 +154,33 @@ print(analysis_results[, .(database_code, chemical_formula, space_group_name)])
 # To get the bond angles table, we must extract the first element `[[1]]` 
 # from the list-column, then we can select the first 5 rows `[1:5, ]`.
 cat("\nFirst 5 calculated bond angles (with propagated errors):\n")
-print(analysis_results$bond_angles[[1]][1:5, ])
-```
+print(analysis_results$bond_angles[][1:5, ])```
 
 ## Learning More
 
-For a detailed, step-by-step guide explaining each function, the
-crystallographic principles, and the formulas used for calculations,
-please see the package vignette.
+For a detailed, step-by-step guide explaining each function, the crystallographic principles, and the formulas used for calculations, please see the package vignette.
 
-You can access it with the following command after you have successfully
-installed the package:
+You can access it with the following command after you have successfully installed the package:
+```
 
 ``` r
 # This command opens the detailed package guide
 vignette("crystract")
 ```
+
+## Community Guidelines
+
+We welcome and appreciate all forms of community engagement. To ensure a
+smooth and productive collaboration, we have established guidelines for
+contributing, reporting issues, and seeking support.
+
+All participants in this project are expected to abide by our **[Code of
+Conduct](CODE_OF_CONDUCT.md)**. Please read it to understand the
+standards of behavior we expect.
+
+For detailed instructions on how to contribute to the software, report
+bugs, or suggest new features, please review our **[Contributing
+Guidelines](CONTRIBUTING.md)**.
 
 ## Author
 
