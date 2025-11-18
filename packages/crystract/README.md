@@ -112,7 +112,7 @@ commands.
 install.packages("devtools")
 
 # Install crystract from the  GitHub repositoy
-devtools::install_github("PrabhuLab/ml-crystals", subdir = "crystract")
+devtools::install_github("PrabhuLab/ml-crystals", subdir = "packages/crystract")
 ```
 
 ### Verifying the Installation
