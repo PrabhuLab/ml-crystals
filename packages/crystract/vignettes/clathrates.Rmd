@@ -64,7 +64,7 @@ Due to licensing restrictions, the large dataset of clathrate CIF files from the
 
 4.  **Update Path in the Script**: In the code chunk below, you must change the `cif_root_dir` variable to point to the main directory you created (e.g., `C:/my_clathrate_data/`).
 
-**To run the analysis yourself, you must also remove the `eval=FALSE` option from the R code chunk headers in the following sections.**
+**To run the analysis yourself, you must also remove the `eval=TRUE` option from the R code chunk headers in the following sections.**
 
 ### 2.2 Loading the Bundled Example Data
 
@@ -72,9 +72,9 @@ The CIF files for this analysis are included with the package in the `inst/extda
 
 The files are organized into subdirectories whose names define the structural category (e.g., `6c-16i-24k`). The code recursively finds all CIF files and maps each one to its category.
 
-```{r load-files, echo=TRUE, eval=FALSE}
+```{r load-files, echo=TRUE, eval=TRUE}
 # IMPORTANT: Update this path to point to your main data directory
-cif_root_dir <- "path/to/your/clathrate_data_folder"
+cif_root_dir <- "/Users/donngo/repos/ml-crystals/packages/crystract/inst/extdata/Verified"
 
 # Check if the directory was found. If not, stop with a helpful message.
 if (nchar(cif_root_dir) == 0 || !dir.exists(cif_root_dir)) {
@@ -104,7 +104,7 @@ if (length(all_cif_paths) == 0) {
 
 We first run `analyze_cif_files()`. For efficiency and to enable our custom pipeline, we disable the built-in bonding calculations (`bonding_algorithms = "none"`). This performs the most intensive step—calculating all interatomic distances—just once.
 
-```{r run-batch-analysis-optimized, echo=TRUE, eval=FALSE}
+```{r run-batch-analysis-optimized, echo=TRUE, eval=TRUE}
 analysis_results <- analyze_cif_files(
   file_paths = all_cif_paths,
   perform_extraction = TRUE,
@@ -120,7 +120,7 @@ cat("Optimized analysis complete. Raw results table has", nrow(analysis_results)
 
 Now, we apply our core filtering logic by looping through the results for each file.
 
-```{r process-data, echo=TRUE, eval=FALSE}
+```{r process-data, echo=TRUE, eval=TRUE}
 # --- Timing Start ---
 timing_processing <- system.time({
   
@@ -191,7 +191,7 @@ if (exists("removed_ghosts_summary") && nrow(removed_ghosts_summary) > 0) {
 
 A key advantage of this workflow is the ability to inspect the distances that `filter_ghost_distances()` removed. This is crucial for validating the filtering logic and understanding the nature of disorder in the dataset.
 
-```{r show-removed-distances, echo=TRUE, eval=FALSE}
+```{r show-removed-distances, echo=TRUE, eval=TRUE}
 export_dir <- tempfile(pattern = "interactive_report_files")
 dir.create(export_dir, showWarnings = FALSE)
 
@@ -217,7 +217,7 @@ After applying the robust pipeline, we can now visualize the cleaned data.
 
 ### 5.1. Interactive Plot
 
-```{r generate-plot, echo=TRUE, eval=FALSE}
+```{r generate-plot, echo=TRUE, eval=TRUE}
 # Only generate the plot if the data processing was successful
 if (exists("plot_data") && nrow(plot_data) > 0) {
   p <- ggplot(plot_data, aes(x = lattice_parameter_a, y = weighted_distance, color = category, shape = category, text = file)) +
@@ -244,7 +244,7 @@ if (exists("plot_data") && nrow(plot_data) > 0) {
 
 The final, cleaned data used for the plot is provided below in a searchable and exportable table.
 
-```{r show-final-data-table, echo=TRUE, eval=FALSE}
+```{r show-final-data-table, echo=TRUE, eval=TRUE}
 if (exists("plot_data") && nrow(plot_data) > 0) {
   datatable(
     plot_data,

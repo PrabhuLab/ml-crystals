@@ -6,48 +6,45 @@
 \usage{
 analyze_cif_files(
   file_paths,
-  perform_extraction = TRUE,
-  perform_calcs_and_transforms = TRUE,
-  bonding_algorithms = c("minimum_distance"),
-  calculate_bond_angles = TRUE,
-  perform_error_propagation = TRUE
+  workers = 1,
+  output_dir = NULL,
+  batch_size = 1000,
+  ...
 )
 }
 \arguments{
-\item{file_paths}{A character vector of paths to the CIF files to be analyzed.}
+\item{file_paths}{A character vector of CIF file paths, or a named list of
+\code{data.table}s each containing CIF content.}
 
-\item{perform_extraction}{Logical. If \code{TRUE} (default), extracts all metadata
-and base crystallographic data.}
+\item{workers}{An integer for the number of parallel workers. Defaults to \code{1} (sequential).}
 
-\item{perform_calcs_and_transforms}{Logical. If \code{TRUE} (default), generates
-the full unit cell, expands it to a supercell, and calculates distances.}
+\item{output_dir}{Optional path to a directory for saving batched results.
+If \code{NULL} (default), results are returned in memory.}
 
-\item{bonding_algorithms}{A character vector specifying which bonding algorithms
-to apply. The first algorithm listed is used for subsequent calculations.
-Default: \code{c("minimum_distance")}. Options: \code{"minimum_distance"}, \code{"brunner"},
-\code{"hoppe"}. Use \code{"none"} to skip bonding analysis.}
+\item{batch_size}{Number of files per batch. Defaults to 1000.}
 
-\item{calculate_bond_angles}{Logical. If \code{TRUE} (default), calculates bond
-angles based on the primary bonding algorithm.}
-
-\item{perform_error_propagation}{Logical. If \code{TRUE} (default), propagates
-experimental uncertainties. Any missing uncertainty values in a CIF file
-will be treated as zero during this step.}
+\item{...}{Additional arguments passed directly to \code{analyze_single_cif}, such
+as \code{bonding_algorithms}, \code{calculate_bond_angles}, etc.}
 }
 \value{
-A \code{data.table} where each row summarizes the analysis of one CIF file.
-Files with missing essential data will generate warnings and have \code{NULL}
-values in the calculated columns.
+If \code{output_dir} is \code{NULL}, a single \code{data.table} with all results.
+If \code{output_dir} is provided, invisibly returns the path to the output directory.
 }
 \description{
-A high-level wrapper function that reads and analyzes one or more
-CIF files in batch. It calls \code{analyze_single_cif} for each file.
+A high-level wrapper that analyzes CIF files in batch, supporting
+parallel processing and batch-to-disk operations for large datasets.
 }
-\examples{
-cif_file <- system.file("extdata", "ICSD422.cif", package = "crystract")
-if (file.exists(cif_file)) {
-  # This will run the full analysis on all specified files.
-  analysis_results <- analyze_cif_files(cif_file)
-  print(analysis_results[, .(file_name, database_code, chemical_formula)])
+\details{
+This function is optimized for large datasets. It processes files in chunks
+(\code{batch_size}) and uses a memory-safe parallel backend to avoid data transfer
+bottlenecks.
+
+It operates in two modes:
+\enumerate{
+\item \strong{In-Memory (default):} If \code{output_dir} is \code{NULL}, results are aggregated
+in memory and returned as one \code{data.table}. Ideal for smaller jobs.
+\item \strong{Batch-to-Disk:} If \code{output_dir} is a path, each processed batch is
+saved as an RDS file to the specified directory. This is the recommended
+mode for very large datasets as it prevents memory overload.
 }
 }

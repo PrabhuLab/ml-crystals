@@ -1,7 +1,7 @@
 Package: crystract
 Type: Package
 Title: Tools to Extract Data from CIF Files for Crystallography
-Version: 0.0.0.9000
+Version: 1.0.1
 Author: Don Ngo <dngo@carnegiescience.edu>
 Maintainer: Don Ngo <dngo@carnegiescience.edu>
 Description: Provides a suite of functions to parse Crystallographic Information
@@ -12,16 +12,18 @@ Description: Provides a suite of functions to parse Crystallographic Information
     neighbor counts, and calculate bond angles. The package is designed to
     facilitate the preparation of crystallographic data for further analysis,
     including machine learning applications in materials science.
-License: file LICENSE
+License: GPL (>= 3) + file LICENSE 
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3
 Depends:
     R (>= 3.5.0)
 Imports:
     data.table,
     dplyr,
-    stringr
+    stringr,
+    future,
+    future.apply
 Suggests:
     DT,
     ggplot2,
