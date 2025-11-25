@@ -22,7 +22,7 @@ affiliations:
    index: 1
  - name: Technische Universität Dresden, Dresden, Germany
    index: 2
- - name: Elbe Flugzeugwerke GmbH, Dresden, Germany
+ - name: Independent Scholar Dresden, Germany
    index: 3
  - name: Department of Earth and Planetary Sciences, Rutgers University, Piscataway, NJ, USA
    index: 4
@@ -87,7 +87,7 @@ Finally, as an open source package, "`crystract`" will be a community-driven, tr
 
 # Acknowledgements
 
-The authors would like to thank Michael Baitinger, Robert T. Downs, Jolyon Ralph, and Xiaogang Ma for their discussions on crystallography, and cyberinfrastructure development. D.N. has been supported by the Earth and Planetary Science Interdisciplinary Internship at Carnegie Science (a National Science Foundation REU). Additionally, funding and support for this project was provided by the Carnegie Institution for Science and a private foundation.
+The authors would like to thank Michael Baitinger, Robert T. Downs, Jolyon Ralph, and Xiaogang Ma for their discussions on crystallography, and cyberinfrastructure development. D.N. has been supported by the Earth and Planetary Science Interdisciplinary Internship at Carnegie Science (a National Science Foundation REU). Many thanks to Dionysis Foustoukos, Johanna Teske, Carnegie Science, and the National Science Foundation for the internship oppurtunity. Additionally, funding and support for this project was provided by the Carnegie Institution for Science and a private foundation.
 
 # Author Contributions using the CRediT (Contribution Roles Taxonomy)
 
