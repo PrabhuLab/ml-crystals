@@ -3,6 +3,13 @@
 /packages/crystract/.RData
 /packages/crystract/.Ruserdata
 /packages/crystract/inst/
-/notebook/data/
+/notebook/workflow/data/
+/notebook/clathrates/Verified/
+/notebook/clathrates/interactive_report_files/
+/notebook/datathon/batch_results/
+/notebook/natural/split_cif_files/
+/notebook/natural/crystract_batch_results/
+/notebook/natural/amcsd_parsed_list.rds
 /packages/crystract/doc/
 /packages/crystract/Meta/
+.Rproj.user/
