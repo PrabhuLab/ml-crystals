@@ -52,6 +52,7 @@ set_radii_data(NULL)
 }
 \seealso{
 Other post-processing: 
+\code{\link{aggregate_batch_results}()},
 \code{\link{calculate_weighted_average_network_distance}()},
 \code{\link{export_analysis_to_csv}()},
 \code{\link{filter_ghost_distances}()}

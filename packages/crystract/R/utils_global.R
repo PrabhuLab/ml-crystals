@@ -117,6 +117,8 @@ utils::globalVariables(
     "lower_bound",
     "n",
     "sum_d",
-    "upper_bound"
+    "upper_bound",
+    "null",
+    "..valid_cols"
   )
 )

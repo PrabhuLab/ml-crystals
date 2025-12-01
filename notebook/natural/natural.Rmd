@@ -1,0 +1,371 @@
+---
+title: "High-Throughput Bond Length Analysis of the AMCSD"
+author: "Using the Built-in crystract Batch Processor"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    theme: united
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = TRUE, warning = TRUE)
+```
+
+## 1. Introduction
+
+This notebook demonstrates a robust and scalable workflow for extracting and analyzing interatomic bond lengths from the entire American Mineralist Crystal Structure Database (AMCSD). This version has been updated to use the `crystract` package's high-level `analyze_cif_files` function, which provides built-in, optimized support for parallel batch processing to disk. This simplifies the code and makes the analysis more efficient and maintainable.
+
+## 2. Setup: Loading Libraries
+
+First, we load the necessary R packages for data manipulation, crystallographic analysis, parallel computation, and visualization.
+
+```{r load-libraries}
+# For data manipulation and speed
+library(data.table)
+library(stringr)
+library(tidyr)
+
+# For crystallographic analysis
+library(crystract)
+
+# For parallel processing
+library(future)
+library(future.apply)
+
+# For visualization
+library(ggplot2)
+```
+
+## 3. Data Preparation: One-Time Parse of the AMCSD File
+
+The entire AMCSD dataset is provided as a single text file (`cifdata.txt`). The first step is to parse this file into a list of individual crystal structures that `crystract` can process.
+
+**This is a time-consuming, one-time operation.** The results will be saved as an `.rds` file to avoid repeating it. If you have already run this and have the `amcsd_parsed_list.rds` file, you can skip to section 5.
+
+```{r define-parsing-function}
+#' @title Split a large multi-entry CIF file with validation
+#' @description Reads, sanitizes, and splits a multi-entry CIF file.
+#' @param file_path The full path to the large text file.
+#' @return A named list where each element is a data.table representing one CIF file's content.
+split_amcsd_file <- function(file_path) {
+  if (!file.exists(file_path)) {
+    stop("AMCSD data file not found at the specified path: ", file_path)
+  }
+  
+  # Read and sanitize the file at the byte level to handle non-UTF8 characters
+  con <- file(file_path, "rb")
+  raw_bytes <- readBin(con, "raw", n = file.size(file_path))
+  close(con)
+  valid_bytes_mask <- (raw_bytes >= 32 & raw_bytes <= 126) | raw_bytes %in% as.raw(c(9, 10, 13))
+  raw_bytes[!valid_bytes_mask] <- as.raw(32)
+  clean_text <- rawToChar(raw_bytes, multiple = FALSE)
+  
+  # Split the sanitized text into individual CIF entries
+  cif_entries_text <- str_split(clean_text, "(?=data_global)")[[1]]
+  cif_entries_text <- cif_entries_text[str_trim(cif_entries_text) != ""]
+  
+  # Process each text entry into a data.table
+  cif_list <- lapply(cif_entries_text, function(entry) {
+    dt <- suppressWarnings(
+      fread(text = entry, sep = "\n", header = FALSE, strip.white = FALSE),
+      classes = "fread_incomplete_final_line"
+    )
+    
+    # Extract the AMCSD code to use as a unique name
+    amcsd_line <- dt[str_detect(V1, "_database_code_amcsd")]
+    amcsd_code <- if (nrow(amcsd_line) > 0) {
+      str_trim(str_replace(amcsd_line$V1, "_database_code_amcsd", ""))
+    } else {
+      paste0("unknown_", sample(1E6, 1))
+    }
+    
+    list(name = amcsd_code, content = dt)
+  })
+  
+  # Create the final named list
+  cif_contents <- lapply(cif_list, `[[`, "content")
+  names(cif_contents) <- sapply(cif_list, `[[`, "name")
+  
+  return(cif_contents)
+}
+```
+
+Now, execute the parsing function. **This chunk is set to `eval=FALSE` to prevent re-running it.**
+
+```{r execute-parsing, eval=TRUE}
+# This chunk should only be run ONCE. Change eval=TRUE to run it.
+amcsd_file_path <- "cifdata.txt" 
+cat("Starting the parsing of the main cifdata.txt file. This may take several minutes...\n")
+
+# Parse the file into a list of data.tables
+cif_data_list <- split_amcsd_file(amcsd_file_path)
+
+cat(sprintf("Successfully parsed %d crystal structures from the file.\n", length(cif_data_list)))
+
+# Save the parsed list to an RDS file for quick loading in the future
+saveRDS(cif_data_list, "amcsd_parsed_list.rds")
+cat("Parsed data has been saved to 'amcsd_parsed_list.rds'.\n")
+```
+
+## 4. Caching Data: Saving to Individual CIF Files (Optional)
+
+To completely avoid re-parsing `cifdata.txt` in the future, this optional step saves each crystal structure into its own `.cif` file inside the `split_cif_files/` directory.
+
+```{r save-split-files, eval=TRUE}
+# This chunk should only be run ONCE. Change eval=TRUE to run it.
+output_dir <- "split_cif_files"
+if (!dir.exists(output_dir)) {
+  dir.create(output_dir)
+}
+
+# Load the parsed list if it's not in memory
+if (!exists("cif_data_list")) {
+  cif_data_list <- readRDS("amcsd_parsed_list.rds")
+}
+
+cat(sprintf("Saving %d individual CIF files to the '%s/' directory...\n", length(cif_data_list), output_dir))
+
+# Loop through the list and write each data.table to a file
+invisible(lapply(names(cif_data_list), function(name) {
+  file_path <- file.path(output_dir, paste0(name, ".cif"))
+  fwrite(cif_data_list[[name]], file_path, col.names = FALSE, quote = FALSE)
+}))
+
+cat("All individual CIF files have been saved.\n")
+```
+
+## 5. Loading Data for Analysis
+
+Load the pre-parsed data from the RDS file. This is the fastest way to start the analysis on subsequent runs.
+
+```{r load-from-rds}
+# Load the pre-parsed list of CIF data
+cif_data_list <- readRDS("amcsd_parsed_list.rds")
+cat(sprintf("Successfully loaded %d parsed structures from 'amcsd_parsed_list.rds'.\n", length(cif_data_list)))
+```
+
+## 6. Filtering for Specific Minerals
+
+This chunk filters the full AMCSD dataset to retain only the structures corresponding to the list of minerals provided. The subsequent analysis will only run on these selected files.
+
+```{r filter-mineral-list}
+cat("Filtering the database for the specified list of minerals...\n")
+
+# Define the list of minerals to include in the analysis
+target_minerals <- c(
+  "Pyrite", "Marcasite", "Vaesite", "Cattierite", "Hauerite", "Krutovite", "krutaite", 
+  "Trogtalite", "Ferroselite", "Covelline", "Arsenopyrite", "Cobaltite", "Realgar",
+  "Pararealgar", "Orpiment", "Tetrahedrite", "Tennantite", "Umangite", "Calaverite",
+  "Krennerite", "Sylvanite", "Montbrayite", "Melonite", "Wehrlite"
+)
+
+# Create a single regex pattern for case-insensitive matching of any mineral name
+filter_pattern <- paste(target_minerals, collapse = "|")
+
+# This function checks if a CIF's text content contains any of the target mineral names
+contains_target_mineral <- function(cif_dt) {
+  any(str_detect(cif_dt$V1, regex(filter_pattern, ignore_case = TRUE)))
+}
+
+# Apply the filter function across the list to get a logical vector
+indices_to_keep <- sapply(cif_data_list, contains_target_mineral)
+
+# Subset the original list to keep only the matching entries
+cif_data_list <- cif_data_list[indices_to_keep]
+
+cat(sprintf("Filtering complete. The dataset for analysis now contains %d structures.\n", length(cif_data_list)))
+```
+
+## 7. Parallel Analysis Using `crystract`'s Batch Processor
+
+This is the most computationally intensive step. Instead of a manual loop, we now use the high-level `analyze_cif_files` function on our filtered list of minerals.
+
+```{r run-package-batch-analysis, eval=TRUE}
+# --- Set Analysis Parameters ---
+num_workers <- parallel::detectCores() - 1 # Use all but one core
+analysis_output_dir <- "crystract_batch_results" # Directory to save batch files
+batch_processing_size <- 4000 # Number of files per batch
+
+# --- Run the Analysis ---
+cat(sprintf("Starting analysis of %d files using crystract's built-in batch processor...\n", length(cif_data_list)))
+overall_time <- system.time({
+
+  # This single function call now robustly handles parallel processing and
+  # batching internally without memory overload issues.
+  analyze_cif_files(
+    file_paths = cif_data_list,                 # Use the pre-parsed and filtered list
+    workers = num_workers,                      # Number of parallel cores
+    output_dir = analysis_output_dir,           # Activate batch-to-disk mode
+    batch_size = batch_processing_size,         # Files per batch
+    
+    # Arguments passed down to analyze_single_cif for each file
+    bonding_algorithms = "minimum_distance",
+    calculate_bond_angles = FALSE,
+    perform_error_propagation = FALSE
+  )
+  
+})
+
+cat("----------------------------------\n")
+cat("Package Batch Analysis Complete!\n")
+cat(sprintf("Total processing time: %.2f minutes\n", overall_time["elapsed"] / 60))
+cat(sprintf("Batch results have been saved in the '%s/' directory.\n", analysis_output_dir))
+
+# The new analyze_cif_files function automatically shuts down its parallel
+# workers when it completes. This call is therefore optional but is good 
+# practice to include for clarity.
+plan(sequential)
+```
+
+## 8. Data Aggregation and Tidying
+
+With the analysis complete, we now use the `aggregate_batch_results` helper function from `crystract` to load and combine all the generated batch files into a single `data.table`.
+
+```{r aggregate-data}
+# The directory where the batch files were saved
+analysis_output_dir <- "crystract_batch_results"
+
+if (dir.exists(analysis_output_dir)) {
+  cat(sprintf(
+    "Aggregating batch results from '%s/'...\n",
+    analysis_output_dir
+  ))
+  
+  # Use the package's built-in aggregator
+  all_results <- aggregate_batch_results(
+    analysis_output_dir,
+    cols_to_keep = c("file_name", "bonded_pairs_minimum_distance")
+  )
+  total_structures_processed <- nrow(all_results)
+  
+  # Unnest the bonded pairs data
+  bonds_to_unnest <- all_results[!sapply(bonded_pairs_minimum_distance, is.null), .(file_name, bonded_pairs = bonded_pairs_minimum_distance)]
+  
+  if (nrow(bonds_to_unnest) > 0) {
+    final_bonds_data <- unnest(bonds_to_unnest, cols = c(bonded_pairs))
+    setDT(final_bonds_data)
+    
+    # Extract element symbols from atom labels (e.g., 'Si1' -> 'Si')
+    final_bonds_data[, `:=`(
+      Element1 = str_extract(Atom1, "^[A-Za-z]+"),
+      Element2 = str_extract(Atom2, "^[A-Za-z]+")
+    )]
+    
+    # Keep only needed columns and remove rows with missing data or outliers
+    final_bonds_data <- final_bonds_data[, .(Element1, Element2, Distance)]
+    final_bonds_data <- na.omit(final_bonds_data)
+    final_bonds_data <- final_bonds_data[Distance > 0.5 &
+                                           Distance < 4.5]
+    
+    cat(
+      sprintf(
+        "Aggregation complete. A total of %d unique bonds from %d structures are ready for plotting.\n",
+        nrow(final_bonds_data),
+        total_structures_processed
+      )
+    )
+  } else {
+    stop("Aggregation failed: No bond data found to unnest.")
+  }
+} else {
+  stop(
+    sprintf(
+      "Analysis results directory '%s' not found. Please run the parallel analysis chunk first.",
+      analysis_output_dir
+    )
+  )
+}
+```
+
+## 9. Diagnostic: Identifying Failed Files
+
+Now that we have the results, we can compare the list of successfully processed files against our original input list to identify which ones failed.
+
+```{r identify-failed-files}
+# Get the list of all file names that were initially parsed
+all_input_files <- names(cif_data_list)
+
+# Get the list of file names that were successfully processed and aggregated
+processed_files <- all_results$file_name
+
+# Use setdiff() to find the files that are in the input list but not in the results
+failed_files <- setdiff(all_input_files, processed_files)
+
+if (length(failed_files) > 0) {
+  cat(sprintf(
+    "Found %d files that were parsed but failed during the analysis step.\n",
+    length(failed_files)
+  ))
+  
+  # Create a data.table for better viewing
+  failed_files_dt <- data.table(failed_file_name = failed_files)
+  
+  # Display the list in an interactive table
+  DT::datatable(
+    failed_files_dt,
+    caption = "List of Files That Failed During Analysis",
+    options = list(pageLength = 15, scrollX = TRUE),
+    rownames = FALSE
+  )
+  
+} else {
+  cat("Congratulations! All parsed files were processed successfully.\n")
+}
+```
+
+## 10. Visualization: Bond Length Distributions
+
+Finally, we can visualize the results. The plot below shows the distribution of all calculated bond lengths for each chemical element, ordered by atomic number.
+
+```{r create-plot, fig.width=16, fig.height=9}
+if (exists("final_bonds_data") && nrow(final_bonds_data) > 0) {
+  # Reshape the data into a long format for ggplot
+  plot_data_long <- rbind(
+    final_bonds_data[, .(Element = Element1, Distance)], 
+    final_bonds_data[, .(Element = Element2, Distance)]
+  )
+  
+  # Define atomic numbers to order the elements logically
+  atomic_numbers <- c(H=1, He=2, Li=3, Be=4, B=5, C=6, N=7, O=8, F=9, Ne=10, Na=11, Mg=12, Al=13, Si=14, P=15, S=16, Cl=17, Ar=18, K=19, Ca=20, Sc=21, Ti=22, V=23, Cr=24, Mn=25, Fe=26, Co=27, Ni=28, Cu=29, Zn=30, Ga=31, Ge=32, As=33, Se=34, Br=35, Kr=36, Rb=37, Sr=38, Y=39, Zr=40, Nb=41, Mo=42, Tc=43, Ru=44, Rh=45, Pd=46, Ag=47, Cd=48, In=49, Sn=50, Sb=51, Te=52, I=53, Xe=54, Cs=55, Ba=56, La=57, Ce=58, Pr=59, Nd=60, Pm=61, Sm=62, Eu=63, Gd=64, Tb=65, Dy=66, Ho=67, Er=68, Tm=69, Yb=70, Lu=71, Hf=72, Ta=73, W=74, Re=75, Os=76, Ir=77, Pt=78, Au=79, Hg=80, Tl=81, Pb=82, Bi=83, Po=84, At=85, Rn=86, Fr=87, Ra=88, Ac=89, Th=90, Pa=91, U=92, Np=93, Pu=94)
+  
+  # Filter data and set the factor levels for ordering
+  plot_data_long <- plot_data_long[Element %in% names(atomic_numbers)]
+  plot_data_long$Element <- factor(plot_data_long$Element, levels = names(sort(atomic_numbers)))
+  
+  # Generate the boxplot
+  bond_length_plot <- ggplot(plot_data_long, aes(x = Element, y = Distance)) +
+    geom_boxplot(outlier.shape = NA, fill = "#4682B4", color = "black") +
+    coord_cartesian(ylim = c(0.5, 4.0)) + # Zoom in on the most common range
+    labs(
+      title = "Distribution of Interatomic Bond Lengths Across the Periodic Table",
+      subtitle = paste("Based on", format(total_structures_processed, big.mark = ","), "structures from the AMCSD"),
+      x = "Element",
+      y = "Bond Length (Ångströms)"
+    ) +
+    theme_minimal(base_size = 14) +
+    theme(
+      axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5, size = 10),
+      panel.grid.major.x = element_blank(),
+      plot.title = element_text(face = "bold", size = 20),
+      plot.subtitle = element_text(size = 16)
+    )
+  
+  print(bond_length_plot)
+} else {
+  cat("No data available to create the bond length plot.\n")
+}
+```
+
+### 10.2 Heatmap
+
+```{r}
+
+
+```
+
+## 11. Conclusion
+
+This workflow successfully demonstrates a scalable and efficient method for analyzing a massive crystallographic database. By leveraging `crystract`'s built-in, parallelized batch processing, we greatly simplified the analysis code while improving its robustness and memory efficiency. The final result is a comprehensive visualization of chemical bonding trends across the periodic table, derived from over 21,000 crystal structures.

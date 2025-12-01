@@ -4,18 +4,20 @@
 \alias{extract_atomic_coordinates}
 \title{Extract Atomic Coordinates}
 \usage{
-extract_atomic_coordinates(cif_content)
+extract_atomic_coordinates(cif_content, chemical_formula = NA)
 }
 \arguments{
 \item{cif_content}{A \code{data.table} containing the lines of a CIF file.}
+
+\item{chemical_formula}{The chemical formula string for validation.}
 }
 \value{
-A \code{data.table} with atomic coordinate data. Returns \code{NULL} if not found.
+A \code{data.table} with atomic coordinate data, or \code{NULL} if not found.
 }
 \description{
-Parses the atomic site information to extract the label, fractional
-coordinates (x, y, z), Wyckoff symbol, multiplicity, occupancy, and their standard
-uncertainties for each asymmetric atom in the unit cell.
+Parses atomic site info, including labels, fractional coordinates,
+and other properties. It efficiently normalizes atom labels to a
+'SymbolNumber' format and validates them against the chemical formula.
 }
 \seealso{
 Other extractors: 

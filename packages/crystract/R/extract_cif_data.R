@@ -139,34 +139,34 @@ extract_unit_cell_metrics <- function(cif_content) {
 }
 
 #' @title Extract Atomic Coordinates
-#' @description Parses the atomic site information to extract the label, fractional
-#'   coordinates (x, y, z), Wyckoff symbol, multiplicity, occupancy, and their standard
-#'   uncertainties for each asymmetric atom in the unit cell.
+#' @description Parses atomic site info, including labels, fractional coordinates,
+#'   and other properties. It efficiently normalizes atom labels to a
+#'   'SymbolNumber' format and validates them against the chemical formula.
 #' @param cif_content A `data.table` containing the lines of a CIF file.
-#' @return A `data.table` with atomic coordinate data. Returns `NULL` if not found.
+#' @param chemical_formula The chemical formula string for validation.
+#' @return A `data.table` with atomic coordinate data, or `NULL` if not found.
 #' @family extractors
 #' @export
-extract_atomic_coordinates <- function(cif_content) {
-  # --- 1. Find the start of the atom site loop ---
+extract_atomic_coordinates <- function(cif_content, chemical_formula = NA) {
+  # --- Sections 1-6: Find and read the data block (No changes needed) ---
   first_header_line_idx <- grep("^_atom_site_fract_x", cif_content$V1)
-  if (is.na(first_header_line_idx)) {
+  if (length(first_header_line_idx) == 0) {
     first_header_line_idx <- grep("^_atom_site_label", cif_content$V1)
-    if (is.na(first_header_line_idx))
+    if (length(first_header_line_idx) == 0)
       return(NULL)
   }
   loop_start_line_idx <- max(grep("^loop_", cif_content$V1[1:first_header_line_idx]))
   if (is.infinite(loop_start_line_idx))
     return(NULL)
 
-  # --- 2. Read the headers and find column indices ---
   line_indices <- (loop_start_line_idx + 1):nrow(cif_content)
   headers <- character()
   first_data_line_idx <- 0
   for (i in line_indices) {
     line <- cif_content$V1[i]
-    if (startsWith(line, "_")) {
+    if (startsWith(line, "_"))
       headers <- c(headers, trimws(line))
-    } else {
+    else {
       first_data_line_idx <- i
       break
     }
@@ -188,22 +188,19 @@ extract_atomic_coordinates <- function(cif_content) {
       idx
   })
   if (anyNA(col_indices[c("label", "x", "y", "z")])) {
-    warning("CIF file is missing essential atom site tags (_label, _fract_x, _y, _z).")
+    warning("CIF file missing essential atom site tags (_label, _fract_x, _y, _z).")
     return(NULL)
   }
 
-  # --- 3. Find the end of the data block ---
   end_candidates <- c(grep("^loop_|^_|^#", cif_content$V1[first_data_line_idx:nrow(cif_content)]),
                       grep("^\\s*$", cif_content$V1[first_data_line_idx:nrow(cif_content)]))
-  last_data_line_idx <- if (length(end_candidates) > 0) {
+  last_data_line_idx <- if (length(end_candidates) > 0)
     first_data_line_idx + min(end_candidates) - 2
-  } else {
+  else
     nrow(cif_content)
-  }
   if (first_data_line_idx > last_data_line_idx)
     return(NULL)
 
-  # --- 4. Read data with fread ---
   data_lines <- cif_content$V1[first_data_line_idx:last_data_line_idx]
   atom_data <- fread(
     text = paste(data_lines, collapse = "\n"),
@@ -212,7 +209,6 @@ extract_atomic_coordinates <- function(cif_content) {
     quote = ""
   )
 
-  # --- 5. VECTORIZED parsing of coordinates and errors ---
   parse_vector_with_error <- function(coord_vector) {
     matches <- stringr::str_match(coord_vector, "([0-9\\.\\-]+)(?:\\(([0-9]+)\\))?")
     value_str <- matches[, 2]
@@ -222,37 +218,25 @@ extract_atomic_coordinates <- function(cif_content) {
     scaled_error <- as.numeric(error_str) * 10^(-decimal_places)
     return(list(value = as.numeric(value_str), error = scaled_error))
   }
-
   x_data <- parse_vector_with_error(atom_data[[col_indices["x"]]])
   y_data <- parse_vector_with_error(atom_data[[col_indices["y"]]])
   z_data <- parse_vector_with_error(atom_data[[col_indices["z"]]])
-
-  # Parse occupancy, assuming 1.0 if the column is missing
-  occ_data <- if (!is.na(col_indices["occupancy"])) {
+  occ_data <- if (!is.na(col_indices["occupancy"]))
     parse_vector_with_error(atom_data[[col_indices["occupancy"]]])
-  } else {
+  else
     list(value = rep(1.0, nrow(atom_data)),
          error = rep(NA_real_, nrow(atom_data)))
-  }
-
-
-  # --- 6. Assemble the final data table ---
-  wyckoff_multiplicity <- if (!is.na(col_indices["multiplicity"])) {
-    as.numeric(atom_data[[col_indices["multiplicity"]]])
-  } else {
-    rep(NA_real_, nrow(atom_data))
-  }
-
-  wyckoff_symbol <- if (!is.na(col_indices["wyckoff"])) {
-    as.character(atom_data[[col_indices["wyckoff"]]])
-  } else {
-    rep(NA_character_, nrow(atom_data))
-  }
 
   atomic_coordinates <- data.table(
     Label = atom_data[[col_indices["label"]]],
-    WyckoffSymbol = wyckoff_symbol,
-    WyckoffMultiplicity = wyckoff_multiplicity,
+    WyckoffSymbol = if (!is.na(col_indices["wyckoff"]))
+      as.character(atom_data[[col_indices["wyckoff"]]])
+    else
+      rep(NA_character_, nrow(atom_data)),
+    WyckoffMultiplicity = if (!is.na(col_indices["multiplicity"]))
+      as.numeric(atom_data[[col_indices["multiplicity"]]])
+    else
+      rep(NA_real_, nrow(atom_data)),
     Occupancy = occ_data$value,
     OccupancyError = occ_data$error,
     x_a = x_data$value,
@@ -262,6 +246,213 @@ extract_atomic_coordinates <- function(cif_content) {
     y_error = y_data$error,
     z_error = z_data$error
   )
+
+  # --- Section 7: NEW - Robust Heuristic Correction of Non-Standard Atom Labels ---
+  valid_elements <- c(
+    "H",
+    "He",
+    "Li",
+    "Be",
+    "B",
+    "C",
+    "N",
+    "O",
+    "F",
+    "Ne",
+    "Na",
+    "Mg",
+    "Al",
+    "Si",
+    "P",
+    "S",
+    "Cl",
+    "Ar",
+    "K",
+    "Ca",
+    "Sc",
+    "Ti",
+    "V",
+    "Cr",
+    "Mn",
+    "Fe",
+    "Co",
+    "Ni",
+    "Cu",
+    "Zn",
+    "Ga",
+    "Ge",
+    "As",
+    "Se",
+    "Br",
+    "Kr",
+    "Rb",
+    "Sr",
+    "Y",
+    "Zr",
+    "Nb",
+    "Mo",
+    "Tc",
+    "Ru",
+    "Rh",
+    "Pd",
+    "Ag",
+    "Cd",
+    "In",
+    "Sn",
+    "Sb",
+    "Te",
+    "I",
+    "Xe",
+    "Cs",
+    "Ba",
+    "La",
+    "Ce",
+    "Pr",
+    "Nd",
+    "Pm",
+    "Sm",
+    "Eu",
+    "Gd",
+    "Tb",
+    "Dy",
+    "Ho",
+    "Er",
+    "Tm",
+    "Yb",
+    "Lu",
+    "Hf",
+    "Ta",
+    "W",
+    "Re",
+    "Os",
+    "Ir",
+    "Pt",
+    "Au",
+    "Hg",
+    "Tl",
+    "Pb",
+    "Bi",
+    "Po",
+    "At",
+    "Rn",
+    "Fr",
+    "Ra",
+    "Ac",
+    "Th",
+    "Pa",
+    "U",
+    "Np",
+    "Pu",
+    "Am",
+    "Cm",
+    "Bk",
+    "Cf",
+    "Es",
+    "Fm",
+    "Md",
+    "No",
+    "Lr",
+    "Rf",
+    "Db",
+    "Sg",
+    "Bh",
+    "Hs",
+    "Mt",
+    "Ds",
+    "Rg",
+    "Cn",
+    "Nh",
+    "Fl",
+    "Mc",
+    "Lv",
+    "Ts",
+    "Og"
+  )
+  base_symbols <- stringr::str_extract(atomic_coordinates$Label, "^[A-Za-z]+")
+  unique_base_symbols <- unique(base_symbols)
+  non_standard_symbols <- setdiff(unique_base_symbols, valid_elements)
+  corrections_made <- list()
+
+  if (length(non_standard_symbols) > 0) {
+    elements_in_formula <- if (!is.na(chemical_formula))
+      unique(stringr::str_extract_all(chemical_formula, "[A-Z][a-z]?")[[1]])
+    else
+      character(0)
+
+    for (sym in non_standard_symbols) {
+      corrected_sym <- NA_character_
+
+      # Rule 1: Prioritize special cases like water oxygen ('Wat', 'OW')
+      if (toupper(sym) %in% c("OW", "WAT", "OH")) {
+        if ("O" %in% elements_in_formula ||
+            length(elements_in_formula) == 0) {
+          corrected_sym <- "O"
+        }
+      } else {
+        # Rule 2: Find the longest valid element prefix that is in the formula
+        prefix2 <- substr(sym, 1, 2)
+        prefix1 <- substr(sym, 1, 1)
+
+        # Check for a 2-letter prefix match first
+        if (prefix2 %in% valid_elements &&
+            (prefix2 %in% elements_in_formula ||
+             length(elements_in_formula) == 0)) {
+          corrected_sym <- prefix2
+          # Then check for a 1-letter prefix match
+        } else if (prefix1 %in% valid_elements &&
+                   (prefix1 %in% elements_in_formula ||
+                    length(elements_in_formula) == 0)) {
+          corrected_sym <- prefix1
+        }
+      }
+
+      if (!is.na(corrected_sym)) {
+        indices_to_fix <- which(base_symbols == sym)
+        # Replace the entire non-standard alphabetic part with the corrected one
+        atomic_coordinates[indices_to_fix, Label := sub("^[A-Za-z]+", corrected_sym, Label)]
+        corrections_made[[sym]] <- corrected_sym
+        base_symbols[indices_to_fix] <- corrected_sym
+      }
+    }
+  }
+
+  if (length(corrections_made) > 0) {
+    correction_messages <- sapply(names(corrections_made), function(key)
+      paste0("'", key, "' -> '", corrections_made[[key]], "'"))
+    warning(paste0(
+      "Corrected non-standard atom labels: ",
+      paste(correction_messages, collapse = ", ")
+    ))
+  }
+
+  # --- Section 8: Final Validation and Normalization ---
+  final_base_symbols <- unique(stringr::str_extract(atomic_coordinates$Label, "^[A-Za-z]+"))
+  still_non_standard <- setdiff(final_base_symbols, valid_elements)
+  if (length(still_non_standard) > 0) {
+    warning(paste0(
+      "Uncorrected non-standard atom labels remain: ",
+      paste(still_non_standard, collapse = ", ")
+    ))
+  }
+
+  symbols <- sub("^([A-Z][a-z]?).*", "\\1", atomic_coordinates$Label, perl = TRUE)
+  numbers <- stringr::str_remove_all(atomic_coordinates$Label, "[^0-9]")
+  atomic_coordinates[, Label := paste0(symbols, numbers)]
+
+  # --- Section 9: Check for implicit atoms ---
+  if (!is.na(chemical_formula)) {
+    cleaned_base_symbols <- unique(stringr::str_extract(atomic_coordinates$Label, "^[A-Z][a-z]?"))
+    elements_in_formula <- unique(stringr::str_extract_all(chemical_formula, "[A-Z][a-z]?")[[1]])
+    missing_elements <- setdiff(elements_in_formula, cleaned_base_symbols)
+    if (length(missing_elements) > 0) {
+      warning(
+        paste0(
+          "Implicit atoms likely present. Elements in formula not in coordinates: ",
+          paste(missing_elements, collapse = ", ")
+        )
+      )
+    }
+  }
 
   return(atomic_coordinates)
 }
