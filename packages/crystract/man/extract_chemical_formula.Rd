@@ -7,13 +7,13 @@
 extract_chemical_formula(cif_content)
 }
 \arguments{
-\item{cif_content}{A \code{data.table} where each row is a line from a CIF file.}
+\item{cif_content}{A \code{data.table} containing the lines of a CIF file.}
 }
 \value{
 A character string of the chemical formula, or \code{NA} if not found.
 }
 \description{
-Extract Chemical Formula from CIF Content
+Extracts the chemical sum formula (e.g., from \verb{_chemical_formula_sum}).
 }
 \seealso{
 Other extractors: 

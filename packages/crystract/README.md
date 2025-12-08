@@ -19,7 +19,9 @@ formulas, unit cell parameters, atomic coordinates, and symmetry
 operations. It also includes tools to calculate interatomic distances,
 identify bonded pairs using various algorithms (Minimum Distance,
 Brunner’s, Hoppe’s), determine nearest neighbor counts, and calculate
-bond angles. The package is designed to facilitate the preparation of
+bond angles. All data is extracted into nested data.tables, which can
+then be exported as an R Data Structure (RDS) or folders of .csv files.
+The package is designed to facilitate the preparation of
 crystallographic data for further analysis, including machine learning
 applications in materials science.
 
@@ -154,14 +156,17 @@ print(analysis_results[, .(database_code, chemical_formula, space_group_name)])
 # To get the bond angles table, we must extract the first element `[[1]]` 
 # from the list-column, then we can select the first 5 rows `[1:5, ]`.
 cat("\nFirst 5 calculated bond angles (with propagated errors):\n")
-print(analysis_results$bond_angles[][1:5, ])```
+print(analysis_results$bond_angles[][1:5, ])
+```
 
 ## Learning More
 
-For a detailed, step-by-step guide explaining each function, the crystallographic principles, and the formulas used for calculations, please see the package vignette.
+For a detailed, step-by-step guide explaining each function, the
+crystallographic principles, and the formulas used for calculations,
+please see the package vignette.
 
-You can access it with the following command after you have successfully installed the package:
-```
+You can access it with the following command after you have successfully
+installed the package:
 
 ``` r
 # This command opens the detailed package guide

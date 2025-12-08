@@ -7,13 +7,13 @@
 extract_structure_type(cif_content)
 }
 \arguments{
-\item{cif_content}{A \code{data.table} where each row is a line from a CIF file.}
+\item{cif_content}{A \code{data.table} containing the lines of a CIF file.}
 }
 \value{
 A character string of the structure type, or \code{NA} if not found.
 }
 \description{
-Extract Structure Type from CIF Content
+Extracts the structure type name (e.g., from \verb{_chemical_name_structure_type}).
 }
 \seealso{
 Other extractors: 

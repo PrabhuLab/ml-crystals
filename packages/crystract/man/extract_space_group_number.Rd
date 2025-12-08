@@ -7,13 +7,13 @@
 extract_space_group_number(cif_content)
 }
 \arguments{
-\item{cif_content}{A \code{data.table} where each row is a line from a CIF file.}
+\item{cif_content}{A \code{data.table} containing the lines of a CIF file.}
 }
 \value{
 A character string of the space group number, or \code{NA} if not found.
 }
 \description{
-Extract Space Group Number from CIF Content
+Extracts the International Tables space group number (e.g., from \verb{_space_group_IT_number}).
 }
 \seealso{
 Other extractors: 

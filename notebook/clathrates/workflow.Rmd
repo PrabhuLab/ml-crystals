@@ -37,7 +37,7 @@ This report documents the final, robust workflow for analyzing a curated dataset
 The curated dataset is organized into subdirectories defining the specific filtering rules for the files within (e.g., `6c-16i-24k`). The script recursively finds all CIF files and maps each one to its structural category.
 
 ```{r load-files, echo=TRUE}
-cif_root_dir <- "/Users/donngo/repos/ml-crystals/notebook/workflow/Verified"
+cif_root_dir <- "/Users/donngo/Documents/ml-crystals/notebook/workflow/Verified"
 
 if (!dir.exists(cif_root_dir)) stop(paste("CRITICAL ERROR: Root directory not found:", cif_root_dir))
 

@@ -13,3 +13,6 @@
 /packages/crystract/doc/
 /packages/crystract/Meta/
 .Rproj.user
+.Rhistory
+/notebook/natural/cif
+/notebook/natural/crystract_chemistry_results

@@ -34,7 +34,7 @@ data(covalent_radii, package = "crystract")
 
 This vignette demonstrates an advanced, robust workflow using the `crystract` package to analyze a large, complex dataset. While the introductory vignette focuses on the step-by-step analysis of a single, well-ordered crystal, this tutorial tackles the challenges of real-world, high-throughput analysis, specifically for disordered structures like clathrates.
 
-The goal is to process a dataset of clathrate structures bundled with this package to calculate a representative "weighted average network bond distance" for each one and explore its relationship with the lattice parameter 'a'.
+The goal is to process a dataset of clathrate structures to calculate a representative "weighted average network bond distance" for each one and explore its relationship with the lattice parameter 'a'.
 
 ### The Robust Pipeline for Disordered Structures
 
@@ -49,52 +49,66 @@ This **Guests -> Ghosts -> Bonds -> Average** sequence ensures the final metric 
 
 ## 2. Preparing the Data
 
-### 2.1. Obtaining the Required CIF Files
+### 2.1. Obtaining and Organizing ICSD Files
 
-Due to licensing restrictions, the large dataset of clathrate CIF files from the ICSD is not bundled with the package. To reproduce this advanced workflow, you must download the required data yourself.
+Due to licensing restrictions, the dataset of clathrate CIF files from the Inorganic Crystal Structure Database (ICSD) is **not** bundled with this package. To reproduce this workflow, you must download the data via your institutional license and organize it specifically for this script.
 
-1.  **Find Required Files**: A complete list of all necessary ICSD entry codes and the structural category (subdirectory) they belong to can be found in the `required_ICSD_files.csv` file at the root of the `ml-crystals` repository.
+#### Step 1: Download Required Files
+A list of the specific ICSD Collection Codes required for this analysis (and their corresponding structural categories) can be found in `required_ICSD_files.csv`, located in the root of the `ml-crystals` repository. Download the `.cif` file for each entry.
 
-2.  **Download Data**: Using a licensed copy of the [ICSD database](https://icsd.fiz-karlsruhe.de/), download the `.cif` file for each entry listed in the CSV.
+#### Step 2: Create the Directory Structure
+The analysis script relies on the folder names to determine the **structural category** (which determines the Wyckoff sites used for calculations). You must create a main directory (e.g., `my_clathrate_data`) and create subdirectories named exactly after the categories found in the CSV file.
 
-3.  **Recreate the Directory Structure**: This is a critical step.
-    *   Create a main directory on your computer, for example, `C:/my_clathrate_data/`.
-    *   Inside this main directory, create the subdirectories exactly as named in the `category` column of the CSV file (e.g., `6c-16i-24k`, `2a-6d`, etc.).
-    *   Place each downloaded `.cif` file into its corresponding category subdirectory.
+The structure must look like this:
 
-4.  **Update Path in the Script**: In the code chunk below, you must change the `cif_root_dir` variable to point to the main directory you created (e.g., `C:/my_clathrate_data/`).
+```text
+/my_clathrate_data/              <-- Main Directory
+│
+├── 6c-16i-24k/                  <-- Subdirectory (Category Name)
+│     ├── ICSD_CollCode12345.cif <-- CIF files belonging to this category
+│     ├── ICSD_CollCode12346.cif
+│     └── ...
+└── ...
+```
 
-**To run the analysis yourself, you must also remove the `eval=TRUE` option from the R code chunk headers in the following sections.**
+**Note:** The subdirectory names (e.g., `6c-16i-24k`) are parsed by the script to determine which atoms belong to the host network. Ensure these folder names match the CSV categories exactly.
 
-### 2.2 Loading the Bundled Example Data
+### 2.2. Loading the Data
 
-The CIF files for this analysis are included with the package in the `inst/extdata/Verified` directory. We use `system.file()` to find this directory in a portable way, ensuring the vignette is reproducible.
+In the chunk below, you must update the `cif_root_dir` variable to point to the location where you organized the files.
 
-The files are organized into subdirectories whose names define the structural category (e.g., `6c-16i-24k`). The code recursively finds all CIF files and maps each one to its category.
+```{r load-files, echo=TRUE, eval=FALSE}
+# IMPORTANT: Update this path to point to your created main data directory
+cif_root_dir <- "C:/path/to/my_clathrate_data"
 
-```{r load-files, echo=TRUE, eval=TRUE}
-# IMPORTANT: Update this path to point to your main data directory
-cif_root_dir <- "/Users/donngo/repos/ml-crystals/packages/crystract/inst/extdata/Verified"
-
-# Check if the directory was found. If not, stop with a helpful message.
-if (nchar(cif_root_dir) == 0 || !dir.exists(cif_root_dir)) {
-  stop("CRITICAL ERROR: Could not find the 'Verified' data directory in inst/extdata/. Please check the package installation and file name case.")
+# Check if the directory exists
+if (!dir.exists(cif_root_dir)) {
+  stop("CRITICAL ERROR: Could not find the data directory. Please update 'cif_root_dir'.")
 }
 
+# Identify category subdirectories
 category_dirs <- list.dirs(path = cif_root_dir, full.names = TRUE, recursive = FALSE)
 
+# Map files to their category based on the folder name
 file_map_list <- lapply(category_dirs, function(dir) {
   full_paths <- list.files(path = dir, pattern = "\\.cif$", full.names = TRUE, ignore.case = TRUE)
   if (length(full_paths) == 0) return(NULL)
-  data.table(file_path = full_paths, file_name = basename(full_paths), category = basename(dir))
+  
+  # The folder name becomes the category identifier
+  data.table(
+    file_path = full_paths, 
+    file_name = basename(full_paths), 
+    category = basename(dir)
+  )
 })
 
 file_map <- rbindlist(file_map_list, fill = TRUE)
 all_cif_paths <- if (!is.null(file_map) && nrow(file_map) > 0) file_map$file_path else character(0)
 
 cat("Found", length(all_cif_paths), "total CIF files across", length(category_dirs), "categories.\n")
+
 if (length(all_cif_paths) == 0) {
-    stop("Execution stopped: No CIF files were found inside the 'Verified' directory.")
+    stop("Execution stopped: No CIF files were found inside the specified directory.")
 }
 ```
 
@@ -104,31 +118,36 @@ if (length(all_cif_paths) == 0) {
 
 We first run `analyze_cif_files()`. For efficiency and to enable our custom pipeline, we disable the built-in bonding calculations (`bonding_algorithms = "none"`). This performs the most intensive step—calculating all interatomic distances—just once.
 
-```{r run-batch-analysis-optimized, echo=TRUE, eval=TRUE}
+```{r run-batch-analysis-optimized, echo=TRUE, eval=FALSE}
+# Run the extraction and distance calculations
 analysis_results <- analyze_cif_files(
   file_paths = all_cif_paths,
   perform_extraction = TRUE,
   perform_calcs_and_transforms = TRUE,
-  bonding_algorithms = "none",
-  calculate_bond_angles = FALSE,
+  bonding_algorithms = "none",        # Skip standard bonding logic
+  calculate_bond_angles = FALSE,      # Skip angles for speed
   perform_error_propagation = FALSE
 )
+
 cat("Optimized analysis complete. Raw results table has", nrow(analysis_results), "rows.\n")
 ```
 
 ### 3.2. Step 2: Applying the "Guests -> Ghosts -> Bonds -> Average" Pipeline
 
-Now, we apply our core filtering logic by looping through the results for each file.
+Now, we apply our core filtering logic by looping through the results for each file. This section extracts the Wyckoff targets from the `category` column (which came from your folder names) and applies the specific logic required for that clathrate type.
 
-```{r process-data, echo=TRUE, eval=TRUE}
+```{r process-data, echo=TRUE, eval=FALSE}
 # --- Timing Start ---
 timing_processing <- system.time({
   
+  # Define atoms to exclude (Guests)
   guest_atoms <- c("Na", "K", "Rb", "Cs", "Sr", "Ba", "Eu")
   all_removed_ghosts <- list()
   
   process_file_results <- function(i) {
     current_filename <- analysis_results$file_name[i]
+    
+    # Retrieve the category established in the loading step
     category_info <- file_map[file_name == current_filename]
     
     if (is.null(current_filename) || nrow(category_info) == 0) return(NULL)
@@ -140,11 +159,16 @@ timing_processing <- system.time({
     
     # --- Pipeline Steps ---
     category <- category_info$category
+    
+    # Parse the folder name (e.g., "6c-16i-24k") to get target Wyckoff sites
+    # This logic assumes folder names are formatted as "Site1-Site2-Site3"
     target_wyckoff_symbols <- strsplit(gsub("\\+M_on_.*", "", category), "-")[[1]]
     
+    # 1. Filter Guest Atoms
     distances <- filter_by_elements(distances, coords, guest_atoms)
     if (nrow(distances) == 0) return(NULL)
     
+    # 2. Filter Ghost Distances
     ghost_filter_result <- filter_ghost_distances(distances, coords, margin = 0.1)
     cleaned_distances <- ghost_filter_result$kept
     
@@ -155,9 +179,11 @@ timing_processing <- system.time({
     }
     if (nrow(cleaned_distances) == 0) return(NULL)
     
+    # 3. Identify Bonds
     bonded_pairs <- minimum_distance(cleaned_distances, delta = 0.1)
     if (nrow(bonded_pairs) == 0) return(NULL)
     
+    # 4. Calculate Weighted Average
     weighted_avg <- calculate_weighted_average_network_distance(bonded_pairs, coords, target_wyckoff_symbols)
     if (is.na(weighted_avg)) return(NULL)
     
@@ -191,10 +217,7 @@ if (exists("removed_ghosts_summary") && nrow(removed_ghosts_summary) > 0) {
 
 A key advantage of this workflow is the ability to inspect the distances that `filter_ghost_distances()` removed. This is crucial for validating the filtering logic and understanding the nature of disorder in the dataset.
 
-```{r show-removed-distances, echo=TRUE, eval=TRUE}
-export_dir <- tempfile(pattern = "interactive_report_files")
-dir.create(export_dir, showWarnings = FALSE)
-
+```{r show-removed-distances, echo=TRUE, eval=FALSE}
 if (exists("removed_ghosts_summary") && nrow(removed_ghosts_summary) > 0) {
   sample_size <- min(1000, nrow(removed_ghosts_summary))
   cat(paste("Displaying a sample of the first", sample_size, "removed distances below:\n"))
@@ -217,7 +240,7 @@ After applying the robust pipeline, we can now visualize the cleaned data.
 
 ### 5.1. Interactive Plot
 
-```{r generate-plot, echo=TRUE, eval=TRUE}
+```{r generate-plot, echo=TRUE, eval=FALSE}
 # Only generate the plot if the data processing was successful
 if (exists("plot_data") && nrow(plot_data) > 0) {
   p <- ggplot(plot_data, aes(x = lattice_parameter_a, y = weighted_distance, color = category, shape = category, text = file)) +
@@ -244,7 +267,7 @@ if (exists("plot_data") && nrow(plot_data) > 0) {
 
 The final, cleaned data used for the plot is provided below in a searchable and exportable table.
 
-```{r show-final-data-table, echo=TRUE, eval=TRUE}
+```{r show-final-data-table, echo=TRUE, eval=FALSE}
 if (exists("plot_data") && nrow(plot_data) > 0) {
   datatable(
     plot_data,
@@ -260,4 +283,4 @@ if (exists("plot_data") && nrow(plot_data) > 0) {
 
 ## 6. Conclusion
 
-This vignette has demonstrated how to leverage the `crystract` package to build a powerful, customized pipeline for a high-throughput analysis of complex crystal structures. By bundling example data and using `system.file()`, we have created a fully reproducible scientific workflow. The "Guests -> Ghosts -> Bonds -> Average" pattern is a reliable method for ensuring that final summary metrics are physically meaningful and robust against common real-world data challenges like site-occupancy disorder.
+This vignette has demonstrated how to leverage the `crystract` package to build a powerful, customized pipeline for high-throughput analysis. By organizing your own ICSD data into a structured directory tree, you can utilize the package's robust processing capabilities. The "Guests -> Ghosts -> Bonds -> Average" pattern presented here ensures that the final summary metrics are physically meaningful, even when dealing with real-world disordered structures.

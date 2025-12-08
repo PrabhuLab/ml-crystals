@@ -26,25 +26,30 @@
 
 #' @title Read CIF Files into Memory
 #' @description Reads one or more CIF files from disk and loads each into a
-#'   `data.table`.
+#'   `data.table`. It includes encoding sanitization to handle legacy characters.
 #' @param file_paths A character vector of paths to the CIF files.
 #' @return A list of `data.table` objects.
 #' @export
-#' @examples
-#' cif_file <- system.file("extdata", "ICSD422.cif", package = "crystract")
-#' if (file.exists(cif_file)) {
-#'   cif_data_list <- read_cif_files(cif_file)
-#'   print(cif_data_list[[1]][1:5, ])
-#' }
 read_cif_files <- function(file_paths) {
   # Set the names of the list to the base filenames
-  cif_list <- lapply(
-    file_paths,
-    fread,
-    sep = "\n",
-    header = FALSE,
-    strip.white = FALSE
-  )
+  cif_list <- lapply(file_paths, function(fp) {
+    # Read the file
+    dt <- data.table::fread(
+      fp,
+      sep = "\n",
+      header = FALSE,
+      strip.white = FALSE,
+      encoding = "UTF-8" # Attempt UTF-8 first
+    )
+
+    # Sanitize: Convert strings to valid UTF-8, replacing invalid bytes with empty strings
+    if (nrow(dt) > 0) {
+      dt[, V1 := iconv(V1, to = "UTF-8", sub = "")]
+    }
+
+    return(dt)
+  })
+
   names(cif_list) <- basename(file_paths)
   return(cif_list)
 }
@@ -129,7 +134,7 @@ analyze_single_cif <- function(cif_content,
         sep = ""
       )
     )
-    return(null)
+    return(NULL)
   }
 
   # --- Step 3: Initialize Result Variables ---
@@ -269,6 +274,26 @@ analyze_cif_files <- function(file_paths,
                               ...) {
   # --- 1. Handle Input: File Paths or Pre-parsed List ---
   if (is.character(file_paths)) {
+    # Check if the input is a single directory path
+    if (length(file_paths) == 1 && dir.exists(file_paths)) {
+      message(sprintf(
+        "Input is a directory. Searching for .cif files in '%s'...",
+        file_paths
+      ))
+      found_files <- list.files(
+        file_paths,
+        pattern = "\\.cif$",
+        full.names = TRUE,
+        ignore.case = TRUE
+      )
+
+      if (length(found_files) == 0) {
+        warning(sprintf("No .cif files found in directory '%s'.", file_paths))
+        return(data.table())
+      }
+      file_paths <- found_files
+    }
+
     cif_contents_list <- read_cif_files(file_paths)
   } else if (is.list(file_paths) &&
              (length(file_paths) == 0 ||
@@ -278,7 +303,9 @@ analyze_cif_files <- function(file_paths,
       names(cif_contents_list) <- paste0("unnamed_", seq_along(cif_contents_list))
     }
   } else {
-    stop("`file_paths` must be a character vector of paths or a list of data.tables.")
+    stop(
+      "`file_paths` must be a character vector of paths, a directory path, or a list of data.tables."
+    )
   }
 
   # --- 2. Set Up Parallel Plan if specified ---

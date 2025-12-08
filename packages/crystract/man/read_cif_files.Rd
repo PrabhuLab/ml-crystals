@@ -14,12 +14,5 @@ A list of \code{data.table} objects.
 }
 \description{
 Reads one or more CIF files from disk and loads each into a
-\code{data.table}.
-}
-\examples{
-cif_file <- system.file("extdata", "ICSD422.cif", package = "crystract")
-if (file.exists(cif_file)) {
-  cif_data_list <- read_cif_files(cif_file)
-  print(cif_data_list[[1]][1:5, ])
-}
+\code{data.table}. It includes encoding sanitization to handle legacy characters.
 }

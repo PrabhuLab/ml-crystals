@@ -7,13 +7,13 @@
 extract_space_group_name(cif_content)
 }
 \arguments{
-\item{cif_content}{A \code{data.table} where each row is a line from a CIF file.}
+\item{cif_content}{A \code{data.table} containing the lines of a CIF file.}
 }
 \value{
 A character string of the space group name, or \code{NA} if not found.
 }
 \description{
-Extract Space Group Name from CIF Content
+Extracts the Hermann-Mauguin space group name (e.g., from \verb{_space_group_name_H-M_alt}).
 }
 \seealso{
 Other extractors: 

@@ -24,12 +24,13 @@
 calculate_distances <- function(atomic_coordinates,
                                 expanded_coords,
                                 unit_cell_metrics) {
-  a <- unit_cell_metrics$`_cell_length_a`
-  b <- unit_cell_metrics$`_cell_length_b`
-  c <- unit_cell_metrics$`_cell_length_c`
-  alpha <- unit_cell_metrics$`_cell_angle_alpha` * pi / 180
-  beta <- unit_cell_metrics$`_cell_angle_beta` * pi / 180
-  gamma <- unit_cell_metrics$`_cell_angle_gamma` * pi / 180
+  # Safe extraction of cell metrics
+  a <- as.numeric(unit_cell_metrics$`_cell_length_a`)
+  b <- as.numeric(unit_cell_metrics$`_cell_length_b`)
+  c <- as.numeric(unit_cell_metrics$`_cell_length_c`)
+  alpha <- as.numeric(unit_cell_metrics$`_cell_angle_alpha`) * pi / 180
+  beta <- as.numeric(unit_cell_metrics$`_cell_angle_beta`) * pi / 180
+  gamma <- as.numeric(unit_cell_metrics$`_cell_angle_gamma`) * pi / 180
 
   coords_atomic <- as.matrix(atomic_coordinates[, .(x_a, y_b, z_c)])
   coords_expanded <- as.matrix(expanded_coords[, .(x_a, y_b, z_c)])
@@ -51,9 +52,14 @@ calculate_distances <- function(atomic_coordinates,
 
   r <- sqrt(r2)
 
-  atom_pairs <- expand.grid(Atom1 = labels_atomic,
-                            Atom2 = labels_expanded,
-                            KEEP.OUT.ATTRS = TRUE)
+  # FIX: stringsAsFactors = FALSE prevents "Ops.factor" warnings downstream
+  atom_pairs <- expand.grid(
+    Atom1 = labels_atomic,
+    Atom2 = labels_expanded,
+    KEEP.OUT.ATTRS = TRUE,
+    stringsAsFactors = FALSE
+  )
+
   distances <- data.table(
     Atom1 = atom_pairs$Atom1,
     Atom2 = atom_pairs$Atom2,
@@ -63,6 +69,7 @@ calculate_distances <- function(atomic_coordinates,
     DeltaZ = as.vector(delta_z)
   )
 
+  # Filter out self-interactions or near-zero distances
   distances <- distances[Distance > 1e-6]
 
   return(distances)

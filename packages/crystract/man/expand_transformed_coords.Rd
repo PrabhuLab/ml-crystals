@@ -7,8 +7,7 @@
 expand_transformed_coords(transformed_coords)
 }
 \arguments{
-\item{transformed_coords}{A \code{data.table} of atom positions within one unit cell,
-typically from \code{apply_symmetry_operations}.}
+\item{transformed_coords}{A \code{data.table} of atom positions within one unit cell.}
 }
 \value{
 A \code{data.table} containing all atomic positions in the expanded supercell.

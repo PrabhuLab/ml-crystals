@@ -7,13 +7,9 @@
 #' @return A character string of the cleaned value, or NA if not found.
 #' @noRd
 extract_value <- function(cif_content, pattern, remove_pattern = TRUE) {
-  # Use base R's grepl for more robust pattern matching
   matching_lines <- cif_content[grepl(pattern, V1, fixed = TRUE)]
-
   if (nrow(matching_lines) > 0) {
-    # Take the first matching line
     value <- matching_lines$V1[1]
-
     if (remove_pattern) {
       value <- gsub(pattern, "", value, fixed = TRUE)
     }
@@ -26,23 +22,18 @@ extract_value <- function(cif_content, pattern, remove_pattern = TRUE) {
 }
 
 #' @title Extract Database Code from CIF Content
-#' @description Extracts the database code (e.g., ICSD number) from CIF data.
-#' @param cif_content A `data.table` where each row is a line from a CIF file.
+#' @description Extracts the database code identifier (e.g., from `_database_code_`) from the CIF.
+#' @param cif_content A `data.table` containing the lines of a CIF file.
 #' @return A character string of the database code, or `NA` if not found.
 #' @family extractors
 #' @export
-#' @examples
-#' cif_file <- system.file("extdata", "ICSD422.cif", package = "crystract")
-#' if (file.exists(cif_file)) {
-#'   cif_content <- data.table::fread(cif_file, sep = "\n", header = FALSE)
-#'   extract_database_code(cif_content)
-#' }
 extract_database_code <- function (cif_content) {
   extract_value(cif_content, "_database_code_")
 }
 
 #' @title Extract Chemical Formula from CIF Content
-#' @param cif_content A `data.table` where each row is a line from a CIF file.
+#' @description Extracts the chemical sum formula (e.g., from `_chemical_formula_sum`).
+#' @param cif_content A `data.table` containing the lines of a CIF file.
 #' @return A character string of the chemical formula, or `NA` if not found.
 #' @family extractors
 #' @export
@@ -51,7 +42,8 @@ extract_chemical_formula <- function(cif_content) {
 }
 
 #' @title Extract Structure Type from CIF Content
-#' @param cif_content A `data.table` where each row is a line from a CIF file.
+#' @description Extracts the structure type name (e.g., from `_chemical_name_structure_type`).
+#' @param cif_content A `data.table` containing the lines of a CIF file.
 #' @return A character string of the structure type, or `NA` if not found.
 #' @family extractors
 #' @export
@@ -60,7 +52,8 @@ extract_structure_type <- function(cif_content) {
 }
 
 #' @title Extract Space Group Name from CIF Content
-#' @param cif_content A `data.table` where each row is a line from a CIF file.
+#' @description Extracts the Hermann-Mauguin space group name (e.g., from `_space_group_name_H-M_alt`).
+#' @param cif_content A `data.table` containing the lines of a CIF file.
 #' @return A character string of the space group name, or `NA` if not found.
 #' @family extractors
 #' @export
@@ -69,7 +62,8 @@ extract_space_group_name <- function(cif_content) {
 }
 
 #' @title Extract Space Group Number from CIF Content
-#' @param cif_content A `data.table` where each row is a line from a CIF file.
+#' @description Extracts the International Tables space group number (e.g., from `_space_group_IT_number`).
+#' @param cif_content A `data.table` containing the lines of a CIF file.
 #' @return A character string of the space group number, or `NA` if not found.
 #' @family extractors
 #' @export
@@ -86,13 +80,6 @@ extract_space_group_number <- function(cif_content) {
 #'   error.
 #' @family extractors
 #' @export
-#' @examples
-#' cif_file <- system.file("extdata", "ICSD422.cif", package = "crystract")
-#' if (file.exists(cif_file)) {
-#'   cif_content <- data.table::fread(cif_file, sep = "\n", header = FALSE)
-#'   metrics <- extract_unit_cell_metrics(cif_content)
-#'   print(metrics)
-#' }
 extract_unit_cell_metrics <- function(cif_content) {
   cell_parameters <- c(
     "_cell_length_a",
@@ -111,8 +98,7 @@ extract_unit_cell_metrics <- function(cif_content) {
     decimal_pos <- regexpr("\\.", value_str)
     if (decimal_pos == -1) {
       as.numeric(error_str)
-    }
-    else {
+    } else {
       as.numeric(error_str) * 10^-(nchar(value_str) - decimal_pos)
     }
   }
@@ -122,10 +108,8 @@ extract_unit_cell_metrics <- function(cif_content) {
     if (length(line) > 0) {
       match <- stringr::str_match(line[1], "\\s+([0-9\\.]+)(?:\\(([0-9]+)\\))?")
       if (!is.na(match[1, 1])) {
-        value_str <- match[1, 2]
-        error_str <- match[1, 3]
-        values[[param]] <- as.numeric(value_str)
-        errors[[paste0(param, "_error")]] <- scale_error(value_str, error_str)
+        values[[param]] <- as.numeric(match[1, 2])
+        errors[[paste0(param, "_error")]] <- scale_error(match[1, 2], match[1, 3])
       } else {
         values[[param]] <- NA_real_
         errors[[paste0(param, "_error")]] <- NA_real_
@@ -148,29 +132,37 @@ extract_unit_cell_metrics <- function(cif_content) {
 #' @family extractors
 #' @export
 extract_atomic_coordinates <- function(cif_content, chemical_formula = NA) {
-  # --- Sections 1-6: Find and read the data block (No changes needed) ---
+  # --- 1. Find Header Block ---
   first_header_line_idx <- grep("^_atom_site_fract_x", cif_content$V1)
   if (length(first_header_line_idx) == 0) {
     first_header_line_idx <- grep("^_atom_site_label", cif_content$V1)
     if (length(first_header_line_idx) == 0)
       return(NULL)
   }
+  first_header_line_idx <- first_header_line_idx[1]
+
+  # --- 2. Find Loop Start ---
   loop_start_line_idx <- max(grep("^loop_", cif_content$V1[1:first_header_line_idx]))
   if (is.infinite(loop_start_line_idx))
     return(NULL)
 
+  # --- 3. Parse Headers ---
   line_indices <- (loop_start_line_idx + 1):nrow(cif_content)
   headers <- character()
   first_data_line_idx <- 0
+
   for (i in line_indices) {
-    line <- cif_content$V1[i]
-    if (startsWith(line, "_"))
-      headers <- c(headers, trimws(line))
-    else {
+    line <- trimws(cif_content$V1[i])
+    if (line == "" || startsWith(line, "#"))
+      next
+    if (startsWith(line, "_")) {
+      headers <- c(headers, line)
+    } else {
       first_data_line_idx <- i
       break
     }
   }
+
   tags_to_find <- c(
     label = "_atom_site_label",
     x = "_atom_site_fract_x",
@@ -180,6 +172,7 @@ extract_atomic_coordinates <- function(cif_content, chemical_formula = NA) {
     wyckoff = "_atom_site_Wyckoff_symbol",
     multiplicity = "_atom_site_symmetry_multiplicity"
   )
+
   col_indices <- sapply(tags_to_find, function(tag) {
     idx <- which(headers == tag)
     if (length(idx) == 0)
@@ -187,29 +180,40 @@ extract_atomic_coordinates <- function(cif_content, chemical_formula = NA) {
     else
       idx
   })
-  if (anyNA(col_indices[c("label", "x", "y", "z")])) {
-    warning("CIF file missing essential atom site tags (_label, _fract_x, _y, _z).")
-    return(NULL)
-  }
 
+  if (anyNA(col_indices[c("label", "x", "y", "z")]))
+    return(NULL)
+
+  # --- 4. Determine Data Block Range ---
   end_candidates <- c(grep("^loop_|^_|^#", cif_content$V1[first_data_line_idx:nrow(cif_content)]),
                       grep("^\\s*$", cif_content$V1[first_data_line_idx:nrow(cif_content)]))
+
   last_data_line_idx <- if (length(end_candidates) > 0)
     first_data_line_idx + min(end_candidates) - 2
   else
     nrow(cif_content)
+
   if (first_data_line_idx > last_data_line_idx)
     return(NULL)
 
+  # --- 5. Read Data ---
   data_lines <- cif_content$V1[first_data_line_idx:last_data_line_idx]
-  atom_data <- fread(
+
+  # quote = "" prevents crashes on unquoted atoms like Ag or N
+  atom_data <- data.table::fread(
     text = paste(data_lines, collapse = "\n"),
     header = FALSE,
     sep = "auto",
     quote = ""
   )
 
+  # Clean strings (remove manual quotes if present)
+  clean_str <- function(col_data) {
+    gsub("^'|'$|^\"|\"$", "", as.character(col_data))
+  }
+
   parse_vector_with_error <- function(coord_vector) {
+    coord_vector <- clean_str(coord_vector)
     matches <- stringr::str_match(coord_vector, "([0-9\\.\\-]+)(?:\\(([0-9]+)\\))?")
     value_str <- matches[, 2]
     error_str <- matches[, 3]
@@ -218,25 +222,34 @@ extract_atomic_coordinates <- function(cif_content, chemical_formula = NA) {
     scaled_error <- as.numeric(error_str) * 10^(-decimal_places)
     return(list(value = as.numeric(value_str), error = scaled_error))
   }
-  x_data <- parse_vector_with_error(atom_data[[col_indices["x"]]])
-  y_data <- parse_vector_with_error(atom_data[[col_indices["y"]]])
-  z_data <- parse_vector_with_error(atom_data[[col_indices["z"]]])
+
+  # Safely extract columns
+  safe_extract <- function(idx) {
+    if (idx > ncol(atom_data))
+      return(rep(NA, nrow(atom_data)))
+    return(atom_data[[idx]])
+  }
+
+  x_data <- parse_vector_with_error(safe_extract(col_indices["x"]))
+  y_data <- parse_vector_with_error(safe_extract(col_indices["y"]))
+  z_data <- parse_vector_with_error(safe_extract(col_indices["z"]))
+
   occ_data <- if (!is.na(col_indices["occupancy"]))
-    parse_vector_with_error(atom_data[[col_indices["occupancy"]]])
+    parse_vector_with_error(safe_extract(col_indices["occupancy"]))
   else
     list(value = rep(1.0, nrow(atom_data)),
          error = rep(NA_real_, nrow(atom_data)))
 
   atomic_coordinates <- data.table(
-    Label = atom_data[[col_indices["label"]]],
+    Label = clean_str(safe_extract(col_indices["label"])),
     WyckoffSymbol = if (!is.na(col_indices["wyckoff"]))
-      as.character(atom_data[[col_indices["wyckoff"]]])
+      clean_str(safe_extract(col_indices["wyckoff"]))
     else
-      rep(NA_character_, nrow(atom_data)),
+      NA_character_,
     WyckoffMultiplicity = if (!is.na(col_indices["multiplicity"]))
-      as.numeric(atom_data[[col_indices["multiplicity"]]])
+      as.numeric(clean_str(safe_extract(col_indices["multiplicity"])))
     else
-      rep(NA_real_, nrow(atom_data)),
+      NA_real_,
     Occupancy = occ_data$value,
     OccupancyError = occ_data$error,
     x_a = x_data$value,
@@ -247,7 +260,13 @@ extract_atomic_coordinates <- function(cif_content, chemical_formula = NA) {
     z_error = z_data$error
   )
 
-  # --- Section 7: NEW - Robust Heuristic Correction of Non-Standard Atom Labels ---
+  # Remove rows that failed to parse (NAs in coordinates)
+  atomic_coordinates <- atomic_coordinates[!is.na(x_a) &
+                                             !is.na(y_b) & !is.na(z_c)]
+  if (nrow(atomic_coordinates) == 0)
+    return(NULL)
+
+  # --- 6. Heuristic Label Correction ---
   valid_elements <- c(
     "H",
     "He",
@@ -368,6 +387,7 @@ extract_atomic_coordinates <- function(cif_content, chemical_formula = NA) {
     "Ts",
     "Og"
   )
+
   base_symbols <- stringr::str_extract(atomic_coordinates$Label, "^[A-Za-z]+")
   unique_base_symbols <- unique(base_symbols)
   non_standard_symbols <- setdiff(unique_base_symbols, valid_elements)
@@ -378,40 +398,29 @@ extract_atomic_coordinates <- function(cif_content, chemical_formula = NA) {
       unique(stringr::str_extract_all(chemical_formula, "[A-Z][a-z]?")[[1]])
     else
       character(0)
-
     for (sym in non_standard_symbols) {
       corrected_sym <- NA_character_
-
-      # Rule 1: Prioritize special cases like water oxygen ('Wat', 'OW')
       if (toupper(sym) %in% c("OW", "WAT", "OH")) {
         if ("O" %in% elements_in_formula ||
-            length(elements_in_formula) == 0) {
+            length(elements_in_formula) == 0)
           corrected_sym <- "O"
-        }
       } else {
-        # Rule 2: Find the longest valid element prefix that is in the formula
         prefix2 <- substr(sym, 1, 2)
         prefix1 <- substr(sym, 1, 1)
-
-        # Check for a 2-letter prefix match first
         if (prefix2 %in% valid_elements &&
             (prefix2 %in% elements_in_formula ||
              length(elements_in_formula) == 0)) {
           corrected_sym <- prefix2
-          # Then check for a 1-letter prefix match
         } else if (prefix1 %in% valid_elements &&
                    (prefix1 %in% elements_in_formula ||
                     length(elements_in_formula) == 0)) {
           corrected_sym <- prefix1
         }
       }
-
       if (!is.na(corrected_sym)) {
         indices_to_fix <- which(base_symbols == sym)
-        # Replace the entire non-standard alphabetic part with the corrected one
         atomic_coordinates[indices_to_fix, Label := sub("^[A-Za-z]+", corrected_sym, Label)]
         corrections_made[[sym]] <- corrected_sym
-        base_symbols[indices_to_fix] <- corrected_sym
       }
     }
   }
@@ -425,99 +434,98 @@ extract_atomic_coordinates <- function(cif_content, chemical_formula = NA) {
     ))
   }
 
-  # --- Section 8: Final Validation and Normalization ---
-  final_base_symbols <- unique(stringr::str_extract(atomic_coordinates$Label, "^[A-Za-z]+"))
-  still_non_standard <- setdiff(final_base_symbols, valid_elements)
-  if (length(still_non_standard) > 0) {
-    warning(paste0(
-      "Uncorrected non-standard atom labels remain: ",
-      paste(still_non_standard, collapse = ", ")
-    ))
-  }
-
+  # Normalize Labels
   symbols <- sub("^([A-Z][a-z]?).*", "\\1", atomic_coordinates$Label, perl = TRUE)
   numbers <- stringr::str_remove_all(atomic_coordinates$Label, "[^0-9]")
   atomic_coordinates[, Label := paste0(symbols, numbers)]
-
-  # --- Section 9: Check for implicit atoms ---
-  if (!is.na(chemical_formula)) {
-    cleaned_base_symbols <- unique(stringr::str_extract(atomic_coordinates$Label, "^[A-Z][a-z]?"))
-    elements_in_formula <- unique(stringr::str_extract_all(chemical_formula, "[A-Z][a-z]?")[[1]])
-    missing_elements <- setdiff(elements_in_formula, cleaned_base_symbols)
-    if (length(missing_elements) > 0) {
-      warning(
-        paste0(
-          "Implicit atoms likely present. Elements in formula not in coordinates: ",
-          paste(missing_elements, collapse = ", ")
-        )
-      )
-    }
-  }
 
   return(atomic_coordinates)
 }
 
 #' @title Extract Symmetry Operations
 #' @description Parses the symmetry operation definitions from the CIF content.
+#'   This function uses manual token parsing to avoid issues with inconsistent quoting and spacing in CIF files.
 #' @param cif_content A `data.table` containing the lines of a CIF file.
 #' @return A `data.table` with symmetry operations. Returns `NULL` if not found.
 #' @family extractors
 #' @export
-#' @examples
-#' cif_file <- system.file("extdata", "ICSD422.cif", package = "crystract")
-#' if (file.exists(cif_file)) {
-#'   cif_content <- data.table::fread(cif_file, sep = "\n", header = FALSE)
-#'   sym_ops <- extract_symmetry_operations(cif_content)
-#'   print(sym_ops)
-#' }
 extract_symmetry_operations <- function(cif_content) {
-  # --- 1. Find the start of the symmetry loop ---
-  symop_tag <- "_space_group_symop_operation_xyz"
-  first_header_line_idx <- grep(symop_tag, cif_content$V1)[1]
-  if (is.na(first_header_line_idx)) {
-    symop_tag <- "_symmetry_equiv_pos_as_xyz"
-    first_header_line_idx <- grep(symop_tag, cif_content$V1)[1]
-    if (is.na(first_header_line_idx))
-      return(NULL)
-  }
+  # --- 1. Define valid tags ---
+  target_tags <- c("_space_group_symop_operation_xyz",
+                   "_symmetry_equiv_pos_as_xyz")
+  header_matches <- grep(paste(target_tags, collapse = "|"), cif_content$V1)
+  if (length(header_matches) == 0)
+    return(NULL)
+  first_header_line_idx <- header_matches[1]
+
+  # --- 2. Find Loop Start ---
   loop_start_line_idx <- max(grep("^loop_", cif_content$V1[1:first_header_line_idx]))
   if (is.infinite(loop_start_line_idx))
     return(NULL)
 
-  # --- 2. Find the range of data lines ---
+  # --- 3. Parse Headers to find Index ---
   line_indices <- (loop_start_line_idx + 1):nrow(cif_content)
+  headers <- character()
   first_data_line_idx <- 0
   for (i in line_indices) {
-    if (!startsWith(cif_content$V1[i], "_")) {
+    line <- trimws(cif_content$V1[i])
+    if (line == "" || startsWith(line, "#"))
+      next
+    if (startsWith(line, "_")) {
+      headers <- c(headers, line)
+    } else {
       first_data_line_idx <- i
       break
     }
   }
-  if (first_data_line_idx == 0)
-    return(NULL)
 
+  xyz_col_idx <- which(headers %in% target_tags)
+  if (length(xyz_col_idx) == 0)
+    return(NULL)
+  xyz_col_idx <- xyz_col_idx[1]
+
+  # --- 4. Determine Data Range ---
   end_candidates <- c(grep("^loop_|^_|^#", cif_content$V1[first_data_line_idx:nrow(cif_content)]),
                       grep("^\\s*$", cif_content$V1[first_data_line_idx:nrow(cif_content)]))
-  last_data_line_idx <- if (length(end_candidates) > 0) {
+  last_data_line_idx <- if (length(end_candidates) > 0)
     first_data_line_idx + min(end_candidates) - 2
-  } else {
+  else
     nrow(cif_content)
-  }
   if (first_data_line_idx > last_data_line_idx)
     return(NULL)
 
-  # --- 3. Extract and parse raw data lines ---
+  # --- 5. Manual Line Parsing ---
   data_lines <- cif_content$V1[first_data_line_idx:last_data_line_idx]
-  cleaned_lines <- trimws(gsub("^'|^\"|'$|\"$", "", trimws(sub(
-    "^[0-9]+\\s+", "", data_lines
-  ))))
-  symmetry_matrix <- stringr::str_split_fixed(cleaned_lines, ",", n = 3)
 
-  symmetry_dt <- data.table(
-    x = trimws(symmetry_matrix[, 1]),
-    y = trimws(symmetry_matrix[, 2]),
-    z = trimws(symmetry_matrix[, 3])
-  )
+  extract_nth_token <- function(line, n) {
+    line <- trimws(line)
+    pattern <- "(?:'[^']*'|\"[^\"]*\"|\\S+)"
+    matches <- gregexpr(pattern, line)
+    tokens <- regmatches(line, matches)[[1]]
+    if (length(tokens) < n)
+      return(NA)
+    return(tokens[n])
+  }
+
+  raw_strings <- sapply(data_lines, extract_nth_token, n = xyz_col_idx)
+
+  # Filter out failures
+  raw_strings <- raw_strings[!is.na(raw_strings)]
+  if (length(raw_strings) == 0)
+    return(NULL)
+
+  # --- 6. Aggressive Cleaning ---
+  cleaned_strings <- gsub("\\s+", "", raw_strings)
+  cleaned_strings <- gsub("['\"]", "", cleaned_strings)
+  cleaned_strings <- tolower(cleaned_strings)
+
+  symmetry_matrix <- stringr::str_split_fixed(cleaned_strings, ",", n = 3)
+  symmetry_dt <- data.table(x = symmetry_matrix[, 1], y = symmetry_matrix[, 2], z = symmetry_matrix[, 3])
+
+  symmetry_dt <- symmetry_dt[x != "" & y != "" & z != ""]
+
+  if (nrow(symmetry_dt) == 0)
+    return(NULL)
 
   return(symmetry_dt)
 }

@@ -7,29 +7,15 @@
 apply_symmetry_operations(atomic_coordinates, symmetry_operations)
 }
 \arguments{
-\item{atomic_coordinates}{A \code{data.table} of asymmetric atoms from
-\code{extract_atomic_coordinates}.}
+\item{atomic_coordinates}{A \code{data.table} of asymmetric atoms.}
 
-\item{symmetry_operations}{A \code{data.table} of operations from
-\code{extract_symmetry_operations}.}
+\item{symmetry_operations}{A \code{data.table} of operations.}
 }
 \value{
 A \code{data.table} containing all unique atomic positions in the unit cell.
 }
 \description{
-Generates all symmetry-equivalent atomic positions within the unit cell
-by applying the list of symmetry operations to the initial set of
-asymmetric atoms.
-}
-\examples{
-cif_file <- system.file("extdata", "ICSD422.cif", package = "crystract")
-if (file.exists(cif_file)) {
-  cif_content <- read_cif_files(cif_file)[[1]]
-  atoms <- extract_atomic_coordinates(cif_content)
-  sym_ops <- extract_symmetry_operations(cif_content)
-  full_cell_coords <- apply_symmetry_operations(atoms, sym_ops)
-  print(full_cell_coords)
-}
+Generates all symmetry-equivalent atomic positions within the unit cell.
 }
 \seealso{
 Other coordinate processors: 
