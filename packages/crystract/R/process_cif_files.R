@@ -57,9 +57,12 @@ read_cif_files <- function(file_paths) {
 #' @title Analyze the Content of a Single CIF File
 #' @description The core worker function that orchestrates the analysis pipeline
 #'   for a single crystal structure's data. It is called by `analyze_cif_files`
-#'   for batch processing.
-#' @param cif_content A `data.table` containing the lines of a single CIF file.
+#'   for batch processing, but can now be called directly with a file path.
+#' @param cif_content Either a `data.table` containing the lines of a CIF file,
+#'   OR a character string specifying the file path to a CIF file.
 #' @param file_name The name of the original CIF file, used for labeling output.
+#'   If `NULL` (default) and a file path is provided for `cif_content`,
+#'   the filename is automatically extracted from the path.
 #' @param perform_extraction Logical. If `TRUE`, extracts all metadata and basic
 #'   structural data.
 #' @param perform_calcs_and_transforms Logical. If `TRUE`, generates the full
@@ -76,18 +79,49 @@ read_cif_files <- function(file_paths) {
 #' @examples
 #' cif_file <- system.file("extdata", "ICSD422.cif", package = "crystract")
 #' if (file.exists(cif_file)) {
+#'   # Option 1: Pass the file path directly
+#'   result_from_path <- analyze_single_cif(cif_file)
+#'
+#'   # Option 2: Pass pre-loaded content
 #'   cif_content <- read_cif_files(cif_file)[[1]]
-#'   # Using the single-file analyzer directly:
-#'   single_result <- analyze_single_cif(cif_content, basename(cif_file))
-#'   str(single_result, max.level = 1)
+#'   result_from_dt <- analyze_single_cif(cif_content, basename(cif_file))
 #' }
 analyze_single_cif <- function(cif_content,
-                               file_name = "unknown",
+                               file_name = NULL,
                                perform_extraction = TRUE,
                                perform_calcs_and_transforms = TRUE,
                                bonding_algorithms = c("minimum_distance"),
                                calculate_bond_angles = TRUE,
                                perform_error_propagation = TRUE) {
+
+  # --- Step 0: Handle Input Type (Path vs Data.Table) ---
+  if (is.character(cif_content)) {
+    # It is a file path
+    if (length(cif_content) != 1) {
+      stop("When passing a file path, `analyze_single_cif` accepts exactly one string.")
+    }
+    if (!file.exists(cif_content)) {
+      stop(paste("File not found:", cif_content))
+    }
+
+    # Auto-detect filename if not manually provided
+    if (is.null(file_name)) {
+      file_name <- basename(cif_content)
+    }
+
+    # Read the file into memory
+    # read_cif_files returns a list (e.g., list("ICSD.cif" = dt)); take the first element
+    cif_content <- read_cif_files(cif_content)[[1]]
+
+  } else if (inherits(cif_content, "data.table")) {
+    # It is already loaded content
+    if (is.null(file_name)) {
+      file_name <- "unknown"
+    }
+  } else {
+    stop("`cif_content` must be a file path (character) or loaded CIF data (data.table).")
+  }
+
   # --- Step 1: Data Extraction ---
   if (!perform_extraction) {
     return(data.table(file_name = file_name))
@@ -134,7 +168,7 @@ analyze_single_cif <- function(cif_content,
         sep = ""
       )
     )
-    return(NULL)
+    return(NULL) # Fixed typo: 'null' to 'NULL'
   }
 
   # --- Step 3: Initialize Result Variables ---

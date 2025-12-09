@@ -6,7 +6,7 @@
 \usage{
 analyze_single_cif(
   cif_content,
-  file_name = "unknown",
+  file_name = NULL,
   perform_extraction = TRUE,
   perform_calcs_and_transforms = TRUE,
   bonding_algorithms = c("minimum_distance"),
@@ -15,9 +15,12 @@ analyze_single_cif(
 )
 }
 \arguments{
-\item{cif_content}{A \code{data.table} containing the lines of a single CIF file.}
+\item{cif_content}{Either a \code{data.table} containing the lines of a CIF file,
+OR a character string specifying the file path to a CIF file.}
 
-\item{file_name}{The name of the original CIF file, used for labeling output.}
+\item{file_name}{The name of the original CIF file, used for labeling output.
+If \code{NULL} (default) and a file path is provided for \code{cif_content},
+the filename is automatically extracted from the path.}
 
 \item{perform_extraction}{Logical. If \code{TRUE}, extracts all metadata and basic
 structural data.}
@@ -41,14 +44,16 @@ is missing, a warning is issued and only partial results are returned.
 \description{
 The core worker function that orchestrates the analysis pipeline
 for a single crystal structure's data. It is called by \code{analyze_cif_files}
-for batch processing.
+for batch processing, but can now be called directly with a file path.
 }
 \examples{
 cif_file <- system.file("extdata", "ICSD422.cif", package = "crystract")
 if (file.exists(cif_file)) {
+  # Option 1: Pass the file path directly
+  result_from_path <- analyze_single_cif(cif_file)
+
+  # Option 2: Pass pre-loaded content
   cif_content <- read_cif_files(cif_file)[[1]]
-  # Using the single-file analyzer directly:
-  single_result <- analyze_single_cif(cif_content, basename(cif_file))
-  str(single_result, max.level = 1)
+  result_from_dt <- analyze_single_cif(cif_content, basename(cif_file))
 }
 }
