@@ -3,14 +3,14 @@ title: "Using the crystract Package for Crystallographic Analysis"
 author: "Don Ngo, Julia Maria Hubner, Anirudh Prabhu"
 date: "`r Sys.Date()`"
 output:
-  rmarkdown::html_vignette:
-    toc: true
   pdf_document:
+    toc: true
+  rmarkdown::html_vignette:
     toc: true
 vignette: >
   %\VignetteIndexEntry{Using the crystract Package for Crystallographic Analysis}
-  %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown}
 ---
 
 ```{r, include = FALSE}
@@ -81,7 +81,12 @@ This is the recommended function for batch processing.
 cif_path <- "path/to/your/ICSD422.cif"
 
 # Run the pipeline on our single example file
-analysis_results <- analyze_cif_files(cif_path)
+analysis_results <- analyze_single_cif(cif_path)
+
+# You may also use analyze_cif_files() to process multiple files at once:
+# analysis_results <- analyze_cif_files(c("file1.cif", "file2.cif", ...))
+# Or a whole directory:
+# analysis_results <- analyze_cif_files("path/to/cif_directory/")
 
 # Let's inspect the structure of the output table.
 # It's a single row containing all our results in nested data.tables.
@@ -585,6 +590,53 @@ set_radii_data(my_custom_radii)
 set_radii_data(NULL)
 ```
 This feature provides full control over the criteria used for identifying and filtering physically implausible bond distances, making the analysis adaptable to a wide range of chemical systems.
+
+## 3. Advanced: High-Throughput Batch Processing
+
+While the previous examples demonstrated `crystract` on a single file to explain the underlying mechanics, the package is optimized for processing thousands of structures simultaneously.
+
+For large-scale datasets (like the AMCSD or ICSD), `crystract` utilizes the `future` package to parallelize operations across multiple CPU cores. It also supports a **"Batch-to-Disk"** mode, which saves results incrementally to avoid memory exhaustion during massive jobs.
+
+### 3.1 Running a Parallel Batch Job
+
+To process a directory containing many CIF files, you simply point `analyze_cif_files` to the directory or a list of file paths, specify the number of workers (cores), and provide an output directory.
+
+```{r batch-processing-example, eval=FALSE}
+# 1. Define your data source
+# Assume we have a folder named 'cif_data' containing many .cif files
+cif_folder <- "path/to/your/cif_data"  # Update this path accordingly
+all_cif_paths <- list.files(path = cif_folder, pattern = "\\.cif$", full.names = TRUE)
+
+# 2. Run the analysis in parallel
+# We use 'output_dir' to save batches to disk automatically.
+# We use 'workers' to utilize 4 CPU cores.
+analyze_cif_files(
+  file_paths = all_cif_paths,
+  workers = 4,                     # Number of parallel cores
+  output_dir = "batch_results",    # Directory where results will be saved
+  batch_size = 10,               # Process in chunks of 10 files
+  
+  # Pass arguments to control the analysis details
+  bonding_algorithms = "minimum_distance"
+)
+```
+
+### 3.2 Aggregating Batch Results
+
+Once the batch processing is complete, you will have a directory (`batch_results/`) filled with `.rds` files (e.g., `batch_1.rds`, `batch_2.rds`). `crystract` provides a helper function to merge these back into a single data table.
+
+```{r batch-aggregation, eval=FALSE}
+# Aggregate all batch files from the results directory
+full_dataset <- aggregate_batch_results(
+  input_dir = "batch_results",
+  # Optional: Only keep specific columns to save memory
+  # cols_to_keep = c("file_name", "chemical_formula", "bonded_pairs_minimum_distance", "bond_angles")
+)
+
+print(paste("Successfully loaded", nrow(full_dataset), "structures."))
+```
+
+This workflow ensures that even if a job involving an enourmous amount structures is interrupted, previous batches are saved, and the parallelization drastically reduces computation time.
 
 ## Conclusion
 
