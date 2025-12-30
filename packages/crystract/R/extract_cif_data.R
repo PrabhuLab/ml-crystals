@@ -7,6 +7,7 @@
 #' @return A character string of the cleaned value, or NA if not found.
 #' @noRd
 extract_value <- function(cif_content, pattern, remove_pattern = TRUE) {
+  # fixed = TRUE automatically handles indented lines as it searches for the substring anywhere
   matching_lines <- cif_content[grepl(pattern, V1, fixed = TRUE)]
   if (nrow(matching_lines) > 0) {
     value <- matching_lines$V1[1]
@@ -104,6 +105,7 @@ extract_unit_cell_metrics <- function(cif_content) {
   }
 
   for (param in cell_parameters) {
+    # fixed = TRUE handles indented lines automatically
     line <- cif_content[grepl(param, V1, fixed = TRUE)]$V1
     if (length(line) > 0) {
       match <- stringr::str_match(line[1], "\\s+([0-9\\.]+)(?:\\(([0-9]+)\\))?")
@@ -133,16 +135,18 @@ extract_unit_cell_metrics <- function(cif_content) {
 #' @export
 extract_atomic_coordinates <- function(cif_content, chemical_formula = NA) {
   # --- 1. Find Header Block ---
-  first_header_line_idx <- grep("^_atom_site_fract_x", cif_content$V1)
+  # Regex: Matches start of line (^), optional whitespace (\\s*), then the tag
+  first_header_line_idx <- grep("^\\s*_atom_site_fract_x", cif_content$V1)
   if (length(first_header_line_idx) == 0) {
-    first_header_line_idx <- grep("^_atom_site_label", cif_content$V1)
+    first_header_line_idx <- grep("^\\s*_atom_site_label", cif_content$V1)
     if (length(first_header_line_idx) == 0)
       return(NULL)
   }
   first_header_line_idx <- first_header_line_idx[1]
 
   # --- 2. Find Loop Start ---
-  loop_start_line_idx <- max(grep("^loop_", cif_content$V1[1:first_header_line_idx]))
+  # Regex: Matches start of line (^), optional whitespace (\\s*), then "loop_"
+  loop_start_line_idx <- max(grep("^\\s*loop_", cif_content$V1[1:first_header_line_idx]))
   if (is.infinite(loop_start_line_idx))
     return(NULL)
 
@@ -155,6 +159,7 @@ extract_atomic_coordinates <- function(cif_content, chemical_formula = NA) {
     line <- trimws(cif_content$V1[i])
     if (line == "" || startsWith(line, "#"))
       next
+    # trimws ensures this check works even if indented
     if (startsWith(line, "_")) {
       headers <- c(headers, line)
     } else {
@@ -185,8 +190,11 @@ extract_atomic_coordinates <- function(cif_content, chemical_formula = NA) {
     return(NULL)
 
   # --- 4. Determine Data Block Range ---
-  end_candidates <- c(grep("^loop_|^_|^#", cif_content$V1[first_data_line_idx:nrow(cif_content)]),
-                      grep("^\\s*$", cif_content$V1[first_data_line_idx:nrow(cif_content)]))
+  # Regex: Find the next loop, new tag (_), or comment (#), allowing indentation
+  end_candidates <- c(
+    grep("^\\s*loop_|^\\s*_|^\\s*#", cif_content$V1[first_data_line_idx:nrow(cif_content)]),
+    grep("^\\s*$", cif_content$V1[first_data_line_idx:nrow(cif_content)])
+  )
 
   last_data_line_idx <- if (length(end_candidates) > 0)
     first_data_line_idx + min(end_candidates) - 2
@@ -262,7 +270,8 @@ extract_atomic_coordinates <- function(cif_content, chemical_formula = NA) {
 
   # Remove rows that failed to parse (NAs in coordinates)
   atomic_coordinates <- atomic_coordinates[!is.na(x_a) &
-                                             !is.na(y_b) & !is.na(z_c)]
+                                             !is.na(y_b) &
+                                             !is.na(z_c)]
   if (nrow(atomic_coordinates) == 0)
     return(NULL)
 
@@ -459,7 +468,8 @@ extract_symmetry_operations <- function(cif_content) {
   first_header_line_idx <- header_matches[1]
 
   # --- 2. Find Loop Start ---
-  loop_start_line_idx <- max(grep("^loop_", cif_content$V1[1:first_header_line_idx]))
+  # Regex: Matches start of line (^), optional whitespace (\\s*), then "loop_"
+  loop_start_line_idx <- max(grep("^\\s*loop_", cif_content$V1[1:first_header_line_idx]))
   if (is.infinite(loop_start_line_idx))
     return(NULL)
 
@@ -471,6 +481,7 @@ extract_symmetry_operations <- function(cif_content) {
     line <- trimws(cif_content$V1[i])
     if (line == "" || startsWith(line, "#"))
       next
+    # trimws ensures this check works even if indented
     if (startsWith(line, "_")) {
       headers <- c(headers, line)
     } else {
@@ -485,8 +496,11 @@ extract_symmetry_operations <- function(cif_content) {
   xyz_col_idx <- xyz_col_idx[1]
 
   # --- 4. Determine Data Range ---
-  end_candidates <- c(grep("^loop_|^_|^#", cif_content$V1[first_data_line_idx:nrow(cif_content)]),
-                      grep("^\\s*$", cif_content$V1[first_data_line_idx:nrow(cif_content)]))
+  # Regex: Find the next loop, new tag (_), or comment (#), allowing indentation
+  end_candidates <- c(
+    grep("^\\s*loop_|^\\s*_|^\\s*#", cif_content$V1[first_data_line_idx:nrow(cif_content)]),
+    grep("^\\s*$", cif_content$V1[first_data_line_idx:nrow(cif_content)])
+  )
   last_data_line_idx <- if (length(end_candidates) > 0)
     first_data_line_idx + min(end_candidates) - 2
   else
