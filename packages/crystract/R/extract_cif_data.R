@@ -121,7 +121,7 @@ extract_unit_cell_metrics <- function(cif_content) {
       errors[[paste0(param, "_error")]] <- NA_real_
     }
   }
-  return(as.data.table(c(values, errors)))
+  return(data.table::as.data.table(c(values, errors)))
 }
 
 #' @title Extract Atomic Coordinates
@@ -222,13 +222,41 @@ extract_atomic_coordinates <- function(cif_content, chemical_formula = NA) {
 
   parse_vector_with_error <- function(coord_vector) {
     coord_vector <- clean_str(coord_vector)
-    matches <- stringr::str_match(coord_vector, "([0-9\\.\\-]+)(?:\\(([0-9]+)\\))?")
+    # Group 1: Number (allows e/E notation)
+    # Group 2: Error (optional digits in parens)
+    matches <- stringr::str_match(coord_vector,
+                                  "([0-9\\.\\-]+(?:[eE][+\\-]?[0-9]+)?)(?:\\(([0-9]+)\\))?")
     value_str <- matches[, 2]
     error_str <- matches[, 3]
-    decimal_pos <- regexpr("\\.", value_str)
-    decimal_places <- ifelse(decimal_pos == -1, 0, nchar(value_str) - decimal_pos)
-    scaled_error <- as.numeric(error_str) * 10^(-decimal_places)
-    return(list(value = as.numeric(value_str), error = scaled_error))
+
+    # Handle numeric conversion
+    values <- as.numeric(value_str)
+
+    # Handle error scaling
+    errors <- mapply(function(val_s, err_s) {
+      if (is.na(err_s) || err_s == "")
+        return(0) # Default to 0 if NA
+      if (is.na(val_s))
+        return(NA_real_)
+
+      # Check if scientific notation is present in the VALUE string
+      if (grepl("[eE]", val_s)) {
+        # Scientific notation logic:
+        # If val is 4e-4 and err is 2 (representing 0.0002), we need to adjust.
+        # Standard CIF practice for error in parens usually implies the last significant digit.
+        # However, purely numerical parsing is safer if not strictly defined.
+        # Fallback: Treat error as raw numeric if scientific notation is used,
+        # or assume CIF standard doesn't use sci-notation with parenthesis errors often.
+        # Simplest valid approach:
+        return(as.numeric(err_s)) # Returns raw number, often effectively 0 if not scaled
+      }
+
+      decimal_pos <- regexpr("\\.", val_s)
+      decimal_places <- ifelse(decimal_pos == -1, 0, nchar(val_s) - decimal_pos)
+      as.numeric(err_s) * 10^(-decimal_places)
+    }, value_str, error_str)
+
+    return(list(value = values, error = errors))
   }
 
   # Safely extract columns
@@ -248,7 +276,7 @@ extract_atomic_coordinates <- function(cif_content, chemical_formula = NA) {
     list(value = rep(1.0, nrow(atom_data)),
          error = rep(NA_real_, nrow(atom_data)))
 
-  atomic_coordinates <- data.table(
+  atomic_coordinates <- data.table::data.table(
     Label = clean_str(safe_extract(col_indices["label"])),
     WyckoffSymbol = if (!is.na(col_indices["wyckoff"]))
       clean_str(safe_extract(col_indices["wyckoff"]))
@@ -534,7 +562,7 @@ extract_symmetry_operations <- function(cif_content) {
   cleaned_strings <- tolower(cleaned_strings)
 
   symmetry_matrix <- stringr::str_split_fixed(cleaned_strings, ",", n = 3)
-  symmetry_dt <- data.table(x = symmetry_matrix[, 1], y = symmetry_matrix[, 2], z = symmetry_matrix[, 3])
+  symmetry_dt <- data.table::data.table(x = symmetry_matrix[, 1], y = symmetry_matrix[, 2], z = symmetry_matrix[, 3])
 
   symmetry_dt <- symmetry_dt[x != "" & y != "" & z != ""]
 

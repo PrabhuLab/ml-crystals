@@ -4,7 +4,12 @@
 \alias{calculate_distances}
 \title{Calculate Interatomic Distances}
 \usage{
-calculate_distances(atomic_coordinates, expanded_coords, unit_cell_metrics)
+calculate_distances(
+  atomic_coordinates,
+  expanded_coords,
+  unit_cell_metrics,
+  tolerance = 1e-06
+)
 }
 \arguments{
 \item{atomic_coordinates}{A \code{data.table} of the primary (asymmetric) atom set.}
@@ -12,6 +17,10 @@ calculate_distances(atomic_coordinates, expanded_coords, unit_cell_metrics)
 \item{expanded_coords}{A \code{data.table} of atoms in the expanded supercell.}
 
 \item{unit_cell_metrics}{A \code{data.table} with cell parameters.}
+
+\item{tolerance}{A numeric cutoff (default 1e-6). Distances smaller than this
+value are considered floating-point noise (overlapping atoms) and are
+filtered out.}
 }
 \value{
 A \code{data.table} of all non-zero distances.
@@ -31,7 +40,8 @@ if (file.exists(cif_file)) {
   full_cell <- apply_symmetry_operations(atoms, sym_ops)
   super_cell <- expand_transformed_coords(full_cell)
 
-  dists <- calculate_distances(atoms, super_cell, metrics)
+  # Increase tolerance if you see tiny "ghost" distances (e.g. 1e-5)
+  dists <- calculate_distances(atoms, super_cell, metrics, tolerance = 1e-4)
   print(head(dists))
 }
 }

@@ -4,6 +4,9 @@
 #' @param atomic_coordinates A `data.table` of the primary (asymmetric) atom set.
 #' @param expanded_coords A `data.table` of atoms in the expanded supercell.
 #' @param unit_cell_metrics A `data.table` with cell parameters.
+#' @param tolerance A numeric cutoff (default 1e-6). Distances smaller than this
+#'   value are considered floating-point noise (overlapping atoms) and are
+#'   filtered out.
 #' @return A `data.table` of all non-zero distances.
 #' @family property calculators
 #' @export
@@ -18,12 +21,14 @@
 #'   full_cell <- apply_symmetry_operations(atoms, sym_ops)
 #'   super_cell <- expand_transformed_coords(full_cell)
 #'
-#'   dists <- calculate_distances(atoms, super_cell, metrics)
+#'   # Increase tolerance if you see tiny "ghost" distances (e.g. 1e-5)
+#'   dists <- calculate_distances(atoms, super_cell, metrics, tolerance = 1e-4)
 #'   print(head(dists))
 #' }
 calculate_distances <- function(atomic_coordinates,
                                 expanded_coords,
-                                unit_cell_metrics) {
+                                unit_cell_metrics,
+                                tolerance = 1e-6) {
   # Safe extraction of cell metrics
   a <- as.numeric(unit_cell_metrics$`_cell_length_a`)
   b <- as.numeric(unit_cell_metrics$`_cell_length_b`)
@@ -31,27 +36,27 @@ calculate_distances <- function(atomic_coordinates,
   alpha <- as.numeric(unit_cell_metrics$`_cell_angle_alpha`) * pi / 180
   beta <- as.numeric(unit_cell_metrics$`_cell_angle_beta`) * pi / 180
   gamma <- as.numeric(unit_cell_metrics$`_cell_angle_gamma`) * pi / 180
-
+  
   coords_atomic <- as.matrix(atomic_coordinates[, .(x_a, y_b, z_c)])
   coords_expanded <- as.matrix(expanded_coords[, .(x_a, y_b, z_c)])
   labels_atomic <- atomic_coordinates$Label
   labels_expanded <- expanded_coords$Label
-
+  
   delta_x <- outer(coords_atomic[, 1], coords_expanded[, 1], "-")
   delta_y <- outer(coords_atomic[, 2], coords_expanded[, 2], "-")
   delta_z <- outer(coords_atomic[, 3], coords_expanded[, 3], "-")
-
+  
   cos_alpha <- cos(alpha)
   cos_beta <- cos(beta)
   cos_gamma <- cos(gamma)
-
+  
   r2 <- (a^2 * delta_x^2) + (b^2 * delta_y^2) + (c^2 * delta_z^2) +
     (2 * b * c * cos_alpha * delta_y * delta_z) +
     (2 * c * a * cos_beta * delta_z * delta_x) +
     (2 * a * b * cos_gamma * delta_x * delta_y)
-
+  
   r <- sqrt(r2)
-
+  
   # FIX: stringsAsFactors = FALSE prevents "Ops.factor" warnings downstream
   atom_pairs <- expand.grid(
     Atom1 = labels_atomic,
@@ -59,7 +64,7 @@ calculate_distances <- function(atomic_coordinates,
     KEEP.OUT.ATTRS = TRUE,
     stringsAsFactors = FALSE
   )
-
+  
   distances <- data.table(
     Atom1 = atom_pairs$Atom1,
     Atom2 = atom_pairs$Atom2,
@@ -68,10 +73,10 @@ calculate_distances <- function(atomic_coordinates,
     DeltaY = as.vector(delta_y),
     DeltaZ = as.vector(delta_z)
   )
-
-  # Filter out self-interactions or near-zero distances
-  distances <- distances[Distance > 1e-6]
-
+  
+  # Filter out self-interactions or near-zero distances based on tolerance
+  distances <- distances[Distance > tolerance]
+  
   return(distances)
 }
 

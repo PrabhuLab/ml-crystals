@@ -11,7 +11,8 @@ analyze_single_cif(
   perform_calcs_and_transforms = TRUE,
   bonding_algorithms = c("minimum_distance"),
   calculate_bond_angles = TRUE,
-  perform_error_propagation = TRUE
+  perform_error_propagation = TRUE,
+  tolerance = 1e-06
 )
 }
 \arguments{
@@ -36,6 +37,10 @@ Options: \code{"minimum_distance"}, \code{"brunner"}, \code{"hoppe"}. Use \code{
 
 \item{perform_error_propagation}{Logical. If \code{TRUE}, calculates uncertainties.
 Any missing error values in the CIF file are treated as zero.}
+
+\item{tolerance}{Numeric. The cutoff distance (default 1e-6) below which
+distances are considered floating-point noise and ignored. Increase this
+(e.g. to 1e-4) if "ghost" bonds appear in disordered structures.}
 }
 \value{
 A one-row \code{data.table} with results. If essential data for calculations

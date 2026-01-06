@@ -73,6 +73,12 @@ read_cif_files <- function(file_paths) {
 #' @param calculate_bond_angles Logical. If `TRUE`, computes bond angles.
 #' @param perform_error_propagation Logical. If `TRUE`, calculates uncertainties.
 #'   Any missing error values in the CIF file are treated as zero.
+#' @param tolerance Numeric. The cutoff distance (default 1e-6) below which
+#'   distances are considered floating-point noise and ignored. Increase this
+#'   (e.g. to 1e-4) if "ghost" bonds appear in disordered structures.
+#' @param minimum_distance_delta Numeric. The relative tolerance parameter used
+#'   specifically for the "minimum_distance" bonding algorithm. Default is 0.1.
+#'   (e.g., d_cut = d_min * (1 + delta)).
 #' @return A one-row `data.table` with results. If essential data for calculations
 #'   is missing, a warning is issued and only partial results are returned.
 #' @export
@@ -82,9 +88,13 @@ read_cif_files <- function(file_paths) {
 #'   # Option 1: Pass the file path directly
 #'   result_from_path <- analyze_single_cif(cif_file)
 #'
-#'   # Option 2: Pass pre-loaded content
+#'   # Option 2: Pass pre-loaded content with custom bonding delta
 #'   cif_content <- read_cif_files(cif_file)[[1]]
-#'   result_from_dt <- analyze_single_cif(cif_content, basename(cif_file))
+#'   result_from_dt <- analyze_single_cif(
+#'     cif_content,
+#'     basename(cif_file),
+#'     minimum_distance_delta = 0.15
+#'   )
 #' }
 analyze_single_cif <- function(cif_content,
                                file_name = NULL,
@@ -92,8 +102,9 @@ analyze_single_cif <- function(cif_content,
                                perform_calcs_and_transforms = TRUE,
                                bonding_algorithms = c("minimum_distance"),
                                calculate_bond_angles = TRUE,
-                               perform_error_propagation = TRUE) {
-
+                               perform_error_propagation = TRUE,
+                               tolerance = 1e-6,
+                               minimum_distance_delta = 0.1) {
   # --- Step 0: Handle Input Type (Path vs Data.Table) ---
   if (is.character(cif_content)) {
     # It is a file path
@@ -124,7 +135,8 @@ analyze_single_cif <- function(cif_content,
 
   # --- Step 1: Data Extraction ---
   if (!perform_extraction) {
-    return(data.table(file_name = file_name))
+    # Namespaced data.table
+    return(data.table::data.table(file_name = file_name))
   }
   database_code <- extract_database_code(cif_content)
   chemical_formula <- extract_chemical_formula(cif_content)
@@ -168,7 +180,7 @@ analyze_single_cif <- function(cif_content,
         sep = ""
       )
     )
-    return(NULL) # Fixed typo: 'null' to 'NULL'
+    return(NULL)
   }
 
   # --- Step 3: Initialize Result Variables ---
@@ -186,7 +198,11 @@ analyze_single_cif <- function(cif_content,
   if (perform_calcs_and_transforms) {
     transformed_coords <- apply_symmetry_operations(atomic_coordinates, symmetry_operations)
     expanded_coords <- expand_transformed_coords(transformed_coords)
-    distances <- calculate_distances(atomic_coordinates, expanded_coords, unit_cell_metrics)
+    # Passed the tolerance parameter down to calculate_distances
+    distances <- calculate_distances(atomic_coordinates,
+                                     expanded_coords,
+                                     unit_cell_metrics,
+                                     tolerance = tolerance)
   }
 
   # --- Step 5: Bonding Algorithms ---
@@ -197,7 +213,8 @@ analyze_single_cif <- function(cif_content,
     for (algo in unique(bonding_algorithms)) {
       current_bonds <- switch(
         algo,
-        "minimum_distance" = minimum_distance(distances),
+        # Updated to use the user-provided delta
+        "minimum_distance" = minimum_distance(distances, delta = minimum_distance_delta),
         "brunner" = brunner(distances),
         "hoppe" = hoppe(distances),
         {
@@ -250,8 +267,9 @@ analyze_single_cif <- function(cif_content,
   }
 
   # --- Assemble Final Results ---
+  # Namespaced data.table
   return(
-    data.table(
+    data.table::data.table(
       file_name = file_name,
       database_code = database_code,
       chemical_formula = chemical_formula,
@@ -296,7 +314,8 @@ analyze_single_cif <- function(cif_content,
 #'   If `NULL` (default), results are returned in memory.
 #' @param batch_size Number of files per batch. Defaults to 1000.
 #' @param ... Additional arguments passed directly to `analyze_single_cif`, such
-#'   as `bonding_algorithms`, `calculate_bond_angles`, etc.
+#'   as `bonding_algorithms`, `calculate_bond_angles`, `tolerance`, and
+#'   `minimum_distance_delta`.
 #'
 #' @return If `output_dir` is `NULL`, a single `data.table` with all results.
 #'   If `output_dir` is provided, invisibly returns the path to the output directory.
@@ -323,7 +342,8 @@ analyze_cif_files <- function(file_paths,
 
       if (length(found_files) == 0) {
         warning(sprintf("No .cif files found in directory '%s'.", file_paths))
-        return(data.table())
+        # Namespaced data.table
+        return(data.table::data.table())
       }
       file_paths <- found_files
     }
@@ -362,7 +382,8 @@ analyze_cif_files <- function(file_paths,
   total_files <- length(cif_contents_list)
   if (total_files == 0) {
     message("No files to process.")
-    return(data.table())
+    # Namespaced data.table
+    return(data.table::data.table())
   }
 
   batch_starts <- seq(1, total_files, by = batch_size)
@@ -426,7 +447,8 @@ analyze_cif_files <- function(file_paths,
     successful_results <- results_list[!sapply(results_list, is.null)]
 
     if (length(successful_results) > 0) {
-      batch_dt <- rbindlist(successful_results, fill = TRUE)
+      # Namespaced rbindlist
+      batch_dt <- data.table::rbindlist(successful_results, fill = TRUE)
 
       if (is.null(output_dir)) {
         # Mode 1: Append to list for in-memory aggregation
@@ -464,7 +486,8 @@ analyze_cif_files <- function(file_paths,
   if (is.null(output_dir)) {
     # In-memory mode: combine all batch results and return
     if (length(all_results_list) > 0) {
-      final_dt <- rbindlist(all_results_list, fill = TRUE)
+      # Namespaced rbindlist
+      final_dt <- data.table::rbindlist(all_results_list, fill = TRUE)
       message(sprintf(
         "Successfully processed a total of %d structures.",
         nrow(final_dt)
@@ -472,7 +495,8 @@ analyze_cif_files <- function(file_paths,
       return(final_dt)
     } else {
       warning("No structures were processed successfully.")
-      return(data.table())
+      # Namespaced data.table
+      return(data.table::data.table())
     }
   } else {
     # Batch-to-disk mode: return the path to the results directory
@@ -520,7 +544,8 @@ aggregate_batch_results <- function(input_dir, cols_to_keep = NULL) {
     return(batch_dt)
   })
 
-  aggregated_results <- rbindlist(all_results_list, fill = TRUE)
+  # Namespaced rbindlist
+  aggregated_results <- data.table::rbindlist(all_results_list, fill = TRUE)
 
   message(sprintf(
     "Aggregation complete. Total rows: %d.",
