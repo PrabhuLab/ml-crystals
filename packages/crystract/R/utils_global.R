@@ -51,7 +51,7 @@ utils::globalVariables(
     "dcut",
     "dmin",
 
-    # Variables for calculate_angles (newly added)
+    # Variables for calculate_angles
     "cos_theta",
     "cx",
     "cy",
@@ -119,6 +119,9 @@ utils::globalVariables(
     "sum_d",
     "upper_bound",
     "null",
-    "..valid_cols"
+    "..valid_cols",
+    "Tx",
+    "Ty",
+    "Tz"
   )
 )

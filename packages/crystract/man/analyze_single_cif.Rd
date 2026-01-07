@@ -12,7 +12,8 @@ analyze_single_cif(
   bonding_algorithms = c("minimum_distance"),
   calculate_bond_angles = TRUE,
   perform_error_propagation = TRUE,
-  tolerance = 1e-06
+  tolerance = 1e-06,
+  minimum_distance_delta = 0.1
 )
 }
 \arguments{
@@ -41,6 +42,10 @@ Any missing error values in the CIF file are treated as zero.}
 \item{tolerance}{Numeric. The cutoff distance (default 1e-6) below which
 distances are considered floating-point noise and ignored. Increase this
 (e.g. to 1e-4) if "ghost" bonds appear in disordered structures.}
+
+\item{minimum_distance_delta}{Numeric. The relative tolerance parameter used
+specifically for the "minimum_distance" bonding algorithm. Default is 0.1.
+(e.g., d_cut = d_min * (1 + delta)).}
 }
 \value{
 A one-row \code{data.table} with results. If essential data for calculations
@@ -57,8 +62,12 @@ if (file.exists(cif_file)) {
   # Option 1: Pass the file path directly
   result_from_path <- analyze_single_cif(cif_file)
 
-  # Option 2: Pass pre-loaded content
+  # Option 2: Pass pre-loaded content with custom bonding delta
   cif_content <- read_cif_files(cif_file)[[1]]
-  result_from_dt <- analyze_single_cif(cif_content, basename(cif_file))
+  result_from_dt <- analyze_single_cif(
+    cif_content,
+    basename(cif_file),
+    minimum_distance_delta = 0.15
+  )
 }
 }

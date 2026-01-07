@@ -24,7 +24,8 @@ If \code{NULL} (default), results are returned in memory.}
 \item{batch_size}{Number of files per batch. Defaults to 1000.}
 
 \item{...}{Additional arguments passed directly to \code{analyze_single_cif}, such
-as \code{bonding_algorithms}, \code{calculate_bond_angles}, and \code{tolerance}.}
+as \code{bonding_algorithms}, \code{calculate_bond_angles}, \code{tolerance}, and
+\code{minimum_distance_delta}.}
 }
 \value{
 If \code{output_dir} is \code{NULL}, a single \code{data.table} with all results.

@@ -241,14 +241,7 @@ extract_atomic_coordinates <- function(cif_content, chemical_formula = NA) {
 
       # Check if scientific notation is present in the VALUE string
       if (grepl("[eE]", val_s)) {
-        # Scientific notation logic:
-        # If val is 4e-4 and err is 2 (representing 0.0002), we need to adjust.
-        # Standard CIF practice for error in parens usually implies the last significant digit.
-        # However, purely numerical parsing is safer if not strictly defined.
-        # Fallback: Treat error as raw numeric if scientific notation is used,
-        # or assume CIF standard doesn't use sci-notation with parenthesis errors often.
-        # Simplest valid approach:
-        return(as.numeric(err_s)) # Returns raw number, often effectively 0 if not scaled
+        return(as.numeric(err_s))
       }
 
       decimal_pos <- regexpr("\\.", val_s)
@@ -471,10 +464,21 @@ extract_atomic_coordinates <- function(cif_content, chemical_formula = NA) {
     ))
   }
 
-  # Normalize Labels
+  # --- Normalize Labels and Ensure Uniqueness ---
+  # 1. Extract Symbol (e.g., "Fe" from "Fe_1")
   symbols <- sub("^([A-Z][a-z]?).*", "\\1", atomic_coordinates$Label, perl = TRUE)
+
+  # 2. Extract Numbers (e.g., "1" from "Fe1", or "2" from "Fe(2)")
   numbers <- stringr::str_remove_all(atomic_coordinates$Label, "[^0-9]")
+
+  # 3. Create the base normalized label (e.g., "S", "Cu")
+  # This strips out parens, underscores, and other formatting junk
   atomic_coordinates[, Label := paste0(symbols, numbers)]
+
+  # 4. Enforce Uniqueness
+  if (any(duplicated(atomic_coordinates$Label))) {
+    atomic_coordinates[, Label := make.unique(Label, sep = "")]
+  }
 
   return(atomic_coordinates)
 }

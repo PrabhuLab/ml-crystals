@@ -7,12 +7,15 @@
 #' @export
 apply_symmetry_operations <- function(atomic_coordinates, symmetry_operations) {
   if (is.null(atomic_coordinates) || nrow(atomic_coordinates) == 0) {
-    return(data.table(
-      Label = character(),
-      x_a = numeric(),
-      y_b = numeric(),
-      z_c = numeric()
-    ))
+    return(
+      data.table(
+        Label = character(),
+        SymOp = integer(),
+        x_a = numeric(),
+        y_b = numeric(),
+        z_c = numeric()
+      )
+    )
   }
 
   # Helper to safely evaluate the string math (e.g. "x+1/2")
@@ -54,6 +57,7 @@ apply_symmetry_operations <- function(atomic_coordinates, symmetry_operations) {
 
       data.table(
         Label = paste(lbl, j, sep = "_"),
+        SymOp = j,
         x_a = safe_eval(op_x, val_x, val_y, val_z) %% 1,
         y_b = safe_eval(op_y, val_x, val_y, val_z) %% 1,
         z_c = safe_eval(op_z, val_x, val_y, val_z) %% 1
@@ -67,12 +71,15 @@ apply_symmetry_operations <- function(atomic_coordinates, symmetry_operations) {
 
   # Safety check: Ensure columns exist before processing
   if (nrow(transformed_coords) == 0) {
-    return(data.table(
-      Label = character(),
-      x_a = numeric(),
-      y_b = numeric(),
-      z_c = numeric()
-    ))
+    return(
+      data.table(
+        Label = character(),
+        SymOp = integer(),
+        x_a = numeric(),
+        y_b = numeric(),
+        z_c = numeric()
+      )
+    )
   }
 
   # Round to handle floating point errors before finding unique rows
@@ -83,6 +90,7 @@ apply_symmetry_operations <- function(atomic_coordinates, symmetry_operations) {
     z_c = round(z_c, precision)
   )]
 
+  # Remove duplicates but keep the first SymOp that generated the position
   transformed_coords <- unique(transformed_coords, by = c("x_a", "y_b", "z_c"))
   return(transformed_coords)
 }
@@ -100,12 +108,18 @@ expand_transformed_coords <- function(transformed_coords) {
   if (is.null(transformed_coords) ||
       nrow(transformed_coords) == 0 ||
       !"x_a" %in% names(transformed_coords)) {
-    return(data.table(
-      Label = character(),
-      x_a = numeric(),
-      y_b = numeric(),
-      z_c = numeric()
-    ))
+    return(
+      data.table(
+        Label = character(),
+        SymOp = integer(),
+        Tx = integer(),
+        Ty = integer(),
+        Tz = integer(),
+        x_a = numeric(),
+        y_b = numeric(),
+        z_c = numeric()
+      )
+    )
   }
 
   n_cells <- 1
@@ -120,16 +134,15 @@ expand_transformed_coords <- function(transformed_coords) {
 
     # We copy the original table and shift the coordinates
     dt <- copy(transformed_coords)
-    dt[, `:=`(
-      Label = paste(
-        Label,
-        paste(cell_shift$x, cell_shift$y, cell_shift$z, sep = "_"),
-        sep = "_"
-      ),
-      x_a = x_a + cell_shift$x,
-      y_b = y_b + cell_shift$y,
-      z_c = z_c + cell_shift$z
-    )]
+    dt[, `:=`(Tx = cell_shift$x,
+              Ty = cell_shift$y,
+              Tz = cell_shift$z)]
+
+    dt[, Label := paste(Label, Tx, Ty, Tz, sep = "_")]
+
+    dt[, `:=`(x_a = x_a + Tx,
+              y_b = y_b + Ty,
+              z_c = z_c + Tz)]
     return(dt)
   }))
 
