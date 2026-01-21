@@ -9,8 +9,14 @@ navbar:
   left:
     - text: "Reference"
       href: reference/index.html
-    - text: "News"
-      href: news/index.html
+    - text: "Articles"
+      menu:
+        - text: "Package Guide"
+          href: articles/crystract.html
+        - text: "Example Use Case"
+          href: articles/clathrates.html
+    # - text: "News"
+    #   href: news/index.html
   right:
     - icon: fa-github
       href: https://github.com/PrabhuLab/ml-crystals
