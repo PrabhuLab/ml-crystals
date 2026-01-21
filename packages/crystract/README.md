@@ -63,6 +63,148 @@ applications in materials science.
   can be easily exported to a structured directory of CSV files with
   `export_analysis_to_csv()`.
 
+### Here is a comprehensive Data Dictionary for the **crystract** package.
+
+It is organized into three sections: 1. **Master Analysis Object**: The
+main output structure returned by `analyze_cif_files()` and
+`analyze_single_cif()`. 2. **Nested Data Tables**: The specific
+structure of the sub-tables contained within the list-columns of the
+Master Object. 3. **Reference Data**: The structure of auxiliary tables
+like atomic radii.
+
+------------------------------------------------------------------------
+
+### 1. Master Analysis Object
+
+**Function Source:** `analyze_cif_files()`, `analyze_single_cif()`
+**Description:** A `data.table` where each row represents a single
+processed CIF file. Columns 1–6 contain metadata, while the remaining
+columns are **list-columns** containing nested `data.table`s with
+detailed structural data.
+
+| Column Name | Data Type | Description |
+|:---|:---|:---|
+| `file_name` | Character | The name of the processed CIF file (e.g., “ICSD422.cif”). |
+| `database_code` | Character | The unique identifier from the source database (e.g., from `_database_code_`). |
+| `chemical_formula` | Character | The chemical sum formula extracted from the CIF. |
+| `structure_type` | Character | The name of the structure type (e.g., “Perovskite”). |
+| `space_group_name` | Character | Hermann-Mauguin space group symbol (e.g., “P n m a”). |
+| `space_group_number` | Character | International Tables space group number. |
+| `unit_cell_metrics` | List (DT) | Nested table containing lattice parameters (see Section 2.1). |
+| `atomic_coordinates` | List (DT) | Nested table of primary asymmetric atoms (see Section 2.2). |
+| `symmetry_operations` | List (DT) | Nested table of symmetry operators (see Section 2.3). |
+| `transformed_coords` | List (DT) | Nested table of the full unit cell atoms. |
+| `expanded_coords` | List (DT) | Nested table of the supercell (3x3x3) atoms. |
+| `distances` | List (DT) | Nested table of all calculated interatomic distances (see Section 2.4). |
+| `bonded_pairs_minimum_distance` | List (DT) | Nested table of bonds detected via Minimum Distance method (see Section 2.4). |
+| `bonded_pairs_brunner` | List (DT) | Nested table of bonds detected via Brunner’s method. |
+| `bonded_pairs_hoppe` | List (DT) | Nested table of bonds detected via Hoppe’s method. |
+| `neighbor_counts` | List (DT) | Nested table of coordination numbers (see Section 2.5). |
+| `bond_angles` | List (DT) | Nested table of calculated bond angles (see Section 2.6). |
+
+------------------------------------------------------------------------
+
+### 2. Nested Data Tables
+
+#### 2.1. Unit Cell Metrics
+
+**Column in Master Object:** `unit_cell_metrics` **Description:**
+Lattice parameters and their standard uncertainties.
+
+| Column Name | Data Type | Description |
+|:---|:---|:---|
+| `_cell_length_a` | Numeric | Unit cell length $a$ in Angstroms (Å). |
+| `_cell_length_b` | Numeric | Unit cell length $b$ in Angstroms (Å). |
+| `_cell_length_c` | Numeric | Unit cell length $c$ in Angstroms (Å). |
+| `_cell_angle_alpha` | Numeric | Unit cell angle $\alpha$ in degrees. |
+| `_cell_angle_beta` | Numeric | Unit cell angle $\beta$ in degrees. |
+| `_cell_angle_gamma` | Numeric | Unit cell angle $\gamma$ in degrees. |
+| `*_error` | Numeric | Standard uncertainty for the corresponding parameter (e.g., `_cell_length_a_error`). |
+
+#### 2.2. Atomic Coordinates
+
+**Column in Master Object:** `atomic_coordinates` **Description:**
+Properties of the asymmetric unit (primary atoms).
+
+| Column Name | Data Type | Description |
+|:---|:---|:---|
+| `Label` | Character | Unique atom label (e.g., “Fe1”). Normalized to remove special characters. |
+| `WyckoffSymbol` | Character | The Wyckoff letter (e.g., “c”). |
+| `WyckoffMultiplicity` | Numeric | The site multiplicity (e.g., 4). |
+| `Occupancy` | Numeric | Site occupancy factor (0.0 to 1.0). |
+| `OccupancyError` | Numeric | Standard uncertainty of the occupancy. |
+| `x_a` | Numeric | Fractional coordinate $x$ along axis $a$. |
+| `y_b` | Numeric | Fractional coordinate $y$ along axis $b$. |
+| `z_c` | Numeric | Fractional coordinate $z$ along axis $c$. |
+| `x_error`, `y_error`, `z_error` | Numeric | Standard uncertainties for the coordinates. |
+
+#### 2.3. Symmetry Operations
+
+**Column in Master Object:** `symmetry_operations` **Description:**
+Algebraic strings defining how to generate equivalent positions.
+
+| Column Name | Data Type | Description                                 |
+|:------------|:----------|:--------------------------------------------|
+| `x`         | Character | Operation on x coordinate (e.g., “-x+1/2”). |
+| `y`         | Character | Operation on y coordinate.                  |
+| `z`         | Character | Operation on z coordinate.                  |
+
+#### 2.4. Distances and Bonded Pairs
+
+**Columns in Master Object:** `distances`, `bonded_pairs_*`
+**Description:** Pairs of atoms and the scalar distance between them.
+Bonded pair tables contain the same columns (plus `DistanceError` if
+calculated).
+
+| Column Name | Data Type | Description |
+|:---|:---|:---|
+| `Atom1` | Character | Label of the central atom (from the asymmetric unit). |
+| `Atom2` | Character | Label of the neighbor atom (typically from the expanded supercell). |
+| `Distance` | Numeric | Calculated Euclidean distance in Angstroms (Å). |
+| `DistanceError` | Numeric | Propagated standard uncertainty of the distance (if error propagation is enabled). |
+| `DeltaX` | Numeric | Difference in fractional $x$ coordinates ($x_1 - x_2$). |
+| `DeltaY` | Numeric | Difference in fractional $y$ coordinates ($y_1 - y_2$). |
+| `DeltaZ` | Numeric | Difference in fractional $z$ coordinates ($z_1 - z_2$). |
+| `BondStrength` | Numeric | (Hoppe’s Method Only) Calculated bond weight/strength. |
+
+#### 2.5. Neighbor Counts
+
+**Column in Master Object:** `neighbor_counts` **Description:**
+Coordination number summary.
+
+| Column Name | Data Type | Description |
+|:---|:---|:---|
+| `Atom` | Character | Label of the central atom. |
+| `NeighborCount` | Integer | The number of bonded neighbors found for this atom. |
+
+#### 2.6. Bond Angles
+
+**Column in Master Object:** `bond_angles` **Description:** Angles
+formed by a central atom and two neighbors.
+
+| Column Name | Data Type | Description |
+|:---|:---|:---|
+| `CentralAtom` | Character | Label of the atom at the vertex of the angle. |
+| `Neighbor1` | Character | Label of the first neighbor atom. |
+| `Neighbor2` | Character | Label of the second neighbor atom. |
+| `Angle` | Numeric | The bond angle in degrees ($^\circ$). |
+| `AngleError` | Numeric | Propagated standard uncertainty of the angle (if error propagation is enabled). |
+
+------------------------------------------------------------------------
+
+### 3. Reference Data
+
+#### 3.1. Atomic Radii
+
+**Function Source:** `get_radii_data()` / `covalent_radii`
+**Description:** Used for `filter_ghost_distances()`.
+
+| Column Name | Data Type | Description                                     |
+|:------------|:----------|:------------------------------------------------|
+| `Symbol`    | Character | Chemical element symbol (e.g., “Si”, “Fe”).     |
+| `Radius`    | Numeric   | Atomic radius in Angstroms (Å).                 |
+| `Type`      | Character | Category of radius (e.g., “covalent”, “ionic”). |
+
 ## Licensing
 
 `crystract` is offered under a dual-license model to accommodate a
@@ -113,7 +255,7 @@ commands.
 # First, ensure you have the devtools package
 install.packages("devtools")
 
-# Install crystract from the  GitHub repositoy
+# Install crystract from the  GitHub repository
 devtools::install_github("PrabhuLab/ml-crystals", subdir = "packages/crystract", build_vignettes = TRUE)
 ```
 
