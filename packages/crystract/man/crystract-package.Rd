@@ -15,4 +15,11 @@ neighbor counts, and calculate bond angles. The package is designed to
 facilitate the preparation of crystallographic data for further analysis,
 including machine learning applications in materials science.
 }
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://prabhulab.github.io/ml-crystals/}
+}
+
+}
 \keyword{internal}

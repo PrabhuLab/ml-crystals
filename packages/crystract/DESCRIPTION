@@ -1,6 +1,6 @@
 Package: crystract
 Type: Package
-Title: Tools to Extract Data from CIF Files for Crystallography
+Title: A Crystallography Package in R for .cif Data Processing
 Version: 1.0.1
 Author: Don Ngo <dngo@carnegiescience.edu>
 Maintainer: Don Ngo <dngo@carnegiescience.edu>
@@ -35,3 +35,4 @@ Suggests:
 VignetteBuilder: knitr
 Config/testthat/edition: 3
 LazyData: true
+URL: https://prabhulab.github.io/ml-crystals/
