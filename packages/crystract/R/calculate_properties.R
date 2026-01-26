@@ -573,9 +573,19 @@ propagate_angle_error <- function(bond_angles,
 #'   print(head(bonded))
 #' }
 minimum_distance <- function(distances, delta = 0.1) {
-  dmin <- distances[, .(dmin = min(Distance)), by = .(Atom1)]
+  # 1. Filter out non-physical ghost distances BEFORE calculating dmin
+  valid_distances <- distances[Distance > 0.5]
+
+  if (nrow(valid_distances) == 0) return(NULL)
+
+  # 2. Calculate dmin using only physically valid distances
+  dmin <- valid_distances[, .(dmin = min(Distance)), by = .(Atom1)]
+
   dmin[, dcut := (1 + delta) * dmin]
-  bonded_pairs <- distances[dmin, on = .(Atom1), allow.cartesian = TRUE][Distance <= dcut, .(Atom1, Atom2, Distance, DeltaX, DeltaY, DeltaZ, dcut, dmin)]
+
+  # 3. Join back to the FULL distances table (or valid_distances)
+  bonded_pairs <- distances[dmin, on = .(Atom1), allow.cartesian = TRUE][Distance <= dcut & Distance > 0.5, .(Atom1, Atom2, Distance, DeltaX, DeltaY, DeltaZ, dcut, dmin)]
+
   return(bonded_pairs)
 }
 

@@ -4,12 +4,19 @@
 \alias{apply_symmetry_operations}
 \title{Apply Symmetry Operations to Generate a Full Unit Cell}
 \usage{
-apply_symmetry_operations(atomic_coordinates, symmetry_operations)
+apply_symmetry_operations(
+  atomic_coordinates,
+  symmetry_operations,
+  precision = 4
+)
 }
 \arguments{
 \item{atomic_coordinates}{A \code{data.table} of asymmetric atoms.}
 
 \item{symmetry_operations}{A \code{data.table} of operations.}
+
+\item{precision}{An integer specifying the number of decimal places used to
+round coordinates when identifying unique atoms. Defaults to 4.}
 }
 \value{
 A \code{data.table} containing all unique atomic positions in the unit cell.

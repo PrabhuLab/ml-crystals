@@ -105,39 +105,26 @@ analyze_single_cif <- function(cif_content,
                                perform_error_propagation = TRUE,
                                tolerance = 1e-6,
                                minimum_distance_delta = 0.1) {
-  # --- Step 0: Handle Input Type (Path vs Data.Table) ---
+  # --- Step 0: Handle Input Type ---
   if (is.character(cif_content)) {
-    # It is a file path
-    if (length(cif_content) != 1) {
-      stop("When passing a file path, `analyze_single_cif` accepts exactly one string.")
-    }
-    if (!file.exists(cif_content)) {
+    if (length(cif_content) != 1)
+      stop("`analyze_single_cif` accepts exactly one string.")
+    if (!file.exists(cif_content))
       stop(paste("File not found:", cif_content))
-    }
-
-    # Auto-detect filename if not manually provided
-    if (is.null(file_name)) {
+    if (is.null(file_name))
       file_name <- basename(cif_content)
-    }
-
-    # Read the file into memory
-    # read_cif_files returns a list (e.g., list("ICSD.cif" = dt)); take the first element
     cif_content <- read_cif_files(cif_content)[[1]]
-
   } else if (inherits(cif_content, "data.table")) {
-    # It is already loaded content
-    if (is.null(file_name)) {
+    if (is.null(file_name))
       file_name <- "unknown"
-    }
   } else {
-    stop("`cif_content` must be a file path (character) or loaded CIF data (data.table).")
+    stop("`cif_content` must be a file path or loaded CIF data.")
   }
 
   # --- Step 1: Data Extraction ---
-  if (!perform_extraction) {
-    # Namespaced data.table
+  if (!perform_extraction)
     return(data.table::data.table(file_name = file_name))
-  }
+
   database_code <- extract_database_code(cif_content)
   chemical_formula <- extract_chemical_formula(cif_content)
   structure_type <- extract_structure_type(cif_content)
@@ -147,39 +134,15 @@ analyze_single_cif <- function(cif_content,
   atomic_coordinates <- extract_atomic_coordinates(cif_content, chemical_formula)
   symmetry_operations <- extract_symmetry_operations(cif_content)
 
-  # --- Step 2: Validate Essential Data for Calculations ---
-  failure_reasons <- c()
-  if (is.null(atomic_coordinates))
-    failure_reasons <- c(failure_reasons, "missing atomic coordinates")
-  if (is.null(symmetry_operations))
-    failure_reasons <- c(failure_reasons, "missing symmetry operations")
-  if (is.null(unit_cell_metrics)) {
-    failure_reasons <- c(failure_reasons, "missing unit cell metrics block")
-  } else {
-    required_metrics <- c(
-      "_cell_length_a",
-      "_cell_length_b",
-      "_cell_length_c",
-      "_cell_angle_alpha",
-      "_cell_angle_beta",
-      "_cell_angle_gamma"
-    )
-    if (any(is.na(unit_cell_metrics[, ..required_metrics]))) {
-      failure_reasons <- c(failure_reasons, "incomplete unit cell parameters")
-    }
-  }
-
-  if (length(failure_reasons) > 0) {
-    warning(
-      paste(
-        "Skipping calculations for file '",
-        file_name,
-        "' due to: ",
-        paste(failure_reasons, collapse = "; "),
-        ".",
-        sep = ""
-      )
-    )
+  # --- Step 2: Validate Essential Data ---
+  if (is.null(atomic_coordinates) ||
+      is.null(symmetry_operations) || is.null(unit_cell_metrics)) {
+    warning(paste(
+      "Skipping '",
+      file_name,
+      "': missing essential structural data.",
+      sep = ""
+    ))
     return(NULL)
   }
 
@@ -196,9 +159,19 @@ analyze_single_cif <- function(cif_content,
 
   # --- Step 4: Calculations, Transformations, and Expansions ---
   if (perform_calcs_and_transforms) {
-    transformed_coords <- apply_symmetry_operations(atomic_coordinates, symmetry_operations)
-    expanded_coords <- expand_transformed_coords(transformed_coords)
-    # Passed the tolerance parameter down to calculate_distances
+    # If tolerance is 1e-4, we use precision 3 (0.001) for deduplication.
+    # This prevents '0.33332' and '0.33337' (diff 5e-5) from being split into '0.3333' and '0.3334'.
+    if (tolerance <= 0) {
+      precision_val <- 15
+    } else {
+      # Subtract 1 to create a buffer
+      precision_val <- max(0, as.integer(ceiling(-log10(tolerance))) - 1)
+    }
+
+    transformed_coords <- apply_symmetry_operations(atomic_coordinates, symmetry_operations, precision = precision_val)
+
+    expanded_coords <- expand_transformed_coords(transformed_coords, precision = precision_val)
+
     distances <- calculate_distances(atomic_coordinates,
                                      expanded_coords,
                                      unit_cell_metrics,
@@ -213,12 +186,11 @@ analyze_single_cif <- function(cif_content,
     for (algo in unique(bonding_algorithms)) {
       current_bonds <- switch(
         algo,
-        # Updated to use the user-provided delta
         "minimum_distance" = minimum_distance(distances, delta = minimum_distance_delta),
         "brunner" = brunner(distances),
         "hoppe" = hoppe(distances),
         {
-          warning(paste("Invalid bonding algorithm '", algo, "' ignored.", sep = ""))
+          warning(paste("Invalid algorithm '", algo, "' ignored.", sep = ""))
           NULL
         }
       )
@@ -238,7 +210,7 @@ analyze_single_cif <- function(cif_content,
     }
   }
 
-  # --- Step 6: Bond Angles ---
+  # --- Step 6 & 7: Angles & Errors ---
   if (calculate_bond_angles && !is.null(primary_bonded_pairs)) {
     bond_angles <- calculate_angles(primary_bonded_pairs,
                                     atomic_coordinates,
@@ -246,9 +218,7 @@ analyze_single_cif <- function(cif_content,
                                     unit_cell_metrics)
   }
 
-  # --- Step 7: Error Propagation ---
   if (perform_error_propagation) {
-    # These functions are designed to treat NA errors as 0.
     if (!is.null(bonded_pairs_md))
       bonded_pairs_md <- propagate_distance_error(bonded_pairs_md, atomic_coordinates, unit_cell_metrics)
     if (!is.null(bonded_pairs_brunner))
@@ -266,8 +236,6 @@ analyze_single_cif <- function(cif_content,
                                            unit_cell_metrics)
   }
 
-  # --- Assemble Final Results ---
-  # Namespaced data.table
   return(
     data.table::data.table(
       file_name = file_name,
