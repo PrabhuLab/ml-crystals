@@ -4,13 +4,10 @@
 \alias{expand_transformed_coords}
 \title{Expand Coordinates into a Supercell}
 \usage{
-expand_transformed_coords(transformed_coords, precision = 4)
+expand_transformed_coords(transformed_coords)
 }
 \arguments{
 \item{transformed_coords}{A \code{data.table} of atom positions within one unit cell.}
-
-\item{precision}{An integer specifying the number of decimal places used to
-round coordinates. Defaults to 4.}
 }
 \value{
 A \code{data.table} containing all atomic positions in the expanded supercell.

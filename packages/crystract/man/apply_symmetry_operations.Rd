@@ -7,7 +7,8 @@
 apply_symmetry_operations(
   atomic_coordinates,
   symmetry_operations,
-  precision = 4
+  unit_cell_metrics,
+  tolerance = 0.1
 )
 }
 \arguments{
@@ -15,8 +16,9 @@ apply_symmetry_operations(
 
 \item{symmetry_operations}{A \code{data.table} of operations.}
 
-\item{precision}{An integer specifying the number of decimal places used to
-round coordinates when identifying unique atoms. Defaults to 4.}
+\item{unit_cell_metrics}{A \code{data.table} of cell parameters (needed for distance merging).}
+
+\item{tolerance}{Numeric. The distance tolerance in Angstroms for merging close atoms.}
 }
 \value{
 A \code{data.table} containing all unique atomic positions in the unit cell.
