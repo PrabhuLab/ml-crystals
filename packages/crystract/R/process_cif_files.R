@@ -73,7 +73,7 @@ read_cif_files <- function(file_paths) {
 #' @param calculate_bond_angles Logical. If `TRUE`, computes bond angles.
 #' @param perform_error_propagation Logical. If `TRUE`, calculates uncertainties.
 #'   Any missing error values in the CIF file are treated as zero.
-#' @param tolerance Numeric. The cutoff distance (default 1e-6) below which
+#' @param tolerance Numeric. The cutoff distance (default 1e-4) below which
 #'   distances are considered floating-point noise and ignored. Increase this
 #'   (e.g. to 1e-4) if "ghost" bonds appear in disordered structures.
 #' @param minimum_distance_delta Numeric. The relative tolerance parameter used
@@ -103,41 +103,28 @@ analyze_single_cif <- function(cif_content,
                                bonding_algorithms = c("minimum_distance"),
                                calculate_bond_angles = TRUE,
                                perform_error_propagation = TRUE,
-                               tolerance = 1e-6,
+                               tolerance = 1e-4,
                                minimum_distance_delta = 0.1) {
-  # --- Step 0: Handle Input Type (Path vs Data.Table) ---
+  # --- Step 0: Handle Input Type ---
   if (is.character(cif_content)) {
-    # It is a file path
-    if (length(cif_content) != 1) {
-      stop("When passing a file path, `analyze_single_cif` accepts exactly one string.")
-    }
-    if (!file.exists(cif_content)) {
+    if (length(cif_content) != 1)
+      stop("`analyze_single_cif` accepts exactly one string.")
+    if (!file.exists(cif_content))
       stop(paste("File not found:", cif_content))
-    }
-
-    # Auto-detect filename if not manually provided
-    if (is.null(file_name)) {
+    if (is.null(file_name))
       file_name <- basename(cif_content)
-    }
-
-    # Read the file into memory
-    # read_cif_files returns a list (e.g., list("ICSD.cif" = dt)); take the first element
     cif_content <- read_cif_files(cif_content)[[1]]
-
   } else if (inherits(cif_content, "data.table")) {
-    # It is already loaded content
-    if (is.null(file_name)) {
+    if (is.null(file_name))
       file_name <- "unknown"
-    }
   } else {
-    stop("`cif_content` must be a file path (character) or loaded CIF data (data.table).")
+    stop("`cif_content` must be a file path or loaded CIF data.")
   }
 
   # --- Step 1: Data Extraction ---
-  if (!perform_extraction) {
-    # Namespaced data.table
+  if (!perform_extraction)
     return(data.table::data.table(file_name = file_name))
-  }
+
   database_code <- extract_database_code(cif_content)
   chemical_formula <- extract_chemical_formula(cif_content)
   structure_type <- extract_structure_type(cif_content)
@@ -147,39 +134,15 @@ analyze_single_cif <- function(cif_content,
   atomic_coordinates <- extract_atomic_coordinates(cif_content, chemical_formula)
   symmetry_operations <- extract_symmetry_operations(cif_content)
 
-  # --- Step 2: Validate Essential Data for Calculations ---
-  failure_reasons <- c()
-  if (is.null(atomic_coordinates))
-    failure_reasons <- c(failure_reasons, "missing atomic coordinates")
-  if (is.null(symmetry_operations))
-    failure_reasons <- c(failure_reasons, "missing symmetry operations")
-  if (is.null(unit_cell_metrics)) {
-    failure_reasons <- c(failure_reasons, "missing unit cell metrics block")
-  } else {
-    required_metrics <- c(
-      "_cell_length_a",
-      "_cell_length_b",
-      "_cell_length_c",
-      "_cell_angle_alpha",
-      "_cell_angle_beta",
-      "_cell_angle_gamma"
-    )
-    if (any(is.na(unit_cell_metrics[, ..required_metrics]))) {
-      failure_reasons <- c(failure_reasons, "incomplete unit cell parameters")
-    }
-  }
-
-  if (length(failure_reasons) > 0) {
-    warning(
-      paste(
-        "Skipping calculations for file '",
-        file_name,
-        "' due to: ",
-        paste(failure_reasons, collapse = "; "),
-        ".",
-        sep = ""
-      )
-    )
+  # --- Step 2: Validate Essential Data ---
+  if (is.null(atomic_coordinates) ||
+      is.null(symmetry_operations) || is.null(unit_cell_metrics)) {
+    warning(paste(
+      "Skipping '",
+      file_name,
+      "': missing essential structural data.",
+      sep = ""
+    ))
     return(NULL)
   }
 
@@ -196,9 +159,18 @@ analyze_single_cif <- function(cif_content,
 
   # --- Step 4: Calculations, Transformations, and Expansions ---
   if (perform_calcs_and_transforms) {
-    transformed_coords <- apply_symmetry_operations(atomic_coordinates, symmetry_operations)
+    # No precision calculation anymore. We use distance clustering.
+
+    transformed_coords <- apply_symmetry_operations(
+      atomic_coordinates,
+      symmetry_operations,
+      unit_cell_metrics,
+      tolerance = tolerance # This is used for clustering
+    )
+
     expanded_coords <- expand_transformed_coords(transformed_coords)
-    # Passed the tolerance parameter down to calculate_distances
+
+    # tolerance used here for filtering floating point noise in distance calculation
     distances <- calculate_distances(atomic_coordinates,
                                      expanded_coords,
                                      unit_cell_metrics,
@@ -213,12 +185,11 @@ analyze_single_cif <- function(cif_content,
     for (algo in unique(bonding_algorithms)) {
       current_bonds <- switch(
         algo,
-        # Updated to use the user-provided delta
         "minimum_distance" = minimum_distance(distances, delta = minimum_distance_delta),
         "brunner" = brunner(distances),
         "hoppe" = hoppe(distances),
         {
-          warning(paste("Invalid bonding algorithm '", algo, "' ignored.", sep = ""))
+          warning(paste("Invalid algorithm '", algo, "' ignored.", sep = ""))
           NULL
         }
       )
@@ -238,7 +209,7 @@ analyze_single_cif <- function(cif_content,
     }
   }
 
-  # --- Step 6: Bond Angles ---
+  # --- Step 6 & 7: Angles & Errors ---
   if (calculate_bond_angles && !is.null(primary_bonded_pairs)) {
     bond_angles <- calculate_angles(primary_bonded_pairs,
                                     atomic_coordinates,
@@ -246,9 +217,7 @@ analyze_single_cif <- function(cif_content,
                                     unit_cell_metrics)
   }
 
-  # --- Step 7: Error Propagation ---
   if (perform_error_propagation) {
-    # These functions are designed to treat NA errors as 0.
     if (!is.null(bonded_pairs_md))
       bonded_pairs_md <- propagate_distance_error(bonded_pairs_md, atomic_coordinates, unit_cell_metrics)
     if (!is.null(bonded_pairs_brunner))
@@ -266,8 +235,6 @@ analyze_single_cif <- function(cif_content,
                                            unit_cell_metrics)
   }
 
-  # --- Assemble Final Results ---
-  # Namespaced data.table
   return(
     data.table::data.table(
       file_name = file_name,
@@ -325,9 +292,7 @@ analyze_cif_files <- function(file_paths,
                               output_dir = NULL,
                               batch_size = 1000,
                               ...) {
-  # --- 1. Handle Input: File Paths or Pre-parsed List ---
   if (is.character(file_paths)) {
-    # Check if the input is a single directory path
     if (length(file_paths) == 1 && dir.exists(file_paths)) {
       message(sprintf(
         "Input is a directory. Searching for .cif files in '%s'...",
@@ -339,30 +304,25 @@ analyze_cif_files <- function(file_paths,
         full.names = TRUE,
         ignore.case = TRUE
       )
-
       if (length(found_files) == 0) {
         warning(sprintf("No .cif files found in directory '%s'.", file_paths))
-        # Namespaced data.table
         return(data.table::data.table())
       }
       file_paths <- found_files
     }
-
     cif_contents_list <- read_cif_files(file_paths)
   } else if (is.list(file_paths) &&
              (length(file_paths) == 0 ||
               inherits(file_paths[[1]], "data.table"))) {
     cif_contents_list <- file_paths
-    if (is.null(names(cif_contents_list))) {
+    if (is.null(names(cif_contents_list)))
       names(cif_contents_list) <- paste0("unnamed_", seq_along(cif_contents_list))
-    }
   } else {
     stop(
       "`file_paths` must be a character vector of paths, a directory path, or a list of data.tables."
     )
   }
 
-  # --- 2. Set Up Parallel Plan if specified ---
   if (workers > 1) {
     if (!requireNamespace("future", quietly = TRUE) ||
         !requireNamespace("future.apply", quietly = TRUE)) {
@@ -371,46 +331,35 @@ analyze_cif_files <- function(file_paths,
         call. = FALSE
       )
     }
-    # Set up the plan and ensure it's reverted on exit
     old_plan <- future::plan()
     on.exit(future::plan(old_plan), add = TRUE)
     message(paste0("Setting parallel plan to use ", workers, " workers."))
     future::plan(future::multisession, workers = workers)
   }
 
-  # --- 3. Main Logic: Batch Processing ---
   total_files <- length(cif_contents_list)
   if (total_files == 0) {
     message("No files to process.")
-    # Namespaced data.table
     return(data.table::data.table())
   }
 
   batch_starts <- seq(1, total_files, by = batch_size)
   num_batches <- length(batch_starts)
-
-  # Store all results here if not writing to disk
   all_results_list <- if (is.null(output_dir))
     list()
   else
     NULL
-
   message(sprintf(
     "Starting analysis of %d files in %d batches.",
     total_files,
     num_batches
   ))
-
-  # List of extra arguments for the worker
   more_args <- list(...)
 
   for (i in seq_along(batch_starts)) {
     start_index <- batch_starts[i]
     end_index <- min(start_index + batch_size - 1, total_files)
-
-    # Create the small batch to be processed
     cif_batch <- cif_contents_list[start_index:end_index]
-
     message(
       sprintf(
         "\n--- Processing Batch %d of %d (Files %d to %d) ---",
@@ -421,9 +370,6 @@ analyze_cif_files <- function(file_paths,
       )
     )
 
-    # This is the key change: we call our safe, top-level worker.
-    # The 'future.apply' function sends ONLY the small 'cif_batch' and its names
-    # to the workers, avoiding the memory overload.
     results_list <- if (workers > 1) {
       future.apply::future_mapply(
         FUN = .analyze_single_cif_safe,
@@ -434,7 +380,6 @@ analyze_cif_files <- function(file_paths,
         future.seed = TRUE
       )
     } else {
-      # Fallback to sequential mapply if workers = 1
       mapply(
         FUN = .analyze_single_cif_safe,
         cif_content = cif_batch,
@@ -445,16 +390,11 @@ analyze_cif_files <- function(file_paths,
     }
 
     successful_results <- results_list[!sapply(results_list, is.null)]
-
     if (length(successful_results) > 0) {
-      # Namespaced rbindlist
       batch_dt <- data.table::rbindlist(successful_results, fill = TRUE)
-
       if (is.null(output_dir)) {
-        # Mode 1: Append to list for in-memory aggregation
         all_results_list[[i]] <- batch_dt
       } else {
-        # Mode 2: Save batch to its own file on disk
         if (!dir.exists(output_dir))
           dir.create(output_dir, recursive = TRUE)
         batch_filename <- file.path(output_dir, paste0("batch_", i, ".rds"))
@@ -474,19 +414,13 @@ analyze_cif_files <- function(file_paths,
         i
       ))
     }
-
-    # Clean up memory
     rm(cif_batch, results_list, successful_results)
     gc()
   }
 
-  # --- 4. Finalize and Return ---
   message("----------------------------------\nAnalysis Complete!")
-
   if (is.null(output_dir)) {
-    # In-memory mode: combine all batch results and return
     if (length(all_results_list) > 0) {
-      # Namespaced rbindlist
       final_dt <- data.table::rbindlist(all_results_list, fill = TRUE)
       message(sprintf(
         "Successfully processed a total of %d structures.",
@@ -495,11 +429,9 @@ analyze_cif_files <- function(file_paths,
       return(final_dt)
     } else {
       warning("No structures were processed successfully.")
-      # Namespaced data.table
       return(data.table::data.table())
     }
   } else {
-    # Batch-to-disk mode: return the path to the results directory
     message(sprintf(
       "Batch results have been saved in the '%s/' directory.",
       normalizePath(output_dir)

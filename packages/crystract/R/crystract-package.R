@@ -15,7 +15,7 @@
 #'
 #' @importFrom data.table .N := .SD as.data.table copy data.table fread rbindlist set setkey setnames
 #' @importFrom dplyr distinct
-#' @importFrom stats na.omit
+#' @importFrom stats as.dist cutree hclust na.omit
 #' @importFrom stringr str_match str_split_fixed
 #' @importFrom utils combn globalVariables
 NULL

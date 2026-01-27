@@ -4,12 +4,21 @@
 \alias{apply_symmetry_operations}
 \title{Apply Symmetry Operations to Generate a Full Unit Cell}
 \usage{
-apply_symmetry_operations(atomic_coordinates, symmetry_operations)
+apply_symmetry_operations(
+  atomic_coordinates,
+  symmetry_operations,
+  unit_cell_metrics,
+  tolerance = 0.1
+)
 }
 \arguments{
 \item{atomic_coordinates}{A \code{data.table} of asymmetric atoms.}
 
 \item{symmetry_operations}{A \code{data.table} of operations.}
+
+\item{unit_cell_metrics}{A \code{data.table} of cell parameters (needed for distance merging).}
+
+\item{tolerance}{Numeric. The distance tolerance in Angstroms for merging close atoms.}
 }
 \value{
 A \code{data.table} containing all unique atomic positions in the unit cell.
