@@ -36,7 +36,7 @@ crystal_nn(
 A \code{data.table} of bonded pairs.
 }
 \description{
-Exact port of Pymatgen's \code{CrystalNN} weighting logic.
+Port of Pymatgen's \code{CrystalNN} weighting logic.
 }
 \seealso{
 Other bonding algorithms: 

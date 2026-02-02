@@ -4,7 +4,7 @@
 \alias{econ_nn}
 \title{Identify Atomic Bonds using Hoppe's EconNN Method}
 \usage{
-econ_nn(distances, atomic_coordinates, tol = 0.2)
+econ_nn(distances, atomic_coordinates, tol = 0.2, cation_anion = FALSE)
 }
 \arguments{
 \item{distances}{A \code{data.table} of interatomic distances.}
@@ -12,13 +12,14 @@ econ_nn(distances, atomic_coordinates, tol = 0.2)
 \item{atomic_coordinates}{A \code{data.table} of atomic coordinates used to map species to radii.}
 
 \item{tol}{A bond strength cutoff (default 0.2).}
+
+\item{cation_anion}{Logical. If TRUE, restricts bonding to sites with opposite or zero charge.}
 }
 \value{
 A \code{data.table} of bonded pairs.
 }
 \description{
 Uses Effective Coordination Numbers (ECoN) and Mean Fictive Ionic Radii (MEFIR).
-Matches pymatgen logic regarding MEFIR initialization and iteration.
 }
 \seealso{
 Other bonding algorithms: 
