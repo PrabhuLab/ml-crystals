@@ -23,7 +23,8 @@ Imports:
     dplyr,
     stringr,
     future,
-    future.apply
+    future.apply,
+    geometry
 Suggests:
     DT,
     ggplot2,

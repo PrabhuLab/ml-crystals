@@ -2,7 +2,7 @@
 % Please edit documentation in R/calculate_properties.R
 \name{calculate_neighbor_counts}
 \alias{calculate_neighbor_counts}
-\title{Calculate Neighbor Counts}
+\title{Calculate Coordination Numbers}
 \usage{
 calculate_neighbor_counts(bonded_pairs_table)
 }
@@ -10,7 +10,7 @@ calculate_neighbor_counts(bonded_pairs_table)
 \item{bonded_pairs_table}{A \code{data.table} of bonded pairs.}
 }
 \value{
-A \code{data.table} with columns 'Atom' and 'NeighborCount'.
+A \code{data.table} with columns 'Atom' and 'CoordinationNumber'.
 }
 \description{
 Counts the number of nearest neighbors for each central atom based on

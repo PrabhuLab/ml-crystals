@@ -18,5 +18,7 @@
 #' @keywords internal
 .onLoad <- function(libname, pkgname) {
   # This makes the data available for use within the package's internal functions.
-  utils::data("covalent_radii", package = pkgname, envir = parent.env(environment()))
+  utils::data("covalent_radii",
+              package = pkgname,
+              envir = parent.env(environment()))
 }

@@ -69,8 +69,10 @@ read_cif_files <- function(file_paths) {
 #'   unit cell, expands it, and calculates interatomic distances.
 #' @param bonding_algorithms A character vector of bonding algorithms to use.
 #'   The first algorithm is used for subsequent angle/neighbor calculations.
-#'   Options: `"minimum_distance"`, `"brunner"`, `"hoppe"`. Use `"none"` to skip.
-#' @param calculate_bond_angles Logical. If `TRUE`, computes bond angles.
+#'   Options: `"minimum_distance"`, `"brunner"`, `"econ"`, `"crystal_nn"`, `"voronoi"`.
+#'   Use `"none"` to skip.
+#' @param calculate_bond_angles Logical. If `TRUE`, computes bond angles for
+#'   each applied bonding algorithm.
 #' @param perform_error_propagation Logical. If `TRUE`, calculates uncertainties.
 #'   Any missing error values in the CIF file are treated as zero.
 #' @param tolerance Numeric. The cutoff distance (default 1e-4) below which
@@ -136,7 +138,8 @@ analyze_single_cif <- function(cif_content,
 
   # --- Step 2: Validate Essential Data ---
   if (is.null(atomic_coordinates) ||
-      is.null(symmetry_operations) || is.null(unit_cell_metrics)) {
+      is.null(symmetry_operations) ||
+      is.null(unit_cell_metrics)) {
     warning(paste(
       "Skipping '",
       file_name,
@@ -150,112 +153,117 @@ analyze_single_cif <- function(cif_content,
   transformed_coords <- NULL
   expanded_coords <- NULL
   distances <- NULL
-  bonded_pairs_md <- NULL
-  bonded_pairs_brunner <- NULL
-  bonded_pairs_hoppe <- NULL
-  primary_bonded_pairs <- NULL
-  neighbor_counts <- NULL
-  bond_angles <- NULL
+
+  # List to store dynamic results
+  algo_results <- list()
 
   # --- Step 4: Calculations, Transformations, and Expansions ---
   if (perform_calcs_and_transforms) {
-    # No precision calculation anymore. We use distance clustering.
-
-    transformed_coords <- apply_symmetry_operations(
-      atomic_coordinates,
-      symmetry_operations,
-      unit_cell_metrics,
-      tolerance = tolerance # This is used for clustering
-    )
+    transformed_coords <- apply_symmetry_operations(atomic_coordinates,
+                                                    symmetry_operations,
+                                                    unit_cell_metrics,
+                                                    tolerance = tolerance)
 
     expanded_coords <- expand_transformed_coords(transformed_coords)
 
-    # tolerance used here for filtering floating point noise in distance calculation
     distances <- calculate_distances(atomic_coordinates,
                                      expanded_coords,
                                      unit_cell_metrics,
                                      tolerance = tolerance)
   }
 
-  # --- Step 5: Bonding Algorithms ---
+  # --- Step 5: Bonding Algorithms & Step 6: Angles & Errors ---
   if (!is.null(distances) &&
       length(bonding_algorithms) > 0 &&
       !"none" %in% bonding_algorithms) {
-    primary_algo <- bonding_algorithms[1]
     for (algo in unique(bonding_algorithms)) {
       current_bonds <- switch(
         algo,
         "minimum_distance" = minimum_distance(distances, delta = minimum_distance_delta),
-        "brunner" = brunner(distances),
-        "hoppe" = hoppe(distances),
+        "brunner" = brunner_nn_reciprocal(distances),
+        "econ" = econ_nn(distances, atomic_coordinates),
+        "voronoi" = voronoi_nn(atomic_coordinates, expanded_coords, unit_cell_metrics),
+        "crystal_nn" = crystal_nn(
+          distances,
+          atomic_coordinates,
+          expanded_coords,
+          unit_cell_metrics
+        ),
         {
           warning(paste("Invalid algorithm '", algo, "' ignored.", sep = ""))
           NULL
         }
       )
-      if (is.null(current_bonds))
-        next
-      if (algo == "minimum_distance")
-        bonded_pairs_md <- current_bonds
-      if (algo == "brunner")
-        bonded_pairs_brunner <- current_bonds
-      if (algo == "hoppe")
-        bonded_pairs_hoppe <- current_bonds
-      if (algo == primary_algo)
-        primary_bonded_pairs <- current_bonds
+
+      # Only process if valid results were returned
+      if (!is.null(current_bonds) && nrow(current_bonds) > 0) {
+        # Normalize naming for output key
+        out_algo_name <- algo
+
+        # 1. Propagate bond error if requested
+        if (perform_error_propagation) {
+          current_bonds <- propagate_distance_error(current_bonds,
+                                                    atomic_coordinates,
+                                                    unit_cell_metrics)
+        }
+
+        # 2. Store bonds in results list
+        algo_results[[paste0("bonds_", out_algo_name)]] <- list(current_bonds)
+
+        # 3. Calculate and store Coordination Number for THIS algorithm
+        cn_table <- calculate_neighbor_counts(current_bonds)
+        algo_results[[paste0("cn_", out_algo_name)]] <- list(cn_table)
+
+        # 4. Calculate angles for THIS algorithm if requested
+        if (calculate_bond_angles) {
+          current_angles <- calculate_angles(current_bonds,
+                                             atomic_coordinates,
+                                             expanded_coords,
+                                             unit_cell_metrics)
+
+          # Propagate angle error
+          if (perform_error_propagation &&
+              !is.null(current_angles) &&
+              nrow(current_angles) > 0) {
+            current_angles <- propagate_angle_error(
+              current_angles,
+              atomic_coordinates,
+              expanded_coords,
+              unit_cell_metrics
+            )
+          }
+
+          algo_results[[paste0("angles_", out_algo_name)]] <- list(current_angles)
+        }
+      }
     }
-    if (!is.null(primary_bonded_pairs)) {
-      neighbor_counts <- calculate_neighbor_counts(primary_bonded_pairs)
-    }
   }
 
-  # --- Step 6 & 7: Angles & Errors ---
-  if (calculate_bond_angles && !is.null(primary_bonded_pairs)) {
-    bond_angles <- calculate_angles(primary_bonded_pairs,
-                                    atomic_coordinates,
-                                    expanded_coords,
-                                    unit_cell_metrics)
-  }
-
-  if (perform_error_propagation) {
-    if (!is.null(bonded_pairs_md))
-      bonded_pairs_md <- propagate_distance_error(bonded_pairs_md, atomic_coordinates, unit_cell_metrics)
-    if (!is.null(bonded_pairs_brunner))
-      bonded_pairs_brunner <- propagate_distance_error(bonded_pairs_brunner,
-                                                       atomic_coordinates,
-                                                       unit_cell_metrics)
-    if (!is.null(bonded_pairs_hoppe))
-      bonded_pairs_hoppe <- propagate_distance_error(bonded_pairs_hoppe,
-                                                     atomic_coordinates,
-                                                     unit_cell_metrics)
-    if (!is.null(bond_angles))
-      bond_angles <- propagate_angle_error(bond_angles,
-                                           atomic_coordinates,
-                                           expanded_coords,
-                                           unit_cell_metrics)
-  }
-
-  return(
-    data.table::data.table(
-      file_name = file_name,
-      database_code = database_code,
-      chemical_formula = chemical_formula,
-      structure_type = structure_type,
-      space_group_name = space_group_name,
-      space_group_number = space_group_number,
-      unit_cell_metrics = list(unit_cell_metrics),
-      atomic_coordinates = list(atomic_coordinates),
-      symmetry_operations = list(symmetry_operations),
-      transformed_coords = list(transformed_coords),
-      expanded_coords = list(expanded_coords),
-      distances = list(distances),
-      bonded_pairs_minimum_distance = list(bonded_pairs_md),
-      bonded_pairs_brunner = list(bonded_pairs_brunner),
-      bonded_pairs_hoppe = list(bonded_pairs_hoppe),
-      neighbor_counts = list(neighbor_counts),
-      bond_angles = list(bond_angles)
-    )
+  # --- Step 7: Construct Return Data Table ---
+  # Base metadata
+  final_dt <- data.table::data.table(
+    file_name = file_name,
+    database_code = database_code,
+    chemical_formula = chemical_formula,
+    structure_type = structure_type,
+    space_group_name = space_group_name,
+    space_group_number = space_group_number,
+    unit_cell_metrics = list(unit_cell_metrics),
+    atomic_coordinates = list(atomic_coordinates),
+    symmetry_operations = list(symmetry_operations),
+    transformed_coords = list(transformed_coords),
+    expanded_coords = list(expanded_coords),
+    distances = list(distances)
   )
+
+  # Add dynamic algorithm results (bonds, CNs, angles)
+  if (length(algo_results) > 0) {
+    for (res_name in names(algo_results)) {
+      set(final_dt, j = res_name, value = algo_results[[res_name]])
+    }
+  }
+
+  return(final_dt)
 }
 
 #' @title Analyze a Batch of CIF Files

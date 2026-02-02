@@ -29,22 +29,6 @@ A \code{data.table} of all non-zero distances.
 Computes the distances between a central set of atoms and an
 expanded set, using the metric tensor for accuracy.
 }
-\examples{
-# Example setup
-cif_file <- system.file("extdata", "ICSD422.cif", package = "crystract")
-if (file.exists(cif_file)) {
-  cif_content <- read_cif_files(cif_file)[[1]]
-  atoms <- extract_atomic_coordinates(cif_content)
-  metrics <- extract_unit_cell_metrics(cif_content)
-  sym_ops <- extract_symmetry_operations(cif_content)
-  full_cell <- apply_symmetry_operations(atoms, sym_ops)
-  super_cell <- expand_transformed_coords(full_cell)
-
-  # Increase tolerance if you see tiny "ghost" distances (e.g. 1e-5)
-  dists <- calculate_distances(atoms, super_cell, metrics, tolerance = 1e-4)
-  print(head(dists))
-}
-}
 \seealso{
 Other property calculators: 
 \code{\link{calculate_angles}()},

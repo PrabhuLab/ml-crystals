@@ -10,21 +10,6 @@
 #' @return A `data.table` of all non-zero distances.
 #' @family property calculators
 #' @export
-#' @examples
-#' # Example setup
-#' cif_file <- system.file("extdata", "ICSD422.cif", package = "crystract")
-#' if (file.exists(cif_file)) {
-#'   cif_content <- read_cif_files(cif_file)[[1]]
-#'   atoms <- extract_atomic_coordinates(cif_content)
-#'   metrics <- extract_unit_cell_metrics(cif_content)
-#'   sym_ops <- extract_symmetry_operations(cif_content)
-#'   full_cell <- apply_symmetry_operations(atoms, sym_ops)
-#'   super_cell <- expand_transformed_coords(full_cell)
-#'
-#'   # Increase tolerance if you see tiny "ghost" distances (e.g. 1e-5)
-#'   dists <- calculate_distances(atoms, super_cell, metrics, tolerance = 1e-4)
-#'   print(head(dists))
-#' }
 calculate_distances <- function(atomic_coordinates,
                                 expanded_coords,
                                 unit_cell_metrics,
@@ -80,19 +65,19 @@ calculate_distances <- function(atomic_coordinates,
   return(distances)
 }
 
-#' @title Calculate Neighbor Counts
+#' @title Calculate Coordination Numbers
 #' @description Counts the number of nearest neighbors for each central atom based on
 #'   a table of bonded pairs.
 #' @param bonded_pairs_table A `data.table` of bonded pairs.
-#' @return A `data.table` with columns 'Atom' and 'NeighborCount'.
+#' @return A `data.table` with columns 'Atom' and 'CoordinationNumber'.
 #' @family property calculators
 #' @export
 calculate_neighbor_counts <- function(bonded_pairs_table) {
   if (is.null(bonded_pairs_table) || nrow(bonded_pairs_table) == 0) {
-    return(data.table(Atom = character(), NeighborCount = integer()))
+    return(data.table(Atom = character(), CoordinationNumber = integer()))
   }
 
-  neighbor_counts <- bonded_pairs_table[, .(NeighborCount = .N), by = .(Atom1)]
+  neighbor_counts <- bonded_pairs_table[, .(CoordinationNumber = .N), by = .(Atom1)]
 
   setnames(neighbor_counts, "Atom1", "Atom")
 
@@ -547,175 +532,6 @@ propagate_angle_error <- function(bond_angles,
   ))
 }
 
-#' @title Identify Atomic Bonds using the Minimum Distance Method
-#' @description Identifies bonded atoms by finding the nearest neighbor distance (d_min)
-#'   for each central atom and defining a cutoff distance (d_cut) as
-#'   d_cut = (1 + delta) * d_min.
-#' @param distances A `data.table` of interatomic distances from `calculate_distances`.
-#' @param delta The relative tolerance parameter (default 0.1 or ten percent).
-#' @return A `data.table` of bonded pairs.
-#' @family bonding algorithms
-#' @export
-#' @examples
-#' cif_file <- system.file("extdata", "ICSD422.cif", package = "crystract")
-#' if (file.exists(cif_file)) {
-#'   # Setup code
-#'   cif_content <- read_cif_files(cif_file)[[1]]
-#'   atoms <- extract_atomic_coordinates(cif_content)
-#'   metrics <- extract_unit_cell_metrics(cif_content)
-#'   sym_ops <- extract_symmetry_operations(cif_content)
-#'   full_cell <- apply_symmetry_operations(atoms, sym_ops)
-#'   super_cell <- expand_transformed_coords(full_cell)
-#'   dists <- calculate_distances(atoms, super_cell, metrics)
-#'
-#'   # Apply Minimum Distance Method
-#'   bonded <- minimum_distance(dists, delta = 0.1)
-#'   print(head(bonded))
-#' }
-minimum_distance <- function(distances, delta = 0.1) {
-  dmin <- distances[, .(dmin = min(Distance)), by = .(Atom1)]
-  dmin[, dcut := (1 + delta) * dmin]
-  bonded_pairs <- distances[dmin, on = .(Atom1), allow.cartesian = TRUE][Distance <= dcut, .(Atom1, Atom2, Distance, DeltaX, DeltaY, DeltaZ, dcut, dmin)]
-  return(bonded_pairs)
-}
-
-#' @title Identify Atomic Bonds using Brunner's Method
-#' @description (In Progress) An alternative bonding detection method using the
-#'   largest reciprocal gap.
-#' @param distances A `data.table` of interatomic distances.
-#' @param delta A small distance offset (default 0.0001).
-#' @return A `data.table` of bonded pairs.
-#' @family bonding algorithms
-#' @export
-brunner <- function(distances, delta = 0.0001) {
-  if (nrow(distances) == 0) {
-    return(
-      data.table(
-        Atom1 = character(),
-        Atom2 = character(),
-        Distance = numeric(),
-        DeltaX = numeric(),
-        DeltaY = numeric(),
-        DeltaZ = numeric()
-      )
-    )
-  }
-
-  bonds_list <- lapply(split(distances, by = "Atom1"), function(atom_distances_sub_dt) {
-    # Sort by Distance within each atom group
-    atom_distances_sub_dt <- atom_distances_sub_dt[order(Distance)]
-
-    if (nrow(atom_distances_sub_dt) < 2) {
-      return(NULL) # Need at least two distances to form a gap
-    }
-
-    # Calculate reciprocal gaps in a vectorized manner
-    reciprocal_gaps <- 1 / atom_distances_sub_dt$Distance[1:(nrow(atom_distances_sub_dt) - 1)] -
-      1 / atom_distances_sub_dt$Distance[2:nrow(atom_distances_sub_dt)]
-
-    # Find the index of the largest gap
-    j_max <- which.max(reciprocal_gaps)
-
-    # Determine cutoff distance
-    d_cut <- atom_distances_sub_dt$Distance[j_max] + delta
-
-    # Filter for bonds and return relevant columns (including DeltaX, DeltaY, DeltaZ)
-    atom_distances_sub_dt[Distance <= d_cut, .(Atom1, Atom2, Distance, DeltaX, DeltaY, DeltaZ)]
-  })
-
-  # Combine results
-  if (length(bonds_list) > 0) {
-    return(rbindlist(bonds_list, fill = TRUE))
-  } else {
-    return(
-      data.table(
-        Atom1 = character(),
-        Atom2 = character(),
-        Distance = numeric(),
-        DeltaX = numeric(),
-        DeltaY = numeric(),
-        DeltaZ = numeric()
-      )
-    )
-  }
-}
-
-#' @title Identify Atomic Bonds using Hoppe's Method
-#' @description (In Progress) An alternative bonding detection method using
-#'   Effective Coordination Numbers.
-#' @param distances A `data.table` of interatomic distances.
-#' @param delta A bond strength cutoff (default 0.5).
-#' @param tolerance The convergence tolerance for iterative calculation.
-#' @return A `data.table` of bonded pairs.
-#' @family bonding algorithms
-#' @export
-hoppe <- function(distances,
-                  delta = 0.5,
-                  tolerance = 0.001) {
-  if (nrow(distances) == 0) {
-    return(
-      data.table(
-        Atom1 = character(),
-        Atom2 = character(),
-        Distance = numeric(),
-        DeltaX = numeric(),
-        DeltaY = numeric(),
-        DeltaZ = numeric()
-      )
-    )
-  }
-
-  bonded_pairs_list <- lapply(split(distances, by = "Atom1"), function(atom_distances_sub_dt) {
-    if (nrow(atom_distances_sub_dt) == 0)
-      return(NULL)
-
-    dmin <- min(atom_distances_sub_dt$Distance)
-    if (dmin == 0)
-      return(NULL) # Avoid division by zero if an atom is its own neighbor (should be filtered earlier with Distance > 1e-6)
-
-    # Initial davg calculation
-    exp_term_initial <- exp(1 - (atom_distances_sub_dt$Distance / dmin)^6)
-    davg <- sum(atom_distances_sub_dt$Distance * exp_term_initial) / sum(exp_term_initial)
-
-    # Iterative refinement of davg
-    while (TRUE) {
-      prev_davg <- davg
-      if (prev_davg == 0)
-        break # Avoid division by zero if davg collapses to zero
-
-      exp_term <- exp(1 - (atom_distances_sub_dt$Distance / prev_davg)^6)
-      denom_sum <- sum(exp_term)
-
-      if (denom_sum == 0) {
-        # All exp_term are ~0, division by zero likely
-        davg <- prev_davg # Cannot refine further, keep last davg
-        break
-      }
-      davg <- sum(atom_distances_sub_dt$Distance * exp_term) / denom_sum
-      if (abs(davg - prev_davg) <= tolerance)
-        break
-    }
-
-    atom_distances_sub_dt[, BondStrength := exp(1 - (Distance / davg)^6)]
-    # Return all necessary columns for subsequent error propagation
-    atom_distances_sub_dt[BondStrength >= delta, .(Atom1, Atom2, Distance, DeltaX, DeltaY, DeltaZ)]
-  })
-
-  if (length(bonded_pairs_list) > 0) {
-    return(rbindlist(bonded_pairs_list, fill = TRUE))
-  } else {
-    return(
-      data.table(
-        Atom1 = character(),
-        Atom2 = character(),
-        Distance = numeric(),
-        DeltaX = numeric(),
-        DeltaY = numeric(),
-        DeltaZ = numeric()
-      )
-    )
-  }
-}
 #' @title Filter Data by Atom Symbol Interactively
 #' @description Prompts the user to select chemical elements to keep in a data table
 #'   of bonds or angles. Filtering is based on matching the base chemical symbol
@@ -1069,7 +885,8 @@ filter_ghost_distances <- function(distances,
 
   # --- 3. Apply the filter ---
   kept_mask <- merged$Distance >= merged$lower_bound &
-    merged$Distance <= merged$upper_bound & merged$expected_dist > 0
+    merged$Distance <= merged$upper_bound &
+    merged$expected_dist > 0
   kept_dt <- merged[kept_mask, names(distances), with = FALSE]
   # Create a detailed table of removed rows for quality control
   removed_dt <- merged[!kept_mask, .(
@@ -1132,7 +949,6 @@ calculate_weighted_average_network_distance <- function(distances,
     all.x = TRUE
   )
   network_distances[is.na(Occupancy2), Occupancy2 := 1]
-  # --- END: ADDED SECTION ---
 
   # --- 3. Calculate SIMPLE sum of distances (sum_d) and coordination (n) ---
   atom_dist_summary <- network_distances[, .(

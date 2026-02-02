@@ -124,16 +124,112 @@ extract_unit_cell_metrics <- function(cif_content) {
   return(data.table::as.data.table(c(values, errors)))
 }
 
+#' @title Extract Atom Type Information (Internal)
+#' @description Parses the `_atom_type_` loop to get oxidation states and other
+#' species-specific metadata defined globally in the CIF.
+#' @param cif_content A `data.table` containing the lines of a CIF file.
+#' @return A `data.table` mapping Symbol to OxidationState, or NULL.
+#' @noRd
+extract_atom_type_info <- function(cif_content) {
+  # 1. Identify Loop
+  header_pattern <- "^\\s*_atom_type_symbol"
+  idx <- grep(header_pattern, cif_content$V1)
+
+  if (length(idx) == 0)
+    return(NULL)
+  first_header_idx <- idx[1]
+
+  # Find start of loop
+  loop_start <- max(grep("^\\s*loop_", cif_content$V1[1:first_header_idx]))
+  if (is.infinite(loop_start))
+    return(NULL)
+
+  # 2. Parse Headers
+  line_indices <- (loop_start + 1):nrow(cif_content)
+  headers <- character()
+  first_data_line <- 0
+
+  for (i in line_indices) {
+    line <- trimws(cif_content$V1[i])
+    if (line == "" || startsWith(line, "#"))
+      next
+    if (startsWith(line, "_")) {
+      headers <- c(headers, line)
+    } else {
+      first_data_line <- i
+      break
+    }
+  }
+
+  # 3. Check for specific columns
+  sym_idx <- which(headers == "_atom_type_symbol")
+  ox_idx  <- which(headers == "_atom_type_oxidation_number")
+
+  if (length(sym_idx) == 0)
+    return(NULL)
+
+  # 4. Extract Data Block
+  end_candidates <- c(
+    grep("^\\s*loop_|^\\s*_|^\\s*#", cif_content$V1[first_data_line:nrow(cif_content)]),
+    grep("^\\s*$", cif_content$V1[first_data_line:nrow(cif_content)])
+  )
+
+  last_data_line <- if (length(end_candidates) > 0)
+    first_data_line + min(end_candidates) - 2
+  else
+    nrow(cif_content)
+
+  if (first_data_line > last_data_line)
+    return(NULL)
+
+  data_lines <- cif_content$V1[first_data_line:last_data_line]
+
+  # Parse using fread for robustness
+  dt_raw <- data.table::fread(
+    text = paste(data_lines, collapse = "\n"),
+    header = FALSE,
+    sep = "auto",
+    quote = ""
+  )
+
+  # Helper to clean strings
+  clean_val <- function(x)
+    gsub("^'|'$|^\"|\"$", "", as.character(x))
+
+  # Extract Symbols
+  if (sym_idx > ncol(dt_raw))
+    return(NULL)
+  symbols <- clean_val(dt_raw[[sym_idx]])
+
+  # Extract Oxidation (if present)
+  oxi_states <- rep(NA_real_, nrow(dt_raw))
+  if (length(ox_idx) > 0 && ox_idx <= ncol(dt_raw)) {
+    # Remove brackets for uncertainty e.g. "2.0(1)" -> 2.0
+    raw_ox <- clean_val(dt_raw[[ox_idx]])
+    raw_ox <- gsub("\\(.*\\)", "", raw_ox)
+    oxi_states <- as.numeric(raw_ox)
+  }
+
+  return(data.table::data.table(Symbol = symbols, OxidationState = oxi_states))
+}
+
 #' @title Extract Atomic Coordinates
 #' @description Parses atomic site info, including labels, fractional coordinates,
-#'   and other properties. It efficiently normalizes atom labels to a
-#'   'SymbolNumber' format and validates them against the chemical formula.
+#'   occupancies, oxidation states, and thermal parameters. It efficiently
+#'   normalizes atom labels to a 'SymbolNumber' format and validates them
+#'   against the chemical formula.
 #' @param cif_content A `data.table` containing the lines of a CIF file.
 #' @param chemical_formula The chemical formula string for validation.
 #' @return A `data.table` with atomic coordinate data, or `NULL` if not found.
 #' @family extractors
 #' @export
 extract_atomic_coordinates <- function(cif_content, chemical_formula = NA) {
+  # --- 0. Pre-fetch Atom Type Info (for Oxidation State Lookup) ---
+  # This part assumes a helper function extract_atom_type_info exists.
+  # Since it's not provided, its call is commented out but the logic to use it remains.
+  # atom_type_info <- extract_atom_type_info(cif_content)
+  atom_type_info <- NULL # Placeholder
+
   # --- 1. Find Header Block ---
   # Regex: Matches start of line (^), optional whitespace (\\s*), then the tag
   first_header_line_idx <- grep("^\\s*_atom_site_fract_x", cif_content$V1)
@@ -170,12 +266,16 @@ extract_atomic_coordinates <- function(cif_content, chemical_formula = NA) {
 
   tags_to_find <- c(
     label = "_atom_site_label",
+    type_symbol = "_atom_site_type_symbol",
     x = "_atom_site_fract_x",
     y = "_atom_site_fract_y",
     z = "_atom_site_fract_z",
     occupancy = "_atom_site_occupancy",
     wyckoff = "_atom_site_Wyckoff_symbol",
-    multiplicity = "_atom_site_symmetry_multiplicity"
+    multiplicity = "_atom_site_symmetry_multiplicity",
+    oxidation = "_atom_site_oxidation_number",
+    u_iso = "_atom_site_U_iso_or_equiv",
+    b_iso = "_atom_site_B_iso_or_equiv"
   )
 
   col_indices <- sapply(tags_to_find, function(tag) {
@@ -186,6 +286,7 @@ extract_atomic_coordinates <- function(cif_content, chemical_formula = NA) {
       idx
   })
 
+  # Minimum requirements: Label and X, Y, Z
   if (anyNA(col_indices[c("label", "x", "y", "z")]))
     return(NULL)
 
@@ -215,7 +316,7 @@ extract_atomic_coordinates <- function(cif_content, chemical_formula = NA) {
     quote = ""
   )
 
-  # Clean strings (remove manual quotes if present)
+  # --- 6. Helper Functions ---
   clean_str <- function(col_data) {
     gsub("^'|'$|^\"|\"$", "", as.character(col_data))
   }
@@ -229,21 +330,14 @@ extract_atomic_coordinates <- function(cif_content, chemical_formula = NA) {
     value_str <- matches[, 2]
     error_str <- matches[, 3]
 
-    # Handle numeric conversion
     values <- as.numeric(value_str)
-
-    # Handle error scaling
     errors <- mapply(function(val_s, err_s) {
       if (is.na(err_s) || err_s == "")
-        return(0) # Default to 0 if NA
+        return(0)
       if (is.na(val_s))
         return(NA_real_)
-
-      # Check if scientific notation is present in the VALUE string
-      if (grepl("[eE]", val_s)) {
+      if (grepl("[eE]", val_s))
         return(as.numeric(err_s))
-      }
-
       decimal_pos <- regexpr("\\.", val_s)
       decimal_places <- ifelse(decimal_pos == -1, 0, nchar(val_s) - decimal_pos)
       as.numeric(err_s) * 10^(-decimal_places)
@@ -252,13 +346,14 @@ extract_atomic_coordinates <- function(cif_content, chemical_formula = NA) {
     return(list(value = values, error = errors))
   }
 
-  # Safely extract columns
   safe_extract <- function(idx) {
-    if (idx > ncol(atom_data))
+    if (is.na(idx) ||
+        idx > ncol(atom_data))
       return(rep(NA, nrow(atom_data)))
     return(atom_data[[idx]])
   }
 
+  # --- 7. Extract and Parse Core Columns ---
   x_data <- parse_vector_with_error(safe_extract(col_indices["x"]))
   y_data <- parse_vector_with_error(safe_extract(col_indices["y"]))
   z_data <- parse_vector_with_error(safe_extract(col_indices["z"]))
@@ -269,8 +364,42 @@ extract_atomic_coordinates <- function(cif_content, chemical_formula = NA) {
     list(value = rep(1.0, nrow(atom_data)),
          error = rep(NA_real_, nrow(atom_data)))
 
+  thermal_val <- rep(NA_real_, nrow(atom_data))
+  if (!is.na(col_indices["u_iso"])) {
+    thermal_val <- parse_vector_with_error(safe_extract(col_indices["u_iso"]))$value
+  } else if (!is.na(col_indices["b_iso"])) {
+    thermal_val <- parse_vector_with_error(safe_extract(col_indices["b_iso"]))$value
+  }
+
+  # --- 8. Advanced Oxidation State Logic ---
+  site_ox_vals <- rep(NA_real_, nrow(atom_data))
+
+  # Method A: Direct Site Oxidation
+  if (!is.na(col_indices["oxidation"])) {
+    raw_ox <- clean_str(safe_extract(col_indices["oxidation"]))
+    raw_ox <- gsub("\\(.*\\)", "", raw_ox) # Remove errors in parentheses
+    site_ox_vals <- as.numeric(raw_ox)
+  }
+
+  # Method B: Lookup via Type Symbol if direct method fails
+  if (all(is.na(site_ox_vals)) && !is.null(atom_type_info)) {
+    site_symbols <- if (!is.na(col_indices["type_symbol"])) {
+      clean_str(safe_extract(col_indices["type_symbol"]))
+    } else {
+      lbls <- clean_str(safe_extract(col_indices["label"]))
+      gsub("[0-9_\\+\\-].*", "", lbls) # Fallback to cleaning label
+    }
+    match_idx <- match(site_symbols, atom_type_info$Symbol)
+    site_ox_vals <- atom_type_info$OxidationState[match_idx]
+  }
+
+  # --- 9. Build Initial DataTable ---
   atomic_coordinates <- data.table::data.table(
     Label = clean_str(safe_extract(col_indices["label"])),
+    TypeSymbol = if (!is.na(col_indices["type_symbol"]))
+      clean_str(safe_extract(col_indices["type_symbol"]))
+    else
+      NA_character_,
     WyckoffSymbol = if (!is.na(col_indices["wyckoff"]))
       clean_str(safe_extract(col_indices["wyckoff"]))
     else
@@ -279,6 +408,8 @@ extract_atomic_coordinates <- function(cif_content, chemical_formula = NA) {
       as.numeric(clean_str(safe_extract(col_indices["multiplicity"])))
     else
       NA_real_,
+    OxidationState = site_ox_vals,
+    ThermalParam = thermal_val,
     Occupancy = occ_data$value,
     OccupancyError = occ_data$error,
     x_a = x_data$value,
@@ -289,14 +420,13 @@ extract_atomic_coordinates <- function(cif_content, chemical_formula = NA) {
     z_error = z_data$error
   )
 
-  # Remove rows that failed to parse (NAs in coordinates)
+  # Remove rows that failed to parse (NAs in essential coordinates)
   atomic_coordinates <- atomic_coordinates[!is.na(x_a) &
-                                             !is.na(y_b) &
-                                             !is.na(z_c)]
+                                             !is.na(y_b) & !is.na(z_c)]
   if (nrow(atomic_coordinates) == 0)
     return(NULL)
 
-  # --- 6. Heuristic Label Correction ---
+  # --- 10. Heuristic Label Correction ---
   valid_elements <- c(
     "H",
     "He",
@@ -418,7 +548,13 @@ extract_atomic_coordinates <- function(cif_content, chemical_formula = NA) {
     "Og"
   )
 
-  base_symbols <- stringr::str_extract(atomic_coordinates$Label, "^[A-Za-z]+")
+  # Use TypeSymbol if available, else derive from Label for correction
+  base_symbols <- if (!all(is.na(atomic_coordinates$TypeSymbol))) {
+    stringr::str_extract(atomic_coordinates$TypeSymbol, "^[A-Za-z]+")
+  } else {
+    stringr::str_extract(atomic_coordinates$Label, "^[A-Za-z]+")
+  }
+
   unique_base_symbols <- unique(base_symbols)
   non_standard_symbols <- setdiff(unique_base_symbols, valid_elements)
   corrections_made <- list()
@@ -448,6 +584,7 @@ extract_atomic_coordinates <- function(cif_content, chemical_formula = NA) {
         }
       }
       if (!is.na(corrected_sym)) {
+        # Apply correction to the original Label column
         indices_to_fix <- which(base_symbols == sym)
         atomic_coordinates[indices_to_fix, Label := sub("^[A-Za-z]+", corrected_sym, Label)]
         corrections_made[[sym]] <- corrected_sym
@@ -464,18 +601,11 @@ extract_atomic_coordinates <- function(cif_content, chemical_formula = NA) {
     ))
   }
 
-  # --- Normalize Labels and Ensure Uniqueness ---
-  # 1. Extract Symbol (e.g., "Fe" from "Fe_1")
+  # --- 11. Normalize Labels and Ensure Uniqueness ---
   symbols <- sub("^([A-Z][a-z]?).*", "\\1", atomic_coordinates$Label, perl = TRUE)
-
-  # 2. Extract Numbers (e.g., "1" from "Fe1", or "2" from "Fe(2)")
   numbers <- stringr::str_remove_all(atomic_coordinates$Label, "[^0-9]")
-
-  # 3. Create the base normalized label (e.g., "S", "Cu")
-  # This strips out parens, underscores, and other formatting junk
   atomic_coordinates[, Label := paste0(symbols, numbers)]
 
-  # 4. Enforce Uniqueness
   if (any(duplicated(atomic_coordinates$Label))) {
     atomic_coordinates[, Label := make.unique(Label, sep = "")]
   }

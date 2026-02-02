@@ -64,7 +64,8 @@ set_radii_data <- function(radii_data = NULL) {
     custom_dt <- data.table::as.data.table(radii_data)
 
     if (!is.character(custom_dt$Symbol) ||
-        !is.numeric(custom_dt$Radius) || !is.character(custom_dt$Type)) {
+        !is.numeric(custom_dt$Radius) ||
+        !is.character(custom_dt$Type)) {
       stop(
         "Please check column types: Symbol (character), Radius (numeric), Type (character)."
       )

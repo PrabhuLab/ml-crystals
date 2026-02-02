@@ -12,7 +12,7 @@ analyze_single_cif(
   bonding_algorithms = c("minimum_distance"),
   calculate_bond_angles = TRUE,
   perform_error_propagation = TRUE,
-  tolerance = 1e-06,
+  tolerance = 1e-04,
   minimum_distance_delta = 0.1
 )
 }
@@ -32,14 +32,16 @@ unit cell, expands it, and calculates interatomic distances.}
 
 \item{bonding_algorithms}{A character vector of bonding algorithms to use.
 The first algorithm is used for subsequent angle/neighbor calculations.
-Options: \code{"minimum_distance"}, \code{"brunner"}, \code{"hoppe"}. Use \code{"none"} to skip.}
+Options: \code{"minimum_distance"}, \code{"brunner"}, \code{"econ"}, \code{"crystal_nn"}, \code{"voronoi"}.
+Use \code{"none"} to skip.}
 
-\item{calculate_bond_angles}{Logical. If \code{TRUE}, computes bond angles.}
+\item{calculate_bond_angles}{Logical. If \code{TRUE}, computes bond angles for
+each applied bonding algorithm.}
 
 \item{perform_error_propagation}{Logical. If \code{TRUE}, calculates uncertainties.
 Any missing error values in the CIF file are treated as zero.}
 
-\item{tolerance}{Numeric. The cutoff distance (default 1e-6) below which
+\item{tolerance}{Numeric. The cutoff distance (default 1e-4) below which
 distances are considered floating-point noise and ignored. Increase this
 (e.g. to 1e-4) if "ghost" bonds appear in disordered structures.}
 

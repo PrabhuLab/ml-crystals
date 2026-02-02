@@ -16,8 +16,9 @@ A \code{data.table} with atomic coordinate data, or \code{NULL} if not found.
 }
 \description{
 Parses atomic site info, including labels, fractional coordinates,
-and other properties. It efficiently normalizes atom labels to a
-'SymbolNumber' format and validates them against the chemical formula.
+occupancies, oxidation states, and thermal parameters. It efficiently
+normalizes atom labels to a 'SymbolNumber' format and validates them
+against the chemical formula.
 }
 \seealso{
 Other extractors: 
