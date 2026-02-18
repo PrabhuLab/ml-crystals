@@ -1,85 +1,78 @@
 url: https://prabhulab.github.io/ml-crystals/
-
 template:
   bootstrap: 5
   bootswatch: litera
-
 navbar:
-  title: "crystract"
+  title: crystract
   left:
-    - text: "Reference"
-      href: reference/index.html
-    - text: "Articles"
-      menu:
-        - text: "Package Guide"
-          href: articles/crystract.html
-        - text: "Example Use Case"
-          href: articles/clathrates.html
-    # - text: "News"
-    #   href: news/index.html
+  - text: Reference
+    href: reference/index.html
+  - text: Articles
+    menu:
+    - text: Package Guide
+      href: articles/crystract.html
+    - text: Example Use Case
+      href: articles/clathrates.html
   right:
-    - icon: fa-github
-      href: https://github.com/PrabhuLab/ml-crystals
-      aria-label: "GitHub"
-
+  - icon: fa-github
+    href: https://github.com/PrabhuLab/ml-crystals
+    aria-label: GitHub
 reference:
-  - title: "Core Analysis"
-    desc: "The main entry points for processing CIF files."
-    contents:
-      - analyze_cif_files
-      - analyze_single_cif
-      - export_analysis_to_csv
+- title: Core Analysis
+  desc: The main entry points for processing CIF files.
+  contents:
+  - analyze_cif_files
+  - analyze_single_cif
+  - export_analysis_to_csv
+- title: Calculators
+  desc: Functions for geometry and crystallography calculations.
+  contents:
+  - calculate_distances
+  - calculate_angles
+  - calculate_neighbor_counts
+  - calculate_weighted_average_network_distance
+- title: Error Propagation
+  desc: Functions to propagate uncertainties through calculations.
+  contents:
+  - propagate_distance_error
+  - propagate_angle_error
+- title: Bonding Algorithms
+  desc: Methods for determining atomic connectivity.
+  contents:
+  - minimum_distance
+  - brunner_nn_reciprocal
+  - econ_nn
+  - voronoi_nn
+  - crystal_nn
+- title: Filtering & Post-Processing
+  desc: Tools to clean and refine data.
+  contents:
+  - filter_atoms_by_symbol
+  - filter_by_wyckoff_symbol
+  - filter_by_elements
+  - filter_ghost_distances
+  - aggregate_batch_results
+- title: Coordinate Transformations
+  desc: Tools for symmetry application and supercell expansion.
+  contents:
+  - apply_symmetry_operations
+  - expand_transformed_coords
+  - calculate_expansion_factors
+  - merge_sites_pbc
+- title: Data Extraction (Low-Level)
+  desc: Parsers for specific CIF data blocks.
+  contents:
+  - read_cif_files
+  - extract_atomic_coordinates
+  - extract_unit_cell_metrics
+  - extract_symmetry_operations
+  - extract_database_code
+  - extract_chemical_formula
+  - extract_structure_type
+  - extract_space_group_name
+  - extract_space_group_number
+- title: Data
+  contents:
+  - covalent_radii
+  - set_radii_data
 
-  - title: "Calculators"
-    desc: "Functions for geometry and crystallography calculations."
-    contents:
-      - calculate_distances
-      - calculate_angles
-      - calculate_neighbor_counts
-      - calculate_weighted_average_network_distance
-
-  - title: "Error Propagation"
-    desc: "Functions to propagate uncertainties through calculations."
-    contents:
-      - propagate_distance_error
-      - propagate_angle_error
-
-  - title: "Bonding Algorithms"
-    desc: "Methods for determining atomic connectivity."
-    contents:
-      - minimum_distance
-      - brunner
-      - hoppe
-
-  - title: "Filtering & Post-Processing"
-    desc: "Tools to clean and refine data."
-    contents:
-      - filter_atoms_by_symbol
-      - filter_by_wyckoff_symbol
-      - filter_by_elements
-      - filter_ghost_distances
-      - aggregate_batch_results
-
-  - title: "Coordinate Transformations"
-    desc: "Tools for symmetry application and supercell expansion."
-    contents:
-      - apply_symmetry_operations
-      - expand_transformed_coords
-
-  - title: "Data Extraction (Low-Level)"
-    desc: "Parsers for specific CIF data blocks."
-    contents:
-      - read_cif_files
-      - extract_atomic_coordinates
-      - extract_unit_cell_metrics
-      - extract_symmetry_operations
-      - extract_database_code
-      - extract_chemical_formula
-      - extract_structure_type
-      - extract_space_group_name
-      - extract_space_group_number
-
-  - title: "Data"
-    contents:
-      - covalent_radii
-      - set_radii_data
