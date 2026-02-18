@@ -46,9 +46,7 @@ is particularly useful for cleaning data from disordered crystal structures.
 }
 \seealso{
 Other post-processing: 
-\code{\link{aggregate_batch_results}()},
 \code{\link{calculate_weighted_average_network_distance}()},
-\code{\link{export_analysis_to_csv}()},
 \code{\link{set_radii_data}()}
 }
 \concept{post-processing}

@@ -1,5 +1,4 @@
-#' Generic Value Extractor (Internal)
-#'
+#' @title Generic Value Extractor (Internal)
 #' @description Extracts a single value from CIF content based on a matching text pattern.
 #' @param cif_content A data.table containing the lines of a CIF file.
 #' @param pattern The text pattern (e.g., "_database_code_") to search for.
@@ -7,7 +6,6 @@
 #' @return A character string of the cleaned value, or NA if not found.
 #' @noRd
 extract_value <- function(cif_content, pattern, remove_pattern = TRUE) {
-  # fixed = TRUE automatically handles indented lines as it searches for the substring anywhere
   matching_lines <- cif_content[grepl(pattern, V1, fixed = TRUE)]
   if (nrow(matching_lines) > 0) {
     value <- matching_lines$V1[1]
@@ -105,7 +103,6 @@ extract_unit_cell_metrics <- function(cif_content) {
   }
 
   for (param in cell_parameters) {
-    # fixed = TRUE handles indented lines automatically
     line <- cif_content[grepl(param, V1, fixed = TRUE)]$V1
     if (length(line) > 0) {
       match <- stringr::str_match(line[1], "\\s+([0-9\\.]+)(?:\\(([0-9]+)\\))?")
@@ -184,27 +181,23 @@ extract_atom_type_info <- function(cif_content) {
 
   data_lines <- cif_content$V1[first_data_line:last_data_line]
 
-  # Parse using fread for robustness
   dt_raw <- data.table::fread(
     text = paste(data_lines, collapse = "\n"),
     header = FALSE,
     sep = "auto",
-    quote = ""
+    quote = "",
+    fill = TRUE
   )
 
-  # Helper to clean strings
   clean_val <- function(x)
     gsub("^'|'$|^\"|\"$", "", as.character(x))
 
-  # Extract Symbols
   if (sym_idx > ncol(dt_raw))
     return(NULL)
   symbols <- clean_val(dt_raw[[sym_idx]])
 
-  # Extract Oxidation (if present)
   oxi_states <- rep(NA_real_, nrow(dt_raw))
   if (length(ox_idx) > 0 && ox_idx <= ncol(dt_raw)) {
-    # Remove brackets for uncertainty e.g. "2.0(1)" -> 2.0
     raw_ox <- clean_val(dt_raw[[ox_idx]])
     raw_ox <- gsub("\\(.*\\)", "", raw_ox)
     oxi_states <- as.numeric(raw_ox)
@@ -215,9 +208,8 @@ extract_atom_type_info <- function(cif_content) {
 
 #' @title Extract Atomic Coordinates
 #' @description Parses atomic site info, including labels, fractional coordinates,
-#'   occupancies, oxidation states, and thermal parameters. It efficiently
-#'   normalizes atom labels to a 'SymbolNumber' format and validates them
-#'   against the chemical formula.
+#'   occupancies, oxidation states, and thermal parameters. It includes logic
+#'   to extract oxidation states from both site tags and type loops.
 #' @param cif_content A `data.table` containing the lines of a CIF file.
 #' @param chemical_formula The chemical formula string for validation.
 #' @return A `data.table` with atomic coordinate data, or `NULL` if not found.
@@ -225,13 +217,9 @@ extract_atom_type_info <- function(cif_content) {
 #' @export
 extract_atomic_coordinates <- function(cif_content, chemical_formula = NA) {
   # --- 0. Pre-fetch Atom Type Info (for Oxidation State Lookup) ---
-  # This part assumes a helper function extract_atom_type_info exists.
-  # Since it's not provided, its call is commented out but the logic to use it remains.
-  # atom_type_info <- extract_atom_type_info(cif_content)
-  atom_type_info <- NULL # Placeholder
+  atom_type_info <- extract_atom_type_info(cif_content)
 
   # --- 1. Find Header Block ---
-  # Regex: Matches start of line (^), optional whitespace (\\s*), then the tag
   first_header_line_idx <- grep("^\\s*_atom_site_fract_x", cif_content$V1)
   if (length(first_header_line_idx) == 0) {
     first_header_line_idx <- grep("^\\s*_atom_site_label", cif_content$V1)
@@ -241,7 +229,6 @@ extract_atomic_coordinates <- function(cif_content, chemical_formula = NA) {
   first_header_line_idx <- first_header_line_idx[1]
 
   # --- 2. Find Loop Start ---
-  # Regex: Matches start of line (^), optional whitespace (\\s*), then "loop_"
   loop_start_line_idx <- max(grep("^\\s*loop_", cif_content$V1[1:first_header_line_idx]))
   if (is.infinite(loop_start_line_idx))
     return(NULL)
@@ -255,7 +242,6 @@ extract_atomic_coordinates <- function(cif_content, chemical_formula = NA) {
     line <- trimws(cif_content$V1[i])
     if (line == "" || startsWith(line, "#"))
       next
-    # trimws ensures this check works even if indented
     if (startsWith(line, "_")) {
       headers <- c(headers, line)
     } else {
@@ -286,12 +272,10 @@ extract_atomic_coordinates <- function(cif_content, chemical_formula = NA) {
       idx
   })
 
-  # Minimum requirements: Label and X, Y, Z
   if (anyNA(col_indices[c("label", "x", "y", "z")]))
     return(NULL)
 
   # --- 4. Determine Data Block Range ---
-  # Regex: Find the next loop, new tag (_), or comment (#), allowing indentation
   end_candidates <- c(
     grep("^\\s*loop_|^\\s*_|^\\s*#", cif_content$V1[first_data_line_idx:nrow(cif_content)]),
     grep("^\\s*$", cif_content$V1[first_data_line_idx:nrow(cif_content)])
@@ -308,12 +292,13 @@ extract_atomic_coordinates <- function(cif_content, chemical_formula = NA) {
   # --- 5. Read Data ---
   data_lines <- cif_content$V1[first_data_line_idx:last_data_line_idx]
 
-  # quote = "" prevents crashes on unquoted atoms like Ag or N
+  # fill=TRUE handles the footer warning ("Discarded single-line footer: <<END>>")
   atom_data <- data.table::fread(
     text = paste(data_lines, collapse = "\n"),
     header = FALSE,
     sep = "auto",
-    quote = ""
+    quote = "",
+    fill = TRUE
   )
 
   # --- 6. Helper Functions ---
@@ -323,8 +308,6 @@ extract_atomic_coordinates <- function(cif_content, chemical_formula = NA) {
 
   parse_vector_with_error <- function(coord_vector) {
     coord_vector <- clean_str(coord_vector)
-    # Group 1: Number (allows e/E notation)
-    # Group 2: Error (optional digits in parens)
     matches <- stringr::str_match(coord_vector,
                                   "([0-9\\.\\-]+(?:[eE][+\\-]?[0-9]+)?)(?:\\(([0-9]+)\\))?")
     value_str <- matches[, 2]
@@ -377,7 +360,7 @@ extract_atomic_coordinates <- function(cif_content, chemical_formula = NA) {
   # Method A: Direct Site Oxidation
   if (!is.na(col_indices["oxidation"])) {
     raw_ox <- clean_str(safe_extract(col_indices["oxidation"]))
-    raw_ox <- gsub("\\(.*\\)", "", raw_ox) # Remove errors in parentheses
+    raw_ox <- gsub("\\(.*\\)", "", raw_ox)
     site_ox_vals <- as.numeric(raw_ox)
   }
 
@@ -387,11 +370,32 @@ extract_atomic_coordinates <- function(cif_content, chemical_formula = NA) {
       clean_str(safe_extract(col_indices["type_symbol"]))
     } else {
       lbls <- clean_str(safe_extract(col_indices["label"]))
-      gsub("[0-9_\\+\\-].*", "", lbls) # Fallback to cleaning label
+      gsub("[0-9_\\+\\-].*", "", lbls)
     }
     match_idx <- match(site_symbols, atom_type_info$Symbol)
     site_ox_vals <- atom_type_info$OxidationState[match_idx]
   }
+
+  # --- 8b. Snap Coordinates to Ideal Fractions (Pymatgen Logic) ---
+  # Pymatgen CifParser rounds coordinates close to 1/3, 2/3 to avoid precision issues
+  snap_coordinate <- function(val, tolerance = 1e-4) {
+    if (is.na(val)) return(val)
+
+    # Check 1/3
+    if (abs(val * 3 - 1) < tolerance) return(1/3)
+    # Check 2/3
+    if (abs(val * 3 - 2) < tolerance) return(2/3)
+
+    # Check 0 and 1 (Standard rounding)
+    if (abs(val) < tolerance) return(0.0)
+    if (abs(val - 1) < tolerance) return(0.0) # Wrap 1 to 0
+
+    return(val)
+  }
+
+  x_vals <- sapply(x_data$value, snap_coordinate)
+  y_vals <- sapply(y_data$value, snap_coordinate)
+  z_vals <- sapply(z_data$value, snap_coordinate)
 
   # --- 9. Build Initial DataTable ---
   atomic_coordinates <- data.table::data.table(
@@ -420,9 +424,9 @@ extract_atomic_coordinates <- function(cif_content, chemical_formula = NA) {
     z_error = z_data$error
   )
 
-  # Remove rows that failed to parse (NAs in essential coordinates)
   atomic_coordinates <- atomic_coordinates[!is.na(x_a) &
-                                             !is.na(y_b) & !is.na(z_c)]
+                                             !is.na(y_b) &
+                                             !is.na(z_c)]
   if (nrow(atomic_coordinates) == 0)
     return(NULL)
 
@@ -548,7 +552,6 @@ extract_atomic_coordinates <- function(cif_content, chemical_formula = NA) {
     "Og"
   )
 
-  # Use TypeSymbol if available, else derive from Label for correction
   base_symbols <- if (!all(is.na(atomic_coordinates$TypeSymbol))) {
     stringr::str_extract(atomic_coordinates$TypeSymbol, "^[A-Za-z]+")
   } else {
@@ -584,7 +587,6 @@ extract_atomic_coordinates <- function(cif_content, chemical_formula = NA) {
         }
       }
       if (!is.na(corrected_sym)) {
-        # Apply correction to the original Label column
         indices_to_fix <- which(base_symbols == sym)
         atomic_coordinates[indices_to_fix, Label := sub("^[A-Za-z]+", corrected_sym, Label)]
         corrections_made[[sym]] <- corrected_sym
@@ -615,13 +617,11 @@ extract_atomic_coordinates <- function(cif_content, chemical_formula = NA) {
 
 #' @title Extract Symmetry Operations
 #' @description Parses the symmetry operation definitions from the CIF content.
-#'   This function uses manual token parsing to avoid issues with inconsistent quoting and spacing in CIF files.
 #' @param cif_content A `data.table` containing the lines of a CIF file.
 #' @return A `data.table` with symmetry operations. Returns `NULL` if not found.
 #' @family extractors
 #' @export
 extract_symmetry_operations <- function(cif_content) {
-  # --- 1. Define valid tags ---
   target_tags <- c("_space_group_symop_operation_xyz",
                    "_symmetry_equiv_pos_as_xyz")
   header_matches <- grep(paste(target_tags, collapse = "|"), cif_content$V1)
@@ -629,13 +629,10 @@ extract_symmetry_operations <- function(cif_content) {
     return(NULL)
   first_header_line_idx <- header_matches[1]
 
-  # --- 2. Find Loop Start ---
-  # Regex: Matches start of line (^), optional whitespace (\\s*), then "loop_"
   loop_start_line_idx <- max(grep("^\\s*loop_", cif_content$V1[1:first_header_line_idx]))
   if (is.infinite(loop_start_line_idx))
     return(NULL)
 
-  # --- 3. Parse Headers to find Index ---
   line_indices <- (loop_start_line_idx + 1):nrow(cif_content)
   headers <- character()
   first_data_line_idx <- 0
@@ -643,7 +640,6 @@ extract_symmetry_operations <- function(cif_content) {
     line <- trimws(cif_content$V1[i])
     if (line == "" || startsWith(line, "#"))
       next
-    # trimws ensures this check works even if indented
     if (startsWith(line, "_")) {
       headers <- c(headers, line)
     } else {
@@ -657,8 +653,6 @@ extract_symmetry_operations <- function(cif_content) {
     return(NULL)
   xyz_col_idx <- xyz_col_idx[1]
 
-  # --- 4. Determine Data Range ---
-  # Regex: Find the next loop, new tag (_), or comment (#), allowing indentation
   end_candidates <- c(
     grep("^\\s*loop_|^\\s*_|^\\s*#", cif_content$V1[first_data_line_idx:nrow(cif_content)]),
     grep("^\\s*$", cif_content$V1[first_data_line_idx:nrow(cif_content)])
@@ -670,7 +664,6 @@ extract_symmetry_operations <- function(cif_content) {
   if (first_data_line_idx > last_data_line_idx)
     return(NULL)
 
-  # --- 5. Manual Line Parsing ---
   data_lines <- cif_content$V1[first_data_line_idx:last_data_line_idx]
 
   extract_nth_token <- function(line, n) {
@@ -684,24 +677,19 @@ extract_symmetry_operations <- function(cif_content) {
   }
 
   raw_strings <- sapply(data_lines, extract_nth_token, n = xyz_col_idx)
-
-  # Filter out failures
   raw_strings <- raw_strings[!is.na(raw_strings)]
   if (length(raw_strings) == 0)
     return(NULL)
 
-  # --- 6. Aggressive Cleaning ---
   cleaned_strings <- gsub("\\s+", "", raw_strings)
   cleaned_strings <- gsub("['\"]", "", cleaned_strings)
   cleaned_strings <- tolower(cleaned_strings)
 
   symmetry_matrix <- stringr::str_split_fixed(cleaned_strings, ",", n = 3)
   symmetry_dt <- data.table::data.table(x = symmetry_matrix[, 1], y = symmetry_matrix[, 2], z = symmetry_matrix[, 3])
-
   symmetry_dt <- symmetry_dt[x != "" & y != "" & z != ""]
 
   if (nrow(symmetry_dt) == 0)
     return(NULL)
-
   return(symmetry_dt)
 }

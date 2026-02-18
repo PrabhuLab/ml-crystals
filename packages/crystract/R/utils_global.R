@@ -256,6 +256,17 @@ utils::globalVariables(
     "z1",
     "z2",
     "X",
+    "center_coords",
+    "my_tets",
+    "neighbor_indices",
+    "prim_label",
+
+    # CrystalNN specific
+    "atomic_rads",
+
+    # Merge Sites
+    "ClusterID",
+    "N",
 
     # Unit cell metrics used in apply_symmetry_operations
     "unit_cell_metrics"

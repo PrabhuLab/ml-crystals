@@ -14,7 +14,6 @@ A \code{data.table} with symmetry operations. Returns \code{NULL} if not found.
 }
 \description{
 Parses the symmetry operation definitions from the CIF content.
-This function uses manual token parsing to avoid issues with inconsistent quoting and spacing in CIF files.
 }
 \seealso{
 Other extractors: 

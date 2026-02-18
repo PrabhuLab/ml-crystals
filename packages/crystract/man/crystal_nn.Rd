@@ -9,7 +9,7 @@ crystal_nn(
   atomic_coordinates,
   expanded_coords,
   unit_cell_metrics,
-  cutoff_length = 13,
+  cutoff_length = 7,
   x_diff_weight = 3,
   porosity_adjustment = TRUE,
   distance_cutoffs = c(0.5, 1)
@@ -24,7 +24,7 @@ crystal_nn(
 
 \item{unit_cell_metrics}{Cell parameters.}
 
-\item{cutoff_length}{Voronoi cutoff.}
+\item{cutoff_length}{Voronoi cutoff. Default 7.0 matches Pymatgen CrystalNN default.}
 
 \item{x_diff_weight}{Electronegativity weight (default 3.0).}
 
@@ -36,7 +36,10 @@ crystal_nn(
 A \code{data.table} of bonded pairs.
 }
 \description{
-Port of Pymatgen's \code{CrystalNN} weighting logic.
+Port of Pymatgen's \code{CrystalNN} weighting logic. Includes Porosity,
+Electronegativity, and Distance penalties.
+Uses specific Decision Tree logic for radii (Shannon -> Covalent -> Atomic) per
+pymatgen's fallback logic.
 }
 \seealso{
 Other bonding algorithms: 

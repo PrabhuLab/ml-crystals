@@ -13,39 +13,20 @@ analyze_cif_files(
 )
 }
 \arguments{
-\item{file_paths}{A character vector of CIF file paths, or a named list of
-\code{data.table}s each containing CIF content.}
+\item{file_paths}{Character vector of paths or list of data.tables.}
 
-\item{workers}{An integer for the number of parallel workers. Defaults to \code{1} (sequential).}
+\item{workers}{Integer. Number of parallel workers.}
 
-\item{output_dir}{Optional path to a directory for saving batched results.
-If \code{NULL} (default), results are returned in memory.}
+\item{output_dir}{Path to output directory (optional).}
 
-\item{batch_size}{Number of files per batch. Defaults to 1000.}
+\item{batch_size}{Integer.}
 
-\item{...}{Additional arguments passed directly to \code{analyze_single_cif}, such
-as \code{bonding_algorithms}, \code{calculate_bond_angles}, \code{tolerance}, and
-\code{minimum_distance_delta}.}
+\item{...}{Args passed to \code{analyze_single_cif}.}
 }
 \value{
-If \code{output_dir} is \code{NULL}, a single \code{data.table} with all results.
-If \code{output_dir} is provided, invisibly returns the path to the output directory.
+Data.table or output directory path.
 }
 \description{
 A high-level wrapper that analyzes CIF files in batch, supporting
-parallel processing and batch-to-disk operations for large datasets.
-}
-\details{
-This function is optimized for large datasets. It processes files in chunks
-(\code{batch_size}) and uses a memory-safe parallel backend to avoid data transfer
-bottlenecks.
-
-It operates in two modes:
-\enumerate{
-\item \strong{In-Memory (default):} If \code{output_dir} is \code{NULL}, results are aggregated
-in memory and returned as one \code{data.table}. Ideal for smaller jobs.
-\item \strong{Batch-to-Disk:} If \code{output_dir} is a path, each processed batch is
-saved as an RDS file to the specified directory. This is the recommended
-mode for very large datasets as it prevents memory overload.
-}
+parallel processing and batch-to-disk operations.
 }

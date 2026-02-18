@@ -20,56 +20,29 @@ analyze_single_cif(
 \item{cif_content}{Either a \code{data.table} containing the lines of a CIF file,
 OR a character string specifying the file path to a CIF file.}
 
-\item{file_name}{The name of the original CIF file, used for labeling output.
-If \code{NULL} (default) and a file path is provided for \code{cif_content},
-the filename is automatically extracted from the path.}
+\item{file_name}{The name of the original CIF file, used for labeling output.}
 
-\item{perform_extraction}{Logical. If \code{TRUE}, extracts all metadata and basic
-structural data.}
+\item{perform_extraction}{Logical. If \code{TRUE}, extracts all metadata.}
 
-\item{perform_calcs_and_transforms}{Logical. If \code{TRUE}, generates the full
-unit cell, expands it, and calculates interatomic distances.}
+\item{perform_calcs_and_transforms}{Logical. If \code{TRUE}, generates unit cell
+and supercell.}
 
-\item{bonding_algorithms}{A character vector of bonding algorithms to use.
-The first algorithm is used for subsequent angle/neighbor calculations.
-Options: \code{"minimum_distance"}, \code{"brunner"}, \code{"econ"}, \code{"crystal_nn"}, \code{"voronoi"}.
-Use \code{"none"} to skip.}
+\item{bonding_algorithms}{Character vector. Options: \code{"minimum_distance"},
+\code{"brunner"}, \code{"econ"}, \code{"crystal_nn"}, \code{"voronoi"}.}
 
-\item{calculate_bond_angles}{Logical. If \code{TRUE}, computes bond angles for
-each applied bonding algorithm.}
+\item{calculate_bond_angles}{Logical.}
 
-\item{perform_error_propagation}{Logical. If \code{TRUE}, calculates uncertainties.
-Any missing error values in the CIF file are treated as zero.}
+\item{perform_error_propagation}{Logical.}
 
-\item{tolerance}{Numeric. The cutoff distance (default 1e-4) below which
-distances are considered floating-point noise and ignored. Increase this
-(e.g. to 1e-4) if "ghost" bonds appear in disordered structures.}
+\item{tolerance}{Numeric. Cutoff for floating-point noise and atom merging (default 1e-4).}
 
-\item{minimum_distance_delta}{Numeric. The relative tolerance parameter used
-specifically for the "minimum_distance" bonding algorithm. Default is 0.1.
-(e.g., d_cut = d_min * (1 + delta)).}
+\item{minimum_distance_delta}{Numeric. Tolerance for min-dist algorithm.}
 }
 \value{
-A one-row \code{data.table} with results. If essential data for calculations
-is missing, a warning is issued and only partial results are returned.
+A one-row \code{data.table} with results.
 }
 \description{
 The core worker function that orchestrates the analysis pipeline
-for a single crystal structure's data. It is called by \code{analyze_cif_files}
-for batch processing, but can now be called directly with a file path.
-}
-\examples{
-cif_file <- system.file("extdata", "ICSD422.cif", package = "crystract")
-if (file.exists(cif_file)) {
-  # Option 1: Pass the file path directly
-  result_from_path <- analyze_single_cif(cif_file)
-
-  # Option 2: Pass pre-loaded content with custom bonding delta
-  cif_content <- read_cif_files(cif_file)[[1]]
-  result_from_dt <- analyze_single_cif(
-    cif_content,
-    basename(cif_file),
-    minimum_distance_delta = 0.15
-  )
-}
+for a single crystal structure's data. It dynamically adjusts supercell
+size based on the requested bonding algorithms to ensure Voronoi accuracy.
 }

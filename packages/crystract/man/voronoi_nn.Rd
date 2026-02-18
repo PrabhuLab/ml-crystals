@@ -9,8 +9,7 @@ voronoi_nn(
   expanded_coords,
   unit_cell_metrics,
   cutoff = 13,
-  tol = 0,
-  allow_pathological = FALSE
+  tol = 0
 )
 }
 \arguments{
@@ -23,15 +22,16 @@ voronoi_nn(
 \item{cutoff}{Distance cutoff (default 13.0).}
 
 \item{tol}{Tolerance for solid angle weights (default 0).}
-
-\item{allow_pathological}{Logical. If FALSE, raises error for infinite vertices.}
 }
 \value{
 A \code{data.table} of bonded pairs.
 }
 \description{
 Performs 3D Voronoi analysis on the supercell.
-strictly mapping Asymmetric Unit atoms to their Supercell equivalents.
+strictly mapping Asymmetric Unit atoms to their Supercell equivalents for processing.
+Ensures potential neighbors are within cutoff to avoid edge artifacts.
+Uses QJ (Joggled input) to handle degenerate structures (FCC/BCC) and filters/merges
+the resulting micro-faces to produce accurate Solid Angles.
 }
 \seealso{
 Other bonding algorithms: 

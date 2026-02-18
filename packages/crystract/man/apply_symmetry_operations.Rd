@@ -8,7 +8,7 @@ apply_symmetry_operations(
   atomic_coordinates,
   symmetry_operations,
   unit_cell_metrics,
-  tolerance = 0.1
+  tolerance = 1e-04
 )
 }
 \arguments{
@@ -18,7 +18,8 @@ apply_symmetry_operations(
 
 \item{unit_cell_metrics}{A \code{data.table} of cell parameters (needed for distance merging).}
 
-\item{tolerance}{Numeric. The distance tolerance in Angstroms for merging close atoms.}
+\item{tolerance}{Numeric. The distance tolerance in Angstroms for merging close atoms.
+Default is 1e-4.}
 }
 \value{
 A \code{data.table} containing all unique atomic positions in the unit cell.
@@ -28,6 +29,7 @@ Generates all symmetry-equivalent atomic positions within the unit cell.
 }
 \seealso{
 Other coordinate processors: 
+\code{\link{calculate_expansion_factors}()},
 \code{\link{expand_transformed_coords}()}
 }
 \concept{coordinate processors}

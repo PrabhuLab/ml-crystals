@@ -9,24 +9,11 @@ aggregate_batch_results(input_dir, cols_to_keep = NULL)
 \arguments{
 \item{input_dir}{The directory containing RDS files from \code{analyze_cif_files}.}
 
-\item{cols_to_keep}{An optional character vector of column names to keep.
-If provided, only these columns will be loaded from each batch file,
-dramatically reducing memory consumption. If \code{NULL} (default), all columns
-are loaded.}
+\item{cols_to_keep}{Optional character vector of column names to keep.}
 }
 \value{
 A single \code{data.table} containing the aggregated results.
 }
 \description{
 Reads all \code{batch_*.rds} files from a directory and combines them.
-For very large datasets, it supports selecting specific columns to reduce
-memory usage during aggregation.
 }
-\seealso{
-Other post-processing: 
-\code{\link{calculate_weighted_average_network_distance}()},
-\code{\link{export_analysis_to_csv}()},
-\code{\link{filter_ghost_distances}()},
-\code{\link{set_radii_data}()}
-}
-\concept{post-processing}

@@ -56,48 +56,22 @@ read_cif_files <- function(file_paths) {
 
 #' @title Analyze the Content of a Single CIF File
 #' @description The core worker function that orchestrates the analysis pipeline
-#'   for a single crystal structure's data. It is called by `analyze_cif_files`
-#'   for batch processing, but can now be called directly with a file path.
+#'   for a single crystal structure's data. It dynamically adjusts supercell
+#'   size based on the requested bonding algorithms to ensure Voronoi accuracy.
 #' @param cif_content Either a `data.table` containing the lines of a CIF file,
 #'   OR a character string specifying the file path to a CIF file.
 #' @param file_name The name of the original CIF file, used for labeling output.
-#'   If `NULL` (default) and a file path is provided for `cif_content`,
-#'   the filename is automatically extracted from the path.
-#' @param perform_extraction Logical. If `TRUE`, extracts all metadata and basic
-#'   structural data.
-#' @param perform_calcs_and_transforms Logical. If `TRUE`, generates the full
-#'   unit cell, expands it, and calculates interatomic distances.
-#' @param bonding_algorithms A character vector of bonding algorithms to use.
-#'   The first algorithm is used for subsequent angle/neighbor calculations.
-#'   Options: `"minimum_distance"`, `"brunner"`, `"econ"`, `"crystal_nn"`, `"voronoi"`.
-#'   Use `"none"` to skip.
-#' @param calculate_bond_angles Logical. If `TRUE`, computes bond angles for
-#'   each applied bonding algorithm.
-#' @param perform_error_propagation Logical. If `TRUE`, calculates uncertainties.
-#'   Any missing error values in the CIF file are treated as zero.
-#' @param tolerance Numeric. The cutoff distance (default 1e-4) below which
-#'   distances are considered floating-point noise and ignored. Increase this
-#'   (e.g. to 1e-4) if "ghost" bonds appear in disordered structures.
-#' @param minimum_distance_delta Numeric. The relative tolerance parameter used
-#'   specifically for the "minimum_distance" bonding algorithm. Default is 0.1.
-#'   (e.g., d_cut = d_min * (1 + delta)).
-#' @return A one-row `data.table` with results. If essential data for calculations
-#'   is missing, a warning is issued and only partial results are returned.
+#' @param perform_extraction Logical. If `TRUE`, extracts all metadata.
+#' @param perform_calcs_and_transforms Logical. If `TRUE`, generates unit cell
+#'   and supercell.
+#' @param bonding_algorithms Character vector. Options: `"minimum_distance"`,
+#'   `"brunner"`, `"econ"`, `"crystal_nn"`, `"voronoi"`.
+#' @param calculate_bond_angles Logical.
+#' @param perform_error_propagation Logical.
+#' @param tolerance Numeric. Cutoff for floating-point noise and atom merging (default 1e-4).
+#' @param minimum_distance_delta Numeric. Tolerance for min-dist algorithm.
+#' @return A one-row `data.table` with results.
 #' @export
-#' @examples
-#' cif_file <- system.file("extdata", "ICSD422.cif", package = "crystract")
-#' if (file.exists(cif_file)) {
-#'   # Option 1: Pass the file path directly
-#'   result_from_path <- analyze_single_cif(cif_file)
-#'
-#'   # Option 2: Pass pre-loaded content with custom bonding delta
-#'   cif_content <- read_cif_files(cif_file)[[1]]
-#'   result_from_dt <- analyze_single_cif(
-#'     cif_content,
-#'     basename(cif_file),
-#'     minimum_distance_delta = 0.15
-#'   )
-#' }
 analyze_single_cif <- function(cif_content,
                                file_name = NULL,
                                perform_extraction = TRUE,
@@ -153,8 +127,6 @@ analyze_single_cif <- function(cif_content,
   transformed_coords <- NULL
   expanded_coords <- NULL
   distances <- NULL
-
-  # List to store dynamic results
   algo_results <- list()
 
   # --- Step 4: Calculations, Transformations, and Expansions ---
@@ -164,7 +136,19 @@ analyze_single_cif <- function(cif_content,
                                                     unit_cell_metrics,
                                                     tolerance = tolerance)
 
-    expanded_coords <- expand_transformed_coords(transformed_coords)
+    # DYNAMIC EXPANSION LOGIC
+    # Constrain logic: only expand > 3x3x3 if Voronoi/CrystalNN are requested
+    expansion_factors <- c(1, 1, 1) # Default 3x3x3 (-1:1)
+
+    needs_voronoi <- any(c("voronoi", "crystal_nn") %in% bonding_algorithms)
+
+    if (needs_voronoi) {
+      # Voronoi needs typically 13.0 Angstroms coverage
+      voronoi_cutoff <- 13.0
+      expansion_factors <- calculate_expansion_factors(unit_cell_metrics, voronoi_cutoff)
+    }
+
+    expanded_coords <- expand_transformed_coords(transformed_coords, expansion_factors)
 
     distances <- calculate_distances(atomic_coordinates,
                                      expanded_coords,
@@ -195,33 +179,25 @@ analyze_single_cif <- function(cif_content,
         }
       )
 
-      # Only process if valid results were returned
       if (!is.null(current_bonds) && nrow(current_bonds) > 0) {
-        # Normalize naming for output key
         out_algo_name <- algo
 
-        # 1. Propagate bond error if requested
         if (perform_error_propagation) {
           current_bonds <- propagate_distance_error(current_bonds,
                                                     atomic_coordinates,
                                                     unit_cell_metrics)
         }
 
-        # 2. Store bonds in results list
         algo_results[[paste0("bonds_", out_algo_name)]] <- list(current_bonds)
-
-        # 3. Calculate and store Coordination Number for THIS algorithm
         cn_table <- calculate_neighbor_counts(current_bonds)
         algo_results[[paste0("cn_", out_algo_name)]] <- list(cn_table)
 
-        # 4. Calculate angles for THIS algorithm if requested
         if (calculate_bond_angles) {
           current_angles <- calculate_angles(current_bonds,
                                              atomic_coordinates,
                                              expanded_coords,
                                              unit_cell_metrics)
 
-          # Propagate angle error
           if (perform_error_propagation &&
               !is.null(current_angles) &&
               nrow(current_angles) > 0) {
@@ -232,7 +208,6 @@ analyze_single_cif <- function(cif_content,
               unit_cell_metrics
             )
           }
-
           algo_results[[paste0("angles_", out_algo_name)]] <- list(current_angles)
         }
       }
@@ -240,7 +215,6 @@ analyze_single_cif <- function(cif_content,
   }
 
   # --- Step 7: Construct Return Data Table ---
-  # Base metadata
   final_dt <- data.table::data.table(
     file_name = file_name,
     database_code = database_code,
@@ -256,7 +230,6 @@ analyze_single_cif <- function(cif_content,
     distances = list(distances)
   )
 
-  # Add dynamic algorithm results (bonds, CNs, angles)
   if (length(algo_results) > 0) {
     for (res_name in names(algo_results)) {
       set(final_dt, j = res_name, value = algo_results[[res_name]])
@@ -268,32 +241,13 @@ analyze_single_cif <- function(cif_content,
 
 #' @title Analyze a Batch of CIF Files
 #' @description A high-level wrapper that analyzes CIF files in batch, supporting
-#'   parallel processing and batch-to-disk operations for large datasets.
-#'
-#' @details
-#' This function is optimized for large datasets. It processes files in chunks
-#' (`batch_size`) and uses a memory-safe parallel backend to avoid data transfer
-#' bottlenecks.
-#'
-#' It operates in two modes:
-#' 1.  **In-Memory (default):** If `output_dir` is `NULL`, results are aggregated
-#'     in memory and returned as one `data.table`. Ideal for smaller jobs.
-#' 2.  **Batch-to-Disk:** If `output_dir` is a path, each processed batch is
-#'     saved as an RDS file to the specified directory. This is the recommended
-#'     mode for very large datasets as it prevents memory overload.
-#'
-#' @param file_paths A character vector of CIF file paths, or a named list of
-#'   `data.table`s each containing CIF content.
-#' @param workers An integer for the number of parallel workers. Defaults to `1` (sequential).
-#' @param output_dir Optional path to a directory for saving batched results.
-#'   If `NULL` (default), results are returned in memory.
-#' @param batch_size Number of files per batch. Defaults to 1000.
-#' @param ... Additional arguments passed directly to `analyze_single_cif`, such
-#'   as `bonding_algorithms`, `calculate_bond_angles`, `tolerance`, and
-#'   `minimum_distance_delta`.
-#'
-#' @return If `output_dir` is `NULL`, a single `data.table` with all results.
-#'   If `output_dir` is provided, invisibly returns the path to the output directory.
+#'   parallel processing and batch-to-disk operations.
+#' @param file_paths Character vector of paths or list of data.tables.
+#' @param workers Integer. Number of parallel workers.
+#' @param output_dir Path to output directory (optional).
+#' @param batch_size Integer.
+#' @param ... Args passed to `analyze_single_cif`.
+#' @return Data.table or output directory path.
 #' @export
 analyze_cif_files <- function(file_paths,
                               workers = 1,
@@ -450,16 +404,9 @@ analyze_cif_files <- function(file_paths,
 
 #' @title Aggregate Batched Analysis Results
 #' @description Reads all `batch_*.rds` files from a directory and combines them.
-#'   For very large datasets, it supports selecting specific columns to reduce
-#'   memory usage during aggregation.
-#'
 #' @param input_dir The directory containing RDS files from `analyze_cif_files`.
-#' @param cols_to_keep An optional character vector of column names to keep.
-#'   If provided, only these columns will be loaded from each batch file,
-#'   dramatically reducing memory consumption. If `NULL` (default), all columns
-#'   are loaded.
+#' @param cols_to_keep Optional character vector of column names to keep.
 #' @return A single `data.table` containing the aggregated results.
-#' @family post-processing
 #' @export
 aggregate_batch_results <- function(input_dir, cols_to_keep = NULL) {
   batch_files <- list.files(path = input_dir,
@@ -471,11 +418,9 @@ aggregate_batch_results <- function(input_dir, cols_to_keep = NULL) {
 
   message(sprintf("Found %d batch files to aggregate.", length(batch_files)))
 
-  # Use lapply to read and optionally subset each file
   all_results_list <- lapply(batch_files, function(file) {
     batch_dt <- readRDS(file)
     if (!is.null(cols_to_keep)) {
-      # Check which of the requested columns actually exist in the data.table
       valid_cols <- intersect(cols_to_keep, names(batch_dt))
       if (length(valid_cols) > 0) {
         return(batch_dt[, ..valid_cols])
@@ -484,127 +429,61 @@ aggregate_batch_results <- function(input_dir, cols_to_keep = NULL) {
     return(batch_dt)
   })
 
-  # Namespaced rbindlist
   aggregated_results <- data.table::rbindlist(all_results_list, fill = TRUE)
-
   message(sprintf(
     "Aggregation complete. Total rows: %d.",
     nrow(aggregated_results)
   ))
-
   return(aggregated_results)
 }
 
 #' @title Export Analysis Results to a Directory of CSVs
-#' @description Takes the output `data.table` from `analyze_cif_files` or
-#'   `analyze_single_cif` and exports its contents into a structured directory
-#'   of CSV files. A 'meta' folder is created for top-level data, and
-#'   separate folders are created for each nested table (e.g., atomic_coordinates,
-#'   bond_angles).
-#'
-#' @details
-#' The function operates as follows:
-#' 1.  It creates the main `output_dir`. If the directory already exists,
-#'     the function will stop unless `overwrite = TRUE`.
-#' 2.  It identifies which columns in the input `analysis_results` are standard
-#'     data (metadata) and which are list-columns containing nested `data.table`s.
-#' 3.  The metadata is saved as a single `meta_summary.csv` file inside a `meta` sub-directory.
-#' 4.  For each list-column (e.g., `unit_cell_metrics`), it creates a sub-directory
-#'     with that name (e.g., `output_dir/unit_cell_metrics/`).
-#' 5.  Inside each sub-directory, it iterates through every row of the original
-#'     `analysis_results` table. For each row, it saves the corresponding nested
-#'     `data.table` as a CSV file. The CSV is named after the CIF file it
-#'     originated from (e.g., `ICSD422.csv`).
-#'
-#' This structure makes it easy to access all data of a specific type (e.g., all
-#' bond angle tables) or all data related to a single original CIF file.
-#'
-#' @param analysis_results A `data.table` object, typically the output from
-#'   `analyze_cif_files`.
-#' @param output_dir A character string specifying the path to the main output
-#'   directory where the folders and files will be created.
-#' @param overwrite A logical value. If `TRUE`, any existing directory at
-#'   `output_dir` will be removed and recreated. If `FALSE` (the default), the
-#'   function will stop with an error if the directory already exists.
-#' @return Invisibly returns the path to the `output_dir`.
-#' @family post-processing
+#' @description Exports analysis results to CSV structure.
+#' @param analysis_results A `data.table` object.
+#' @param output_dir Path to main output directory.
+#' @param overwrite Logical.
+#' @return Invisibly returns output_dir.
 #' @export
-#' @examples
-#' # This is a full workflow example.
-#'
-#' # 1. Define path to an example CIF file
-#' cif_file <- system.file("extdata", "ICSD422.cif", package = "crystract")
-#' if (file.exists(cif_file)) {
-#'   # 2. Run the analysis
-#'   analysis_results <- analyze_cif_files(cif_file)
-#'
-#'   # 3. Define a temporary output directory for this example
-#'   export_path <- file.path(tempdir(), "crystract_export")
-#'
-#'   # 4. Export the results, overwriting if the directory exists
-#'   export_analysis_to_csv(analysis_results, export_path, overwrite = TRUE)
-#'
-#'   # 5. List the created files and folders to verify
-#'   cat("Exported directory structure:\n")
-#'   print(list.files(export_path, recursive = TRUE))
-#'
-#'   # 6. Clean up the temporary directory
-#'   unlink(export_path, recursive = TRUE)
-#' }
 export_analysis_to_csv <- function(analysis_results, output_dir, overwrite = FALSE) {
-  # --- Input Validation ---
   if (!inherits(analysis_results, "data.table") ||
       nrow(analysis_results) == 0) {
-    stop("`analysis_results` must be a non-empty data.table from analyze_cif_files().")
+    stop("`analysis_results` must be a non-empty data.table.")
   }
   if (!"file_name" %in% names(analysis_results)) {
     stop("`analysis_results` must contain a 'file_name' column.")
   }
 
-  # --- Directory Management ---
   if (dir.exists(output_dir)) {
     if (overwrite) {
       unlink(output_dir, recursive = TRUE, force = TRUE)
       dir.create(output_dir, recursive = TRUE)
     } else {
-      stop(
-        paste(
-          "Output directory '",
-          output_dir,
-          "' already exists. Use overwrite = TRUE to replace it."
-        )
-      )
+      stop(paste(
+        "Output directory '",
+        output_dir,
+        "' already exists. Use overwrite = TRUE."
+      ))
     }
   } else {
     dir.create(output_dir, recursive = TRUE)
   }
 
-  # --- Identify Column Types ---
   is_nested_col <- sapply(analysis_results, is.list)
   nested_col_names <- names(is_nested_col)[is_nested_col]
   meta_col_names <- names(is_nested_col)[!is_nested_col]
 
-  # --- Export Metadata ---
   meta_dir <- file.path(output_dir, "meta")
   dir.create(meta_dir)
   meta_data <- analysis_results[, ..meta_col_names]
   data.table::fwrite(meta_data, file.path(meta_dir, "meta_summary.csv"))
 
-  # --- Export Nested Tables ---
   for (col_name in nested_col_names) {
-    # Skip creating empty folders for columns that are all NULL
-    if (all(sapply(analysis_results[[col_name]], is.null))) {
+    if (all(sapply(analysis_results[[col_name]], is.null)))
       next
-    }
-
-    # Create a subdirectory for the nested table type
     nested_dir <- file.path(output_dir, col_name)
     dir.create(nested_dir)
-
-    # Iterate through each file's results (each row)
     for (i in 1:nrow(analysis_results)) {
       nested_table <- analysis_results[[col_name]][[i]]
-
       if (!is.null(nested_table) &&
           inherits(nested_table, "data.table") &&
           nrow(nested_table) > 0) {
@@ -615,7 +494,6 @@ export_analysis_to_csv <- function(analysis_results, output_dir, overwrite = FAL
       }
     }
   }
-
   message(paste(
     "Analysis successfully exported to:",
     normalizePath(output_dir)

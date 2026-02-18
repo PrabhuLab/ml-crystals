@@ -4,14 +4,15 @@
 \alias{merge_sites_pbc}
 \title{Merge Close Atoms (Pymatgen Style)}
 \usage{
-merge_sites_pbc(atomic_coordinates, unit_cell_metrics, tol = 0.1)
+merge_sites_pbc(atomic_coordinates, unit_cell_metrics, tol = 1e-04)
 }
 \arguments{
 \item{atomic_coordinates}{A data.table with columns \code{Label}, \code{x_a}, \code{y_b}, \code{z_c}.}
 
 \item{unit_cell_metrics}{A data.table containing cell lengths and angles.}
 
-\item{tol}{Numeric. Distance tolerance in Angstroms. Sites closer than this will be merged.}
+\item{tol}{Numeric. Distance tolerance in Angstroms. Sites closer than this will be merged.
+Default is 1e-4.}
 }
 \value{
 A deduplicated data.table with coordinates averaged.
@@ -19,5 +20,6 @@ A deduplicated data.table with coordinates averaged.
 \description{
 Merges atomic sites that are within a specified distance tolerance,
 accounting for Periodic Boundary Conditions (PBC). This mimics pymatgen's
-\code{Structure.merge_sites} logic using hierarchical clustering.
+\code{Structure.merge_sites} logic: it performs hierarchical clustering and then
+averages the coordinates of the merged sites, taking care of PBC wrapping.
 }

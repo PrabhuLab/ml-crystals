@@ -4,20 +4,24 @@
 \alias{expand_transformed_coords}
 \title{Expand Coordinates into a Supercell}
 \usage{
-expand_transformed_coords(transformed_coords)
+expand_transformed_coords(transformed_coords, expansion_factors = c(1, 1, 1))
 }
 \arguments{
 \item{transformed_coords}{A \code{data.table} of atom positions within one unit cell.}
+
+\item{expansion_factors}{A numeric vector \code{c(a, b, c)} specifying the number of
+images in each direction (+/-). Default \code{c(1,1,1)} creates a 3x3x3 grid.}
 }
 \value{
 A \code{data.table} containing all atomic positions in the expanded supercell.
 }
 \description{
 Takes a set of atomic coordinates within a single unit cell and
-replicates them into a 3x3x3 supercell grid.
+replicates them into a supercell grid defined by expansion factors.
 }
 \seealso{
 Other coordinate processors: 
-\code{\link{apply_symmetry_operations}()}
+\code{\link{apply_symmetry_operations}()},
+\code{\link{calculate_expansion_factors}()}
 }
 \concept{coordinate processors}
