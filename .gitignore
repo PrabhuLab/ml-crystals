@@ -16,3 +16,5 @@
 .Rhistory
 /notebook/natural/cif
 /notebook/natural/crystract_chemistry_results
+/packages/crystract.Rcheck
+packages/crystract_1.0.1.tar.gz

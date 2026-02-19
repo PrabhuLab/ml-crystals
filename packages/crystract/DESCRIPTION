@@ -1,6 +1,6 @@
 Package: crystract
 Type: Package
-Title: A Crystallography Package in R for .cif Data Processing
+Title: Crystallographic Information File (CIF) Data Processing Tools
 Version: 1.0.1
 Author: Don Ngo <dngo@carnegiescience.edu>
 Maintainer: Don Ngo <dngo@carnegiescience.edu>
