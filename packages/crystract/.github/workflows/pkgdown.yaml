@@ -33,6 +33,7 @@ jobs:
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
+          working-directory: packages/crystract
           extra-packages: any::pkgdown, local::.
           needs: website
 
@@ -40,7 +41,6 @@ jobs:
         run: |
           pkgdown::build_site_github_pages(
             pkg = "packages/crystract",
-            dest_dir = "docs",
             new_process = FALSE,
             install = FALSE
           )
@@ -52,4 +52,4 @@ jobs:
         with:
           clean: false
           branch: gh-pages
-          folder: docs
+          folder: packages/crystract/docs
