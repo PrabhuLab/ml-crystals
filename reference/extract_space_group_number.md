@@ -1,0 +1,31 @@
+# Extract Space Group Number from CIF Content
+
+Extracts the International Tables space group number (e.g., from
+`_space_group_IT_number`).
+
+## Usage
+
+``` r
+extract_space_group_number(cif_content)
+```
+
+## Arguments
+
+- cif_content:
+
+  A `data.table` containing the lines of a CIF file.
+
+## Value
+
+A character string of the space group number, or `NA` if not found.
+
+## See also
+
+Other extractors:
+[`extract_atomic_coordinates()`](https://prabhulab.github.io/ml-crystals/reference/extract_atomic_coordinates.md),
+[`extract_chemical_formula()`](https://prabhulab.github.io/ml-crystals/reference/extract_chemical_formula.md),
+[`extract_database_code()`](https://prabhulab.github.io/ml-crystals/reference/extract_database_code.md),
+[`extract_space_group_name()`](https://prabhulab.github.io/ml-crystals/reference/extract_space_group_name.md),
+[`extract_structure_type()`](https://prabhulab.github.io/ml-crystals/reference/extract_structure_type.md),
+[`extract_symmetry_operations()`](https://prabhulab.github.io/ml-crystals/reference/extract_symmetry_operations.md),
+[`extract_unit_cell_metrics()`](https://prabhulab.github.io/ml-crystals/reference/extract_unit_cell_metrics.md)

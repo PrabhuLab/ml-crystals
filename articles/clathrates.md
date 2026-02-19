@@ -1,0 +1,308 @@
+# Advanced Workflow: High-Throughput Analysis of Clathrate Structures
+
+## 1. Introduction and Objective
+
+This vignette demonstrates an advanced, robust workflow using the
+`crystract` package to analyze a large, complex dataset. While the
+introductory vignette focuses on the step-by-step analysis of a single,
+well-ordered crystal, this tutorial tackles the challenges of
+real-world, high-throughput analysis, specifically for disordered
+structures like clathrates.
+
+The goal is to process a dataset of clathrate structures to calculate a
+representative “weighted average network bond distance” for each one and
+explore its relationship with the lattice parameter ‘a’.
+
+### The Robust Pipeline for Disordered Structures
+
+Clathrate structures often feature site-occupancy disorder and guest
+atoms within a host framework. A naive distance calculation can lead to
+non-physical “ghost” distances. To handle this, we will implement a
+specific, multi-step filtering pipeline for each crystal:
+
+1.  **Filter Guests:** Isolate the host framework by removing guest
+    atoms.
+2.  **Filter Ghosts:** Remove physically implausible distances using
+    [`filter_ghost_distances()`](https://prabhulab.github.io/ml-crystals/reference/filter_ghost_distances.md).
+3.  **Identify Bonds:** Determine the true bonded pairs from the cleaned
+    data using
+    [`minimum_distance()`](https://prabhulab.github.io/ml-crystals/reference/minimum_distance.md).
+4.  **Calculate Average:** Compute the final
+    [`calculate_weighted_average_network_distance()`](https://prabhulab.github.io/ml-crystals/reference/calculate_weighted_average_network_distance.md)
+    only on the confirmed, physical bonds.
+
+This **Guests -\> Ghosts -\> Bonds -\> Average** sequence ensures the
+final metric is accurate and physically meaningful.
+
+## 2. Preparing the Data
+
+### 2.1. Obtaining and Organizing ICSD Files
+
+Due to licensing restrictions, the dataset of clathrate CIF files from
+the Inorganic Crystal Structure Database (ICSD) is **not** bundled with
+this package. To reproduce this workflow, you must download the data via
+your institutional license and organize it specifically for this script.
+
+#### Step 1: Download Required Files
+
+A list of the specific ICSD Collection Codes required for this analysis
+(and their corresponding structural categories) can be found in
+`required_ICSD_files.csv`, located in the root of the `ml-crystals`
+repository. Download the `.cif` file for each entry.
+
+#### Step 2: Create the Directory Structure
+
+The analysis script relies on the folder names to determine the
+**structural category** (which determines the Wyckoff sites used for
+calculations). You must create a main directory (e.g.,
+`my_clathrate_data`) and create subdirectories named exactly after the
+categories found in the CSV file.
+
+The structure must look like this:
+
+``` text
+/my_clathrate_data/              <-- Main Directory
+│
+├── 6c-16i-24k/                  <-- Subdirectory (Category Name)
+│     ├── ICSD_CollCode12345.cif <-- CIF files belonging to this category
+│     ├── ICSD_CollCode12346.cif
+│     └── ...
+└── ...
+```
+
+**Note:** The subdirectory names (e.g., `6c-16i-24k`) are parsed by the
+script to determine which atoms belong to the host network. Ensure these
+folder names match the CSV categories exactly.
+
+### 2.2. Loading the Data
+
+In the chunk below, you must update the `cif_root_dir` variable to point
+to the location where you organized the files.
+
+``` r
+# IMPORTANT: Update this path to point to your created main data directory
+cif_root_dir <- "C:/path/to/my_clathrate_data"
+
+# Check if the directory exists
+if (!dir.exists(cif_root_dir)) {
+  stop("CRITICAL ERROR: Could not find the data directory. Please update 'cif_root_dir'.")
+}
+
+# Identify category subdirectories
+category_dirs <- list.dirs(path = cif_root_dir, full.names = TRUE, recursive = FALSE)
+
+# Map files to their category based on the folder name
+file_map_list <- lapply(category_dirs, function(dir) {
+  full_paths <- list.files(path = dir, pattern = "\\.cif$", full.names = TRUE, ignore.case = TRUE)
+  if (length(full_paths) == 0) return(NULL)
+  
+  # The folder name becomes the category identifier
+  data.table(
+    file_path = full_paths, 
+    file_name = basename(full_paths), 
+    category = basename(dir)
+  )
+})
+
+file_map <- rbindlist(file_map_list, fill = TRUE)
+all_cif_paths <- if (!is.null(file_map) && nrow(file_map) > 0) file_map$file_path else character(0)
+
+cat("Found", length(all_cif_paths), "total CIF files across", length(category_dirs), "categories.\n")
+
+if (length(all_cif_paths) == 0) {
+    stop("Execution stopped: No CIF files were found inside the specified directory.")
+}
+```
+
+## 3. Optimized Batch Analysis and Custom Pipeline
+
+### 3.1. Step 1: Optimized Raw Data Extraction
+
+We first run
+[`analyze_cif_files()`](https://prabhulab.github.io/ml-crystals/reference/analyze_cif_files.md).
+For efficiency and to enable our custom pipeline, we disable the
+built-in bonding calculations (`bonding_algorithms = "none"`). This
+performs the most intensive step—calculating all interatomic
+distances—just once.
+
+``` r
+# Run the extraction and distance calculations
+analysis_results <- analyze_cif_files(
+  file_paths = all_cif_paths,
+  perform_extraction = TRUE,
+  perform_calcs_and_transforms = TRUE,
+  bonding_algorithms = "none",        # Skip standard bonding logic
+  calculate_bond_angles = FALSE,      # Skip angles for speed
+  perform_error_propagation = FALSE
+)
+
+cat("Optimized analysis complete. Raw results table has", nrow(analysis_results), "rows.\n")
+```
+
+### 3.2. Step 2: Applying the “Guests -\> Ghosts -\> Bonds -\> Average” Pipeline
+
+Now, we apply our core filtering logic by looping through the results
+for each file. This section extracts the Wyckoff targets from the
+`category` column (which came from your folder names) and applies the
+specific logic required for that clathrate type.
+
+``` r
+# --- Timing Start ---
+timing_processing <- system.time({
+  
+  # Define atoms to exclude (Guests)
+  guest_atoms <- c("Na", "K", "Rb", "Cs", "Sr", "Ba", "Eu")
+  all_removed_ghosts <- list()
+  
+  process_file_results <- function(i) {
+    current_filename <- analysis_results$file_name[i]
+    
+    # Retrieve the category established in the loading step
+    category_info <- file_map[file_name == current_filename]
+    
+    if (is.null(current_filename) || nrow(category_info) == 0) return(NULL)
+    
+    distances <- analysis_results$distances[[i]]
+    coords <- analysis_results$atomic_coordinates[[i]]
+    
+    if (is.null(distances) || is.null(coords) || nrow(distances) == 0) return(NULL)
+    
+    # --- Pipeline Steps ---
+    category <- category_info$category
+    
+    # Parse the folder name (e.g., "6c-16i-24k") to get target Wyckoff sites
+    # This logic assumes folder names are formatted as "Site1-Site2-Site3"
+    target_wyckoff_symbols <- strsplit(gsub("\\+M_on_.*", "", category), "-")[[1]]
+    
+    # 1. Filter Guest Atoms
+    distances <- filter_by_elements(distances, coords, guest_atoms)
+    if (nrow(distances) == 0) return(NULL)
+    
+    # 2. Filter Ghost Distances
+    ghost_filter_result <- filter_ghost_distances(distances, coords, margin = 0.1)
+    cleaned_distances <- ghost_filter_result$kept
+    
+    removed_table <- ghost_filter_result$removed
+    if (nrow(removed_table) > 0) {
+      removed_table[, file := current_filename]
+      all_removed_ghosts[[length(all_removed_ghosts) + 1]] <<- removed_table
+    }
+    if (nrow(cleaned_distances) == 0) return(NULL)
+    
+    # 3. Identify Bonds
+    bonded_pairs <- minimum_distance(cleaned_distances, delta = 0.1)
+    if (nrow(bonded_pairs) == 0) return(NULL)
+    
+    # 4. Calculate Weighted Average
+    weighted_avg <- calculate_weighted_average_network_distance(bonded_pairs, coords, target_wyckoff_symbols)
+    if (is.na(weighted_avg)) return(NULL)
+    
+    return(
+      data.table(
+        file = current_filename,
+        category = category,
+        lattice_parameter_a = analysis_results$unit_cell_metrics[[i]]$`_cell_length_a`,
+        weighted_distance = weighted_avg
+      )
+    )
+  }
+  
+  plot_data_list <- lapply(1:nrow(analysis_results), process_file_results)
+  plot_data <- rbindlist(plot_data_list, use.names = TRUE, fill = TRUE)
+  plot_data <- na.omit(plot_data)
+  removed_ghosts_summary <- rbindlist(all_removed_ghosts, fill = TRUE)
+}) # --- Timing End ---
+
+cat("Data processing complete.\n")
+cat("Final plot table has", nrow(plot_data), "entries.\n")
+if (exists("removed_ghosts_summary") && nrow(removed_ghosts_summary) > 0) {
+  cat(
+    nrow(removed_ghosts_summary),
+    "non-physical 'ghost' distances were identified and removed.\n"
+  )
+}
+```
+
+## 4. Quality Control: Review of Removed “Ghost” Distances
+
+A key advantage of this workflow is the ability to inspect the distances
+that
+[`filter_ghost_distances()`](https://prabhulab.github.io/ml-crystals/reference/filter_ghost_distances.md)
+removed. This is crucial for validating the filtering logic and
+understanding the nature of disorder in the dataset.
+
+``` r
+if (exists("removed_ghosts_summary") && nrow(removed_ghosts_summary) > 0) {
+  sample_size <- min(1000, nrow(removed_ghosts_summary))
+  cat(paste("Displaying a sample of the first", sample_size, "removed distances below:\n"))
+  
+  datatable(
+    removed_ghosts_summary[1:sample_size, ],
+    caption = paste("Sample of Removed Ghost Distances (", sample_size, " of ", nrow(removed_ghosts_summary), " total)"),
+    rownames = FALSE, extensions = 'Buttons',
+    options = list(pageLength = 10, dom = 'Bfrtip', buttons = c('copy', 'csv')),
+    colnames = c("Atom 1", "Atom 2", "Removed Distance (Å)", "Expected (Å)", "Lower Bound (Å)", "Upper Bound (Å)", "Reason", "File")
+  )
+} else {
+  cat("No 'ghost' distances were detected during the analysis.")
+}
+```
+
+## 5. Visualizing and Exploring Final Results
+
+After applying the robust pipeline, we can now visualize the cleaned
+data.
+
+### 5.1. Interactive Plot
+
+``` r
+# Only generate the plot if the data processing was successful
+if (exists("plot_data") && nrow(plot_data) > 0) {
+  p <- ggplot(plot_data, aes(x = lattice_parameter_a, y = weighted_distance, color = category, shape = category, text = file)) +
+    geom_point(alpha = 0.65, size = 2.5) +
+    geom_smooth(aes(group = 1), method = "lm", se = FALSE, color = "black", linetype = "dotted", fullrange = TRUE) +
+    labs(
+      title = "Average Network Bond Length vs. Lattice Parameter 'a'",
+      subtitle = "Data points are colored by structural category",
+      x = "Lattice Parameter a (Å)",
+      y = "Weighted Average Network Bond Length (Å)",
+      color = "Structural Category", shape = "Structural Category"
+    ) +
+    theme_bw(base_size = 14) +
+    theme(legend.position = "bottom", legend.title = element_text(face = "bold"))
+
+  interactive_plot <- ggplotly(p, tooltip = c("x", "y", "text", "color"))
+  interactive_plot
+} else {
+  cat("No data available to generate plot.")
+}
+```
+
+### 5.2. Interactive Data Table
+
+The final, cleaned data used for the plot is provided below in a
+searchable and exportable table.
+
+``` r
+if (exists("plot_data") && nrow(plot_data) > 0) {
+  datatable(
+    plot_data,
+    caption = "Final Processed Data for Clathrate Structures",
+    rownames = FALSE, filter = 'top', extensions = 'Buttons',
+    options = list(pageLength = 15, dom = 'Bfrtip', buttons = c('copy', 'csv', 'excel')),
+    colnames = c("File", "Category", "Lattice 'a' (Å)", "Weighted Dist (Å)")
+  )
+} else {
+  cat("No final data to display.")
+}
+```
+
+## 6. Conclusion
+
+This vignette has demonstrated how to leverage the `crystract` package
+to build a powerful, customized pipeline for high-throughput analysis.
+By organizing your own ICSD data into a structured directory tree, you
+can utilize the package’s robust processing capabilities. The “Guests
+-\> Ghosts -\> Bonds -\> Average” pattern presented here ensures that
+the final summary metrics are physically meaningful, even when dealing
+with real-world disordered structures.
