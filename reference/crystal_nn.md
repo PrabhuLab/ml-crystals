@@ -1,9 +1,12 @@
 # Identify Atomic Bonds using CrystalNN
 
-Port of Pymatgen's `CrystalNN` weighting logic. Includes Porosity,
-Electronegativity, and Distance penalties. Uses specific Decision Tree
-logic for radii (Shannon -\> Covalent -\> Atomic) per pymatgen's
-fallback logic.
+Poer of Pymatgen's `CrystalNN` algorithm from the ground up. It uses a
+Voronoi-based algorithm and solid angle weights to determine the
+probability of various coordination environments. It modifies
+probability using smooth distance cutoffs and Pauling electronegativity
+differences. The output is either the most probable coordination
+environment (`weighted_cn = FALSE`) or a weighted list of coordination
+environments (`weighted_cn = TRUE`).
 
 ## Usage
 
@@ -15,8 +18,10 @@ crystal_nn(
   unit_cell_metrics,
   cutoff_length = 7,
   x_diff_weight = 3,
-  porosity_adjustment = TRUE,
-  distance_cutoffs = c(0.5, 1)
+  porous_adjustment = TRUE,
+  distance_cutoffs = c(0.5, 1),
+  cation_anion = FALSE,
+  weighted_cn = FALSE
 )
 ```
 
@@ -24,7 +29,7 @@ crystal_nn(
 
 - distances:
 
-  Ignored.
+  Ignored (CrystalNN generates its own Voronoi basis).
 
 - atomic_coordinates:
 
@@ -40,19 +45,33 @@ crystal_nn(
 
 - cutoff_length:
 
-  Voronoi cutoff. Default 7.0 matches Pymatgen CrystalNN default.
+  Numeric. Cutoff in Angstroms for initial neighbor search (default
+  7.0).
 
 - x_diff_weight:
 
-  Electronegativity weight (default 3.0).
+  Numeric. Electronegativity difference weight (default 3.0).
 
-- porosity_adjustment:
+- porous_adjustment:
 
-  Logical (default TRUE).
+  Logical. If TRUE, adjusts Voronoi weights to better describe layered /
+  porous structures (default TRUE).
 
 - distance_cutoffs:
 
-  Vector c(0.5, 1.0).
+  Numeric vector. Penalizes neighbor distances greater than sum of
+  covalent radii plus these cutoffs. Set to NULL to disable.
+
+- cation_anion:
+
+  Logical. If TRUE, restricts bonding targets to sites with opposite or
+  zero charge (requires oxidation states).
+
+- weighted_cn:
+
+  Logical. If FALSE (default), returns neighbors for the most probable
+  coordination environment with weight 1.0. If TRUE, returns all
+  potential neighbors with fractional probabilities.
 
 ## Value
 
