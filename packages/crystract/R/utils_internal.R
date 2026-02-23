@@ -1,101 +1,18 @@
-#' @title Load Internal Data (Internal)
-#' @description Loads data from inst/extdata or package data.
-#' @param filename String. Name of file in inst/extdata.
-#' @noRd
-load_ext_data <- function(filename) {
-  path <- system.file("extdata", filename, package = "crystract")
-  if (path == "") {
-    # Fallback for dev mode
-    path <- file.path("inst", "extdata", filename)
-  }
-  if (!file.exists(path))
-    return(NULL)
-
-  # fill=TRUE handles the footer warning
-  data.table::fread(path, fill = TRUE)
-}
-
-#' @title Get Cached Shannon Radii (Internal)
-#' @description Loads, cleans, and caches the Shannon Radii table.
+#' @title Get Pre-loaded Shannon Radii (Internal)
+#' @description Returns the pre-cleaned Shannon Radii table loaded from package data (sysdata.rda).
 #' @noRd
 get_shannon_radii <- function() {
-  # 1. return cached version if exists
-  if (exists("shannon_radii_cache", envir = .crystract_env)) {
-    return(get("shannon_radii_cache", envir = .crystract_env))
-  }
+  return(shannon_radii)
+}
 
-  # 2. Load from disk
-  dt <- load_ext_data("Shannon_Radii.csv")
-
-  if (is.null(dt))
-    return(NULL)
-
-  # 3. Robust Column Renaming
-  # Remove spaces/punctuation to handle "Ionic Radius" vs "IonicRadius"
-  current_names <- names(dt)
-  clean_names <- gsub("[^A-Za-z0-9]", "", current_names)
-
-  # Define mapping based on Clean Names -> Standard Names
-  target_map <- c("Element" = "Symbol",
-                  "Charge" = "OxidationState",
-                  "IonicRadius" = "Radius")
-
-  for (clean_n in names(target_map)) {
-    idx <- which(clean_names == clean_n)
-    if (length(idx) > 0) {
-      setnames(dt, current_names[idx[1]], target_map[[clean_n]])
-    }
-  }
-
-  # 4. Clean Coordination Column (Roman -> Integer)
-  # Many Shannon tables use VI, IV, etc.
-  if ("Coordination" %in% names(dt)) {
-    # Create a mapping for common Roman numerals found in Shannon data
-    roman_map <- c(
-      "I" = 1,
-      "II" = 2,
-      "III" = 3,
-      "IV" = 4,
-      "V" = 5,
-      "VI" = 6,
-      "VII" = 7,
-      "VIII" = 8,
-      "IX" = 9,
-      "X" = 10,
-      "XI" = 11,
-      "XII" = 12,
-      "XIII" = 13,
-      "XIV" = 14
-    )
-
-    # Function to convert single value
-    clean_coord <- function(x) {
-      # Remove distinct markers like 'sq', 'py' sometimes found in Shannon datasets
-      x_clean <- gsub("[^A-Za-z0-9]", "", as.character(x))
-
-      # Check if it's already a number
-      if (grepl("^[0-9]+$", x_clean))
-        return(as.numeric(x_clean))
-
-      # Check Roman map
-      if (x_clean %in% names(roman_map))
-        return(roman_map[[x_clean]])
-
-      # Fallback: Try removing letters and parsing (e.g. "4sq" -> 4)
-      num_part <- gsub("[^0-9]", "", as.character(x))
-      if (nchar(num_part) > 0)
-        return(as.numeric(num_part))
-
-      return(NA_real_)
-    }
-
-    # Apply conversion
-    dt[, Coordination := sapply(Coordination, clean_coord)]
-  }
-
-  # 4. Cache and return
-  assign("shannon_radii_cache", dt, envir = .crystract_env)
-  return(dt)
+#' @title Get Electronegativity
+#' @description Looks up Pauling electronegativity from internal package data. Matches pymatgen `Element.X`.
+#' @param symbols Character vector of element symbols.
+#' @return Numeric vector of electronegativities.
+#' @noRd
+get_electronegativity <- function(symbols) {
+  vals <- pauling_en$PaulingElectronegativity[match(symbols, pauling_en$Symbol)]
+  return(vals)
 }
 
 #' @title Calculate Cross Product (Internal)
@@ -195,7 +112,8 @@ calculate_solid_angle <- function(center, face_coords) {
     if (denom == 0) {
       term <- if (tp > 0)
         0.5 * pi
-      else-0.5 * pi
+      else
+        - 0.5 * pi
     } else {
       term <- atan(tp / denom)
     }
@@ -315,29 +233,11 @@ is_metal <- function(symbols) {
   return(symbols %in% metals)
 }
 
-#' @title Get Electronegativity
-#' @description Looks up Pauling electronegativity. Matches pymatgen `Element.X`.
-#' @param symbols Character vector of element symbols.
-#' @return Numeric vector of electronegativities.
-#' @noRd
-get_electronegativity <- function(symbols) {
-  # Load data from the provided CSV
-  en_data <- load_ext_data("pauling_electronegativity_stable_elements.csv")
-  if (is.null(en_data)) {
-    warning("pauling_electronegativity_stable_elements.csv not found.")
-    return(rep(NA_real_, length(symbols)))
-  }
-
-  vals <- en_data$PaulingElectronegativity[match(symbols, en_data$Symbol)]
-  return(vals)
-}
-
 #' @title Get Atomic/Ionic Radius (Pymatgen Style - For EconNN)
 #' @description Implements Pymatgen's logic:
 #' 1. Ionic (Shannon) if Oxi != 0.
 #' 2. Covalent (Cordero) if Oxi == 0 or Ionic not found.
 #' 3. Atomic if Covalent not found.
-#' Uses cached data to prevent disk I/O on every call.
 #' @param symbol Character. Element symbol.
 #' @param oxidation_state Numeric. Formal charge.
 #' @param cn Numeric. Coordination number.
@@ -347,7 +247,6 @@ get_radius_pymatgen_style <- function(symbol,
                                       oxidation_state = NA,
                                       cn = 6) {
   atomic_rads <- get_radii_data()
-  # USE CACHED LOADER
   shannon_rads <- get_shannon_radii()
 
   # --- CHECK 1: Oxidation State ---
@@ -365,7 +264,6 @@ get_radius_pymatgen_style <- function(symbol,
     matches <- shannon_rads[Symbol == symbol &
                               OxidationState == oxidation_state]
     if (nrow(matches) > 0) {
-      # The coordination column is now numeric, so subtraction is safe
       matches[, Diff := abs(Coordination - cn)]
       return(matches[order(Diff)]$Radius[1])
     }
@@ -390,7 +288,6 @@ get_radius_pymatgen_style <- function(symbol,
 #' @title Get Atomic/Ionic Radius (Decision Tree - For CrystalNN)
 #' @description Implements Julia-Maria Huebner's specific Decision Tree logic,
 #' aligned with Pymatgen's _get_radius fallback.
-#' Uses cached data to prevent disk I/O on every call.
 #' @param symbol Character. Element symbol.
 #' @param oxidation_state Numeric. Formal charge.
 #' @param cn Numeric. Coordination number.
@@ -400,7 +297,6 @@ get_radius_decision_tree <- function(symbol,
                                      oxidation_state = NA,
                                      cn = 6) {
   atomic_rads <- get_radii_data()
-  # USE CACHED LOADER
   shannon_rads <- get_shannon_radii()
 
   # --- CHECK 1: Oxidation State ---
@@ -415,14 +311,12 @@ get_radius_decision_tree <- function(symbol,
     matches <- shannon_rads[Symbol == symbol &
                               OxidationState == oxidation_state]
     if (nrow(matches) > 0) {
-      # The coordination column is now numeric, so subtraction is safe
       matches[, Diff := abs(Coordination - cn)]
       return(matches[order(Diff)]$Radius[1])
     }
   }
 
   # --- CHECK 2: Covalent (Cordero) ---
-  # Pymatgen logic falls back to covalent/atomic if ionic not found or oxi=0
   radius_match <- atomic_rads[Symbol == symbol &
                                 Type == "covalent"]$Radius
   if (length(radius_match) > 0)
