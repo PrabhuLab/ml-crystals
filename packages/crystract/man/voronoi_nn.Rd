@@ -28,10 +28,6 @@ A \code{data.table} of bonded pairs.
 }
 \description{
 Performs 3D Voronoi analysis on the supercell.
-strictly mapping Asymmetric Unit atoms to their Supercell equivalents for processing.
-Ensures potential neighbors are within cutoff to avoid edge artifacts.
-Uses QJ (Joggled input) to handle degenerate structures (FCC/BCC) and filters/merges
-the resulting micro-faces to produce accurate Solid Angles.
 }
 \seealso{
 Other bonding algorithms: 

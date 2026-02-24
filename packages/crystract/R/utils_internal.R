@@ -233,100 +233,56 @@ is_metal <- function(symbols) {
   return(symbols %in% metals)
 }
 
-#' @title Get Atomic/Ionic Radius (Pymatgen Style - For EconNN)
-#' @description Implements Pymatgen's logic:
-#' 1. Ionic (Shannon) if Oxi != 0.
-#' 2. Covalent (Cordero) if Oxi == 0 or Ionic not found.
-#' 3. Atomic if Covalent not found.
-#' @param symbol Character. Element symbol.
-#' @param oxidation_state Numeric. Formal charge.
-#' @param cn Numeric. Coordination number.
-#' @return Numeric radius in Angstroms.
+#' @title Get Default Radius (Internal)
+#' @description Returns the covalent (or atomic) radius.
+#' @param symbol Element symbol.
 #' @noRd
-get_radius_pymatgen_style <- function(symbol,
-                                      oxidation_state = NA,
-                                      cn = 6) {
+get_default_radius <- function(symbol) {
   atomic_rads <- get_radii_data()
-  shannon_rads <- get_shannon_radii()
+  r <- atomic_rads[Symbol == symbol & Type == "covalent"]$Radius
+  if (length(r) > 0) return(r[1])
 
-  # --- CHECK 1: Oxidation State ---
-  if (!is.na(oxidation_state) &&
-      oxidation_state != 0 && !is.null(shannon_rads)) {
-    # Exact match for Symbol + OS + CN
-    match <- shannon_rads[Symbol == symbol &
-                            OxidationState == oxidation_state &
-                            Coordination == cn]
+  r <- atomic_rads[Symbol == symbol & Type == "atomic"]$Radius
+  if (length(r) > 0) return(r[1])
 
-    if (nrow(match) > 0)
-      return(match$Radius[1])
-
-    # Relax CN: Find matches for Symbol + OS, pick closest CN
-    matches <- shannon_rads[Symbol == symbol &
-                              OxidationState == oxidation_state]
-    if (nrow(matches) > 0) {
-      matches[, Diff := abs(Coordination - cn)]
-      return(matches[order(Diff)]$Radius[1])
-    }
-  }
-
-  # --- CHECK 2: Covalent (Cordero) ---
-  r_atom <- atomic_rads[Symbol == symbol &
-                          Type == "covalent"]$Radius
-  if (length(r_atom) > 0)
-    return(r_atom[1])
-
-  # --- CHECK 3: Atomic ---
-  radius_fallback <- atomic_rads[Symbol == symbol &
-                                   Type == "atomic"]$Radius
-  if (length(radius_fallback) > 0)
-    return(radius_fallback[1])
-
-  # Pymatgen _get_radius returns 0 if no match found
   return(0)
 }
 
-#' @title Get Atomic/Ionic Radius (Decision Tree - For CrystalNN)
-#' @description Implements Julia-Maria Huebner's specific Decision Tree logic,
-#' aligned with Pymatgen's _get_radius fallback.
-#' @param symbol Character. Element symbol.
-#' @param oxidation_state Numeric. Formal charge.
-#' @param cn Numeric. Coordination number.
-#' @return Numeric radius in Angstroms.
+#' @title Get Ionic Radius (Pymatgen _get_radius equivalent)
+#' @description Retrieves oxidation-state dependent radius.
+#' Returns 0 if oxidation state is specified but no matching radius is found.
+#' Returns 0 if no oxidation state is specified (NA).
+#' Returns default radius if oxidation state is 0.
+#' @param symbol Element symbol.
+#' @param oxidation_state Numeric formal charge.
+#' @param cn Coordination number.
 #' @noRd
-get_radius_decision_tree <- function(symbol,
-                                     oxidation_state = NA,
-                                     cn = 6) {
-  atomic_rads <- get_radii_data()
+get_ionic_radius <- function(symbol, oxidation_state = NA_real_, cn = 6) {
+  if (is.na(oxidation_state)) return(0)
+  if (oxidation_state == 0) return(get_default_radius(symbol))
+
   shannon_rads <- get_shannon_radii()
+  if (is.null(shannon_rads)) return(0)
 
-  # --- CHECK 1: Oxidation State ---
-  if (!is.na(oxidation_state) &&
-      oxidation_state != 0 && !is.null(shannon_rads)) {
-    match <- shannon_rads[Symbol == symbol &
-                            OxidationState == oxidation_state &
-                            Coordination == cn]
-    if (nrow(match) > 0)
-      return(match$Radius[1])
+  # 1. Exact Match
+  match <- shannon_rads[Symbol == symbol & OxidationState == oxidation_state & Coordination == cn]
+  if (nrow(match) > 0) return(match$Radius[1])
 
-    matches <- shannon_rads[Symbol == symbol &
-                              OxidationState == oxidation_state]
-    if (nrow(matches) > 0) {
-      matches[, Diff := abs(Coordination - cn)]
-      return(matches[order(Diff)]$Radius[1])
-    }
+  # 2. Relax CN
+  matches <- shannon_rads[Symbol == symbol & OxidationState == oxidation_state]
+  if (nrow(matches) > 0) {
+    matches[, Diff := abs(Coordination - cn)]
+    return(matches[order(Diff)]$Radius[1])
   }
 
-  # --- CHECK 2: Covalent (Cordero) ---
-  radius_match <- atomic_rads[Symbol == symbol &
-                                Type == "covalent"]$Radius
-  if (length(radius_match) > 0)
-    return(radius_match[1])
+  # 3. Average Cationic/Anionic fallback
+  if (oxidation_state > 0) {
+    cat_matches <- shannon_rads[Symbol == symbol & OxidationState > 0]
+    if (nrow(cat_matches) > 0) return(mean(cat_matches$Radius, na.rm = TRUE))
+  } else if (oxidation_state < 0) {
+    an_matches <- shannon_rads[Symbol == symbol & OxidationState < 0]
+    if (nrow(an_matches) > 0) return(mean(an_matches$Radius, na.rm = TRUE))
+  }
 
-  # --- CHECK 3: Atomic ---
-  radius_fallback <- atomic_rads[Symbol == symbol &
-                                   Type == "atomic"]$Radius
-  if (length(radius_fallback) > 0)
-    return(radius_fallback[1])
-
-  return(1.0)
+  return(0)
 }

@@ -13,16 +13,13 @@ econ_nn(distances, atomic_coordinates, tol = 0.2, use_fictive_radius = FALSE)
 
 \item{tol}{A bond strength cutoff (default 0.2).}
 
-\item{use_fictive_radius}{Logical. If \code{TRUE}, calculates Hoppe's fictive ionic radius based
-on the ratio of central/neighbor radii. If \code{FALSE} (default), uses the raw bond distance,
-matching pymatgen's default behavior.}
+\item{use_fictive_radius}{Logical. If \code{TRUE}, calculates Hoppe's fictive ionic radius.}
 }
 \value{
 A \code{data.table} of bonded pairs.
 }
 \description{
 Uses Effective Coordination Numbers (ECoN) and Mean Fictive Ionic Radii (MEFIR).
-Matches pymatgen logic regarding MEFIR initialization and iteration.
 }
 \seealso{
 Other bonding algorithms: 

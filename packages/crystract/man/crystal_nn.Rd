@@ -26,34 +26,23 @@ crystal_nn(
 
 \item{unit_cell_metrics}{Cell parameters.}
 
-\item{cutoff_length}{Numeric. Cutoff in Angstroms for initial neighbor search
-(default 7.0).}
+\item{cutoff_length}{Numeric. Cutoff in Angstroms for initial neighbor search.}
 
-\item{x_diff_weight}{Numeric. Electronegativity difference weight (default 3.0).}
+\item{x_diff_weight}{Numeric. Electronegativity difference weight.}
 
-\item{porous_adjustment}{Logical. If TRUE, adjusts Voronoi weights to
-better describe layered / porous structures (default TRUE).}
+\item{porous_adjustment}{Logical. If TRUE, adjusts Voronoi weights.}
 
-\item{distance_cutoffs}{Numeric vector. Penalizes neighbor distances greater than
-sum of covalent radii plus these cutoffs. Set to NULL to disable.}
+\item{distance_cutoffs}{Numeric vector. Penalizes neighbor distances greater than sum of radii.}
 
-\item{cation_anion}{Logical. If TRUE, restricts bonding targets to sites
-with opposite or zero charge (requires oxidation states).}
+\item{cation_anion}{Logical. Restrictions targets to opposite charge.}
 
-\item{weighted_cn}{Logical. If FALSE (default), returns neighbors for the
-most probable coordination environment with weight 1.0. If TRUE, returns all
-potential neighbors with fractional probabilities.}
+\item{weighted_cn}{Logical. Return fractional probabilities vs strict max probability.}
 }
 \value{
 A \code{data.table} of bonded pairs.
 }
 \description{
-Poer of Pymatgen's \code{CrystalNN} algorithm from the ground up.
-It uses a Voronoi-based algorithm and solid angle weights to determine the
-probability of various coordination environments. It modifies probability using
-smooth distance cutoffs and Pauling electronegativity differences. The output
-is either the most probable coordination environment (\code{weighted_cn = FALSE})
-or a weighted list of coordination environments (\code{weighted_cn = TRUE}).
+Rebuild of Pymatgen's \code{CrystalNN} algorithm from the ground up.
 }
 \seealso{
 Other bonding algorithms: 

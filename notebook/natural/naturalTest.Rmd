@@ -3,8 +3,6 @@ title: "Chemistry-Based Analysis: Sulfides, Selenides, and Tellurides"
 author: "crystract Workflow"
 date: "`r Sys.Date()`"
 output:
-  pdf_document:
-    toc: true
   html_document:
     toc: true
     toc_float: true
@@ -12,6 +10,8 @@ output:
     code_folding: show
     fig_width: 14
     fig_height: 10
+  pdf_document:
+    toc: true
 subtitle: High CN Diagnosis & Weighted CN Analysis
 ---
 
@@ -21,7 +21,9 @@ knitr::opts_chunk$set(echo = TRUE, message = TRUE, warning = FALSE)
 
 ## 1. Introduction
 
-This workflow performs a targeted analysis of **Sulfides, Selenides, and Tellurides**. It utilizes the **Minimum Distance** bonding algorithm within the parallelized extraction pipeline and includes diagnostic steps for high Coordination Numbers (CN > 12) and Weighted Coordination Numbers.
+This workflow performs a targeted analysis of Sulfides, Selenides, and Tellurides. It utilizes the Minimum Distance bonding algorithm within the parallelized extraction pipeline and includes diagnostic steps for high Coordination Numbers (CN > 12) and Weighted Coordination Numbers.
+
+**Note:** All plots in this report are interactive. You can hover to see details, zoom in/out, and click legend items to filter data.
 
 ## 2. Setup: Libraries and Reference Data
 
@@ -44,7 +46,8 @@ library(ggplot2)
 library(forcats)
 library(viridis)
 library(gridExtra)
-library(DT) # For interactive tables
+library(DT)      # For interactive tables
+library(plotly)  # For interactive plots
 
 # --- Initialize Time Tracking ---
 timing_log <- data.frame(
@@ -83,7 +86,7 @@ Filter criteria: **(Contains S OR Se OR Te) AND (Does NOT contain O)**.
 ```{r filter-by-chemistry}
 # --- Configuration ---
 # UPDATE THIS PATH to your local CIF directory
-cif_directory <- "/Users/donngo/Downloads/cif" 
+cif_directory <- "/Users/carnegieuser/Documents/amcsd" 
 
 step_start <- Sys.time()
 
@@ -129,29 +132,130 @@ cat(sprintf("Filtering complete. Kept: %d files.\n", length(target_files)))
 
 ## 4. Parallel Analysis (Optimized)
 
-We now run `crystract` with **`bonding_algorithms = "minimum_distance"`** and **`calculate_bond_angles = TRUE`**. This offloads the heavy geometric calculations to the parallel workers.
+We now run `crystract` with `bonding_algorithms = "minimum_distance"` and `calculate_bond_angles = TRUE` using a customized robust worker function.
 
 ```{r run-analysis}
+# --- Define Custom Radii Table ---
+custom_radii_values <- data.table(
+  Symbol = c("Ac", "Ag", "Al", "Am", "Ar", "As", "At", "Au", "B", "Ba", 
+             "Be", "Bi", "Br", "C", "Ca", "Cd", "Ce", "Cl", "Cm", "Co", 
+             "Cr", "Cs", "Cu", "Dy", "Er", "Eu", "F", "Fe", "Fr", "Ga", 
+             "Gd", "Ge", "H", "He", "Hf", "Hg", "Ho", "I", "In", "Ir", 
+             "K", "Kr", "La", "Li", "Lu", "Mg", "Mn", "Mo", "N", "Na", 
+             "Nb", "Nd", "Ne", "Ni", "Np", "O", "Os", "P", "Pa", "Pb", 
+             "Pd", "Pm", "Po", "Pr", "Pt", "Pu", "Ra", "Rb", "Re", "Rh", 
+             "Rn", "Ru", "S", "Sb", "Sc", "Se", "Si", "Sm", "Sn", "Sr", 
+             "Ta", "Tb", "Tc", "Te", "Th", "Ti", "Tl", "Tm", "U", "V", 
+             "W", "Xe", "Y", "Yb", "Zn", "Zr"),
+  Radius = c(2.15, 1.45, 1.21, 1.8, 1.06, 1.19, 1.5, 1.36, 0.84, 2.15, 
+             0.96, 1.48, 1.2, 0.73, 1.76, 1.44, 2.04, 1.02, 1.69, 1.38, 
+             1.39, 2.44, 1.32, 1.92, 1.89, 1.98, 0.57, 1.42, 2.6, 1.22, 
+             1.96, 1.2, 0.31, 0.28, 1.75, 1.32, 1.92, 1.39, 1.42, 1.41, 
+             2.03, 1.16, 2.07, 1.28, 1.87, 1.41, 1.5, 1.54, 0.71, 1.66, 
+             1.64, 2.01, 0.58, 1.24, 1.9, 0.66, 1.44, 1.07, 2, 1.46, 
+             1.39, 1.99, 1.4, 2.03, 1.36, 1.87, 2.21, 2.2, 1.51, 1.42, 
+             1.5, 1.46, 1.05, 1.39, 1.7, 1.2, 1.11, 1.98, 1.39, 1.95, 
+             1.7, 1.94, 1.47, 1.38, 2.06, 1.6, 1.45, 1.9, 1.96, 1.53, 
+             1.62, 1.4, 1.9, 1.87, 1.22, 1.75),
+  Type = "covalent" 
+)
+
+set_radii_data(custom_radii_values)
+cat("Custom radii table successfully loaded.\n")
+
 analysis_output_dir <- "~/repos/ml-crystals/notebook/natural/crystract_chemistry_results"
 num_workers <- parallel::detectCores() - 1 
 
+# --- Robust Worker Function ---
+process_structure_robust <- function(file_path) {
+  fname <- basename(file_path)
+  
+  tryCatch({
+    # 1. Read and Extract
+    cif_list <- read_cif_files(file_path)
+    if(length(cif_list) == 0) return(NULL)
+    cif_data <- cif_list[[1]]
+    
+    formula <- extract_chemical_formula(cif_data)
+    atoms   <- extract_atomic_coordinates(cif_data, formula)
+    metrics <- extract_unit_cell_metrics(cif_data)
+    sym_ops <- extract_symmetry_operations(cif_data)
+    
+    if (is.null(atoms) || is.null(metrics) || is.null(sym_ops)) return(NULL)
+    
+    # 2. Transform and Expand (3x3x3 Supercell)
+    full_cell <- apply_symmetry_operations(atoms, sym_ops, metrics, tolerance = 1e-4)
+    expanded  <- expand_transformed_coords(full_cell, expansion_factors = c(1, 1, 1))
+    
+    # 3. Calculate Raw Distances
+    dists <- calculate_distances(atoms, expanded, metrics, tolerance = 1e-4)
+    if (nrow(dists) == 0) return(NULL) 
+    
+    # --- 4. Attempt Ghost Filtering with Fallback ---
+    filter_status <- "applied"
+    
+    ghost_res <- tryCatch({
+      filter_ghost_distances(dists, atoms, margin = 0.15, radii_type = "covalent")
+    }, error = function(e) list(kept = data.table()))
+    
+    clean_dists <- ghost_res$kept
+    
+    # 5. Determine Bonds
+    bonds <- minimum_distance(clean_dists, delta = 0.1)
+    if (nrow(bonds) == 0) return(NULL)
+    
+    # 6. Calculate Properties
+    cn_table <- calculate_neighbor_counts(bonds)
+    angles   <- calculate_angles(bonds, atoms, expanded, metrics)
+    
+    # 7. Return Result
+    data.table(
+      file_name = fname,
+      chemical_formula = formula,
+      filter_status = filter_status, # Log status for diagnosis
+      atomic_coordinates = list(atoms),
+      expanded_coords = list(expanded),
+      bonds_minimum_distance = list(bonds),
+      angles_minimum_distance = list(angles),
+      cn_minimum_distance = list(cn_table)
+    )
+    
+  }, error = function(e) {
+    return(NULL)
+  })
+}
+
+# --- Execution Loop ---
 step_start <- Sys.time()
 
 if (length(target_files) > 0) {
-  analyze_cif_files(
-    file_paths = target_files,
-    workers = num_workers,
-    output_dir = analysis_output_dir,
-    batch_size = 1000,
-    perform_extraction = TRUE,
-    perform_calcs_and_transforms = TRUE,
-    bonding_algorithms = "minimum_distance",  
-    calculate_bond_angles = TRUE,
-    minimum_distance_delta = 0.1,
-    perform_error_propagation = FALSE,
-    tolerance = 1e-4
-  )
-  timing_log <- rbind(timing_log, log_time("2. Analysis", step_start))
+  if (!dir.exists(analysis_output_dir)) dir.create(analysis_output_dir, recursive = TRUE)
+  batch_size  <- 1000
+  num_batches <- ceiling(length(target_files) / batch_size)
+  
+  plan(multisession, workers = num_workers)
+  
+  for (b in 1:num_batches) {
+    idx_start <- (b - 1) * batch_size + 1
+    idx_end   <- min(b * batch_size, length(target_files))
+    batch_files <- target_files[idx_start:idx_end]
+    
+    cat(sprintf("Processing Batch %d of %d (%d files)...\n", b, num_batches, length(batch_files)))
+    results_list <- future_lapply(batch_files, process_structure_robust, future.seed = TRUE)
+    batch_dt <- rbindlist(results_list, fill = TRUE)
+    
+    if (nrow(batch_dt) > 0) {
+      save_path <- file.path(analysis_output_dir, paste0("batch_", b, ".rds"))
+      saveRDS(batch_dt, save_path)
+      
+      # Print filter stats for this batch
+      stats <- table(batch_dt$filter_status)
+      cat("  Filter Status:", paste(names(stats), stats, sep="=", collapse=", "), "\n")
+    }
+    rm(results_list, batch_dt); gc()
+  }
+  plan(sequential)
+  timing_log <- rbind(timing_log, log_time("2. Analysis (Robust)", step_start))
 } else {
   stop("No files passed the chemistry filter.")
 }
@@ -159,34 +263,22 @@ if (length(target_files) > 0) {
 
 ## 5. Data Processing: Aggregation & Diagnosis
 
-This step iterates through the batch results produced in Step 4. Since bonds and angles are already calculated, this step focuses on:
-1.  **Aggregating** the results.
-2.  Calculating **Weighted Coordination Numbers**.
-3.  **Diagnosing** high CN anomalies.
-
 ```{r process-and-diagnose}
 step_start <- Sys.time()
 
-# Storage lists
 final_bonds_list <- list()
 final_angles_list <- list()
-high_cn_debug_log <- list() # Stores info on why CN > 12
+high_cn_debug_log <- list()
 
 if (dir.exists(analysis_output_dir)) {
   cat("Reading batch files and aggregating results...\n")
-  
-  # Get list of batch RDS files
   batch_files <- list.files(analysis_output_dir, pattern = "^batch_\\d+\\.rds$", full.names = TRUE)
   
   for (bf in batch_files) {
     batch_dt <- readRDS(bf)
     
-    # Iterate through each structure in the batch
     for (i in 1:nrow(batch_dt)) {
       current_file <- batch_dt$file_name[i]
-      
-      # --- 1. RETRIEVE PRE-CALCULATED DATA ---
-      # Note: Column names depend on bonding algorithm used
       if (is.null(batch_dt$bonds_minimum_distance) || length(batch_dt$bonds_minimum_distance) < i) next
       
       bonded_pairs <- batch_dt$bonds_minimum_distance[[i]]
@@ -196,101 +288,54 @@ if (dir.exists(analysis_output_dir)) {
       expanded_coords <- batch_dt$expanded_coords[[i]]
       
       if (is.null(bonded_pairs) || nrow(bonded_pairs) == 0 || is.null(coords)) next
-      
-      # Deduplicate coordinates for occupancy lookup
       coords <- unique(coords, by = "Label")
 
-      # --- 2. DIAGNOSE HIGH GEOMETRIC CN ---
-      # 'cn_table' comes from the wrapper. It contains 'Atom' and 'CoordinationNumber'.
+      # --- DIAGNOSE HIGH GEOMETRIC CN ---
       high_cn_atoms <- cn_table[CoordinationNumber > 12]
-      
       if (nrow(high_cn_atoms) > 0) {
-        # Grab the specific bonds causing the issue
         bad_bonds <- bonded_pairs[Atom1 %in% high_cn_atoms$Atom]
-        
-        # Merge neighbor coordinates (Atom2) for debugging
-        # We use expanded_coords because Atom2 is likely a symmetry mate
         exp_coords_ref <- unique(expanded_coords[, .(Label, x2=x_a, y2=y_b, z2=z_c)], by = "Label")
-        bad_bonds <- merge(bad_bonds, exp_coords_ref, 
-                           by.x = "Atom2", by.y = "Label", all.x = TRUE)
-        
-        # Back-calculate Central Atom (Atom1) coordinates using Delta
-        bad_bonds[, `:=`(
-          x1 = x2 + DeltaX,
-          y1 = y2 + DeltaY,
-          z1 = z2 + DeltaZ
-        )]
-        
-        # Round for display
-        bad_bonds[, `:=`(
-          x1 = round(x1, 4), y1 = round(y1, 4), z1 = round(z1, 4),
-          x2 = round(x2, 4), y2 = round(y2, 4), z2 = round(z2, 4)
-        )]
-        
-        # Add metadata
-        bad_bonds[, `:=`(
-          File = current_file,
-          Total_CN = cn_table[match(Atom1, Atom), CoordinationNumber]
-        )]
-        
-        # Reorder for log
-        log_entry <- bad_bonds[, .(File, Atom1, x1, y1, z1, Atom2, x2, y2, z2, Distance, Total_CN)]
-        high_cn_debug_log[[length(high_cn_debug_log) + 1]] <- log_entry
+        bad_bonds <- merge(bad_bonds, exp_coords_ref, by.x = "Atom2", by.y = "Label", all.x = TRUE)
+        bad_bonds[, `:=`(x1 = x2 + DeltaX, y1 = y2 + DeltaY, z1 = z2 + DeltaZ)]
+        bad_bonds[, `:=`(File = current_file, Total_CN = cn_table[match(Atom1, Atom), CoordinationNumber])]
+        high_cn_debug_log[[length(high_cn_debug_log) + 1]] <- bad_bonds
       }
       
-      # --- 3. COLLECT ANGLES ---
+      # --- COLLECT ANGLES ---
       if (!is.null(angles) && nrow(angles) > 0) {
         angles[, file_name := current_file]
         final_angles_list[[length(final_angles_list) + 1]] <- angles
       }
       
-      # --- 4. CALCULATE WEIGHTED CN ---
-      # Prepare occupancy data from Atomic Coordinates
+      # --- CALCULATE WEIGHTED CN ---
       bonded_pairs[, NeighborSite := sub("_.*", "", Atom2)]
-      
-      # Count how many times a specific site is a neighbor
       site_counts <- bonded_pairs[, .(m_i = .N), by = .(Atom1, NeighborSite)]
-      
-      # Merge occupancy info
       site_counts <- merge(site_counts, coords[, .(Label, Occupancy)], 
                            by.x = "NeighborSite", by.y = "Label", all.x = TRUE)
       site_counts[is.na(Occupancy), Occupancy := 1.0]
-      
-      # Weighted Sum: Sum(Multiplicity * Occupancy)
       w_cn <- site_counts[, .(CN_Weighted = sum(m_i * Occupancy)), by = .(Atom1)]
       
-      # Merge Weighted CN back to the bond table
       bonded_pairs <- merge(bonded_pairs, w_cn, by = "Atom1")
-      
-      # Add Metadata
       bonded_pairs[, `:=`(
         file_name = current_file,
         RoundedWeightedCN = round(CN_Weighted),
-        CoordinationNumber = cn_table[match(Atom1, Atom), CoordinationNumber]
-      )]
-      
-      # Extract Elements
-      bonded_pairs[, `:=`(
+        CoordinationNumber = cn_table[match(Atom1, Atom), CoordinationNumber],
         Element1 = str_extract(Atom1, "^[A-Za-z]+"),
         Element2 = str_extract(Atom2, "^[A-Za-z]+")
       )]
-      
       final_bonds_list[[length(final_bonds_list) + 1]] <- bonded_pairs
     }
   }
   
-  # --- 5. FINALIZE TABLES ---
   final_bonds_data <- rbindlist(final_bonds_list, fill = TRUE)
   all_angles_data <- rbindlist(final_angles_list, fill = TRUE)
   high_cn_diagnosis <- rbindlist(high_cn_debug_log, fill = TRUE)
   
-  # Add Atomic Numbers (Z) for Sorting
   final_bonds_data <- merge(final_bonds_data, ptable, by.x="Element1", by.y="Symbol", all.x=TRUE)
   setnames(final_bonds_data, "Z", "Z1")
   final_bonds_data <- merge(final_bonds_data, ptable, by.x="Element2", by.y="Symbol", all.x=TRUE)
   setnames(final_bonds_data, "Z", "Z2")
   
-  # Add Z to Angles
   if(nrow(all_angles_data) > 0) {
     all_angles_data[, Element1 := str_extract(CentralAtom, "^[A-Za-z]+")]
     all_angles_data[, Element2 := str_extract(Neighbor1, "^[A-Za-z]+")]
@@ -302,169 +347,81 @@ if (dir.exists(analysis_output_dir)) {
 
   timing_log <- rbind(timing_log, log_time("3. Process & Diagnose", step_start))
   
-  # Cleanup rows with missing Z (e.g., if element lookup failed)
   final_bonds_data <- final_bonds_data[!is.na(Z1) & !is.na(Z2)]
   if(nrow(all_angles_data) > 0) all_angles_data <- all_angles_data[!is.na(Z1) & !is.na(Z2)]
-  
   cat("Processing Complete.\n")
 }
 ```
 
-### 5.1 Diagnostics (Geometric CN)
+### 5.1 Diagnostics
 
 ```{r show-diagnosis}
 if (exists("high_cn_diagnosis") && nrow(high_cn_diagnosis) > 0) {
-  cat(paste("Found", length(unique(high_cn_diagnosis$File)), "files with suspiciously high Geometric CN.\n"))
-  
-  # Show top examples of high CN
-  datatable(
-    head(high_cn_diagnosis[order(-Total_CN)], 500),
-    caption = "Diagnostic: Bonds contributing to Geometric CN > 12",
-    options = list(scrollX = TRUE, pageLength = 10)
-  )
+  datatable(head(high_cn_diagnosis[order(-Total_CN)], 500), 
+            options = list(scrollX = TRUE, pageLength = 5))
 } else {
-  cat("Good news: No atoms with Geometric CN > 12 were found after filtering.\n")
+  cat("No Geometric CN > 12 found.\n")
 }
 ```
 
-### 5.2 Diagnostics (Weighted CN)
+## 7. Global Visualization (Interactive)
 
-```{r weighted-cn-diagnosis}
-# --- 5.2 HIGH WEIGHTED CN DIAGNOSIS ---
-cat("--- 5.2 High Weighted Coordination Number Diagnosis ---\n")
-
-# Define threshold for suspiciously high weighted CN
-wcn_threshold <- 12.0
-
-# Filter the bond list for unique atoms with high weighted CN
-# We use unique() because the bond list has one row per bond, 
-# but the WeightedCN is identical for all bonds of the same central atom.
-high_wcn_atoms <- unique(
-  final_bonds_data[RoundedWeightedCN > wcn_threshold, 
-                   .(file_name, Atom1, Element1, CoordinationNumber, RoundedWeightedCN)],
-  by = c("file_name", "Atom1")
-)
-
-if (nrow(high_wcn_atoms) > 0) {
-  cat(sprintf("Found %d atoms with Weighted CN > %.1f.\n", nrow(high_wcn_atoms), wcn_threshold))
-  
-  # Sort by highest Weighted CN first
-  high_wcn_atoms <- high_wcn_atoms[order(-RoundedWeightedCN)]
-  
-  # Display interactive table
-  datatable(
-    high_wcn_atoms,
-    caption = "Atoms with High Weighted Coordination Numbers (>12)",
-    colnames = c("File", "Atom", "Element", "Geometric CN", "Weighted CN"),
-    options = list(scrollX = TRUE, pageLength = 10)
-  )
-} else {
-  cat(sprintf("No atoms found with Weighted CN > %.1f.\n", wcn_threshold))
-}
-
-# --- 5.2.1 Detailed Breakdown for Top Case ---
-# If we found issues, let's look closer at the WORST offender to see WHY.
-if (nrow(high_wcn_atoms) > 0) {
-  worst_offender <- high_wcn_atoms[1]
-  cat(sprintf("\nDetailed Breakdown for Worst Offender: %s in %s\n", 
-              worst_offender$Atom1, worst_offender$file_name))
-  
-  # Retrieve original bonds for this specific atom
-  debug_bonds <- final_bonds_data[file_name == worst_offender$file_name & 
-                                  Atom1 == worst_offender$Atom1]
-  
-  print(debug_bonds[, .(Atom2, Distance, CN_Weighted)])
-}
-```
-
-## 6. Performance Dashboard
-
-```{r performance-dashboard, echo=FALSE}
-total_duration <- as.numeric(difftime(Sys.time(), global_start, units = "mins"))
-timing_log <- rbind(timing_log, data.frame(Step = "Total Runtime", Duration_Mins = total_duration))
-
-cat("=== Performance Summary ===\n")
-cat(sprintf("Total Structures:   %d\n", length(target_files)))
-cat(sprintf("Total Runtime:      %.2f min\n", total_duration))
-print(timing_log)
-```
-
-## 7. Global Visualization: Bubble Plots
-
-**Color:** Mean Bond Length/Angle  
-**Size:** Number of Observations (Data Confidence)  
-**Sorting:** Atomic Number (Z)
-
-### 7.1 Pairwise Bond Lengths (All Elements)
-
-This plot shows every element pair found in the dataset.
+### 7.1 Pairwise Bond Lengths
 
 ```{r viz-pairwise-length, fig.width=10, fig.height=10}
-# Aggregate
 pair_len_agg <- final_bonds_data[, .(MeanLength = mean(Distance), Count = .N), 
                                  by = .(Element1, Z1, Element2, Z2)]
-# Filter noise
 pair_len_agg <- pair_len_agg[Count >= 5]
-
-# Sort Factors by Atomic Number (Z)
 pair_len_agg[, Element1 := fct_reorder(Element1, Z1)]
 pair_len_agg[, Element2 := fct_reorder(Element2, Z2)]
 
-ggplot(pair_len_agg, aes(x = Element2, y = Element1)) +
-  geom_point(aes(size = Count, fill = MeanLength), shape = 21, color = "grey60") +
-  scale_fill_viridis(option = "magma", direction = -1, name = "Length (Å)") +
+p71 <- ggplot(pair_len_agg, aes(x = Element2, y = Element1, 
+                                text = paste("Center:", Element1, "<br>Neighbor:", Element2, 
+                                             "<br>Avg Dist:", round(MeanLength, 3), "Å",
+                                             "<br>Count:", Count))) +
+  geom_point(aes(size = Count, color = MeanLength)) +
+  scale_color_viridis(option = "magma", direction = -1, name = "Length (Å)") +
   scale_size_continuous(range = c(2, 9), name = "Count") +
-  labs(title = "Pairwise Bond Lengths (All Elements)",
-       subtitle = "Sorted by Atomic Number",
-       x = "Neighbor Element", y = "Central Element") +
+  labs(title = "Pairwise Bond Lengths (All Elements)", x = "Neighbor", y = "Central") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+
+ggplotly(p71, tooltip = "text")
 ```
 
-### 7.2 Pairwise Bond Angles (All Elements)
-
-Visualizing the average bond angle centered at Element 1 involving Neighbor Element 2.
+### 7.2 Pairwise Bond Angles
 
 ```{r viz-pairwise-angle, fig.width=10, fig.height=10}
-# --- CORRECTED SECTION 7.2 ---
-# Uses 'all_angles_data' created in Step 5 instead of missing 'all_results'
-
 if (exists("all_angles_data") && nrow(all_angles_data) > 0) {
-  
-  # Work with a copy of the aggregated data
   df_angles <- copy(all_angles_data)
-  
-  # Ensure Z columns exist (they should be there from Step 5, but safe to check)
   if(!"Z1" %in% names(df_angles)) {
-    df_angles[, Element1 := str_extract(CentralAtom, "^[A-Za-z]+")]
-    df_angles[, Element2 := str_extract(Neighbor1, "^[A-Za-z]+")]
-    df_angles <- merge(df_angles, ptable, by.x="Element1", by.y="Symbol", all.x=TRUE)
-    setnames(df_angles, "Z", "Z1")
-    df_angles <- merge(df_angles, ptable, by.x="Element2", by.y="Symbol", all.x=TRUE)
-    setnames(df_angles, "Z", "Z2")
+     df_angles[, Element1 := str_extract(CentralAtom, "^[A-Za-z]+")]
+     df_angles[, Element2 := str_extract(Neighbor1, "^[A-Za-z]+")]
+     df_angles <- merge(df_angles, ptable, by.x="Element1", by.y="Symbol", all.x=TRUE)
+     setnames(df_angles, "Z", "Z1")
+     df_angles <- merge(df_angles, ptable, by.x="Element2", by.y="Symbol", all.x=TRUE)
+     setnames(df_angles, "Z", "Z2")
   }
-
-  # Filter missing Z and aggregate
   df_angles <- df_angles[!is.na(Z1) & !is.na(Z2)]
   
   pair_ang_agg <- df_angles[, .(MeanAngle = mean(Angle), Count = .N), 
                             by = .(Element1, Z1, Element2, Z2)]
   pair_ang_agg <- pair_ang_agg[Count >= 5]
-  
-  # Sort by Z
   pair_ang_agg[, Element1 := fct_reorder(Element1, Z1)]
   pair_ang_agg[, Element2 := fct_reorder(Element2, Z2)]
 
-  ggplot(pair_ang_agg, aes(x = Element2, y = Element1)) +
-    geom_point(aes(size = Count, fill = MeanAngle), shape = 21, color = "grey60") +
-    scale_fill_viridis(option = "magma", name = "Angle (°)") +
+  p72 <- ggplot(pair_ang_agg, aes(x = Element2, y = Element1,
+                                  text = paste("Center:", Element1, "<br>Neighbor:", Element2,
+                                               "<br>Avg Angle:", round(MeanAngle, 1), "°",
+                                               "<br>Count:", Count))) +
+    geom_point(aes(size = Count, color = MeanAngle)) +
+    scale_color_viridis(option = "magma", name = "Angle (°)") +
     scale_size_continuous(range = c(2, 9), name = "Count") +
-    labs(title = "Pairwise Bond Angles (All Elements)",
-         subtitle = "Sorted by Atomic Number",
-         x = "Neighbor Element", y = "Central Element") +
+    labs(title = "Pairwise Bond Angles", x = "Neighbor", y = "Central") +
     theme_minimal() +
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
-    
+
+  ggplotly(p72, tooltip = "text")
 } else {
   cat("No bond angle data available.\n")
 }
@@ -472,100 +429,99 @@ if (exists("all_angles_data") && nrow(all_angles_data) > 0) {
 
 ## 8. Coordination Number Analysis
 
-### 8.1 Element vs. Regular Coordination Number (Sorted by Z)
-
-This uses the raw `CoordinationNumber` (Regular CN). Note that disordered structures may show artificially high CNs here.
+### 8.1 Regular CN
 
 ```{r viz-regular-cn, fig.width=10, fig.height=10}
-# Aggregate using raw CoordinationNumber
 reg_cn_agg <- final_bonds_data[, .(MeanLength = mean(Distance), Count = .N), 
                                by = .(Element1, Z1, CoordinationNumber)]
-
-# Filter for readability (Remove rare CNs and noise)
-reg_cn_agg <- reg_cn_agg[Count >= 10 ] #& CoordinationNumber <= 12]
-
-# Sort by Z
+reg_cn_agg <- reg_cn_agg[Count >= 10]
 reg_cn_agg[, Element1 := fct_reorder(Element1, Z1)]
 
-ggplot(reg_cn_agg, aes(x = factor(CoordinationNumber), y = Element1)) +
-  geom_point(aes(size = Count, fill = MeanLength), shape = 21, color = "grey50") +
-  scale_fill_viridis(option = "magma", direction = -1, name = "Length (Å)") +
+p81 <- ggplot(reg_cn_agg, aes(x = factor(CoordinationNumber), y = Element1,
+                              text = paste("Element:", Element1, "<br>CN:", CoordinationNumber,
+                                           "<br>Avg Dist:", round(MeanLength, 3), "Å",
+                                           "<br>Count:", Count))) +
+  geom_point(aes(size = Count, color = MeanLength)) +
+  scale_color_viridis(option = "magma", direction = -1, name = "Length") +
   scale_size_continuous(range = c(2, 8)) +
-  labs(title = "Bond Lengths vs. Regular Coordination Number",
-       subtitle = "Elements sorted by Atomic Number",
-       x = "Regular Coordination Number", y = "Central Element") +
-  theme_minimal() +
-  theme(panel.grid.major.x = element_blank())
+  labs(title = "Bond Length vs Regular CN", x = "CN", y = "Element") +
+  theme_minimal()
+
+ggplotly(p81, tooltip = "text")
 ```
 
-### 8.2 Element vs. Weighted Coordination Number (Sorted by Z)
-
-This uses the occupancy-weighted CN, correcting for disorder.
+### 8.2 Weighted CN
 
 ```{r viz-weighted-cn-z, fig.width=10, fig.height=10}
-# Aggregate using Rounded Weighted CN
 wcn_agg <- final_bonds_data[, .(MeanLength = mean(Distance), Count = .N), 
                             by = .(Element1, Z1, RoundedWeightedCN)]
-
-# Filter for readability (Remove rare CNs and noise)
-wcn_agg <- wcn_agg[Count >= 10 & RoundedWeightedCN > 0] # & RoundedWeightedCN <= 12]
-
-# Sort by Z
+wcn_agg <- wcn_agg[Count >= 10 & RoundedWeightedCN > 0]
 wcn_agg[, Element1 := fct_reorder(Element1, Z1)]
 
-ggplot(wcn_agg, aes(x = factor(RoundedWeightedCN), y = Element1)) +
-  geom_point(aes(size = Count, fill = MeanLength), shape = 21, color = "grey50") +
-  scale_fill_viridis(option = "magma", direction = -1, name = "Length (Å)") +
+p82 <- ggplot(wcn_agg, aes(x = factor(RoundedWeightedCN), y = Element1,
+                           text = paste("Element:", Element1, "<br>W-CN:", RoundedWeightedCN,
+                                        "<br>Avg Dist:", round(MeanLength, 3), "Å",
+                                        "<br>Count:", Count))) +
+  geom_point(aes(size = Count, color = MeanLength)) +
+  scale_color_viridis(option = "magma", direction = -1, name = "Length") +
   scale_size_continuous(range = c(2, 8)) +
-  labs(title = "Bond Lengths vs. Weighted Coordination Number",
-       subtitle = "Elements sorted by Atomic Number (Disorder Corrected)",
-       x = "Weighted Coordination Number", y = "Central Element") +
-  theme_minimal() +
-  theme(panel.grid.major.x = element_blank())
+  labs(title = "Bond Length vs Weighted CN", x = "Weighted CN", y = "Element") +
+  theme_minimal()
+
+ggplotly(p82, tooltip = "text")
 ```
 
-### 8.3 Element vs. Weighted Coordination Number (Sorted by Bond Length)
-
-Standard balloon plot sorted by bond length to visualize ionic radii trends.
+### 8.3 Weighted CN (Sorted by Bond Length)
 
 ```{r viz-weighted-cn-len, fig.width=10, fig.height=10}
-# Re-sort factor by MeanLength
 wcn_agg_len <- copy(wcn_agg)
-# Calculate global mean length per element to sort the Y-axis
 elem_means <- wcn_agg_len[, .(GlobalMean = mean(MeanLength)), by = Element1]
 wcn_agg_len <- merge(wcn_agg_len, elem_means, by="Element1")
 wcn_agg_len[, Element1 := fct_reorder(Element1, GlobalMean)]
 
-ggplot(wcn_agg_len, aes(x = factor(RoundedWeightedCN), y = Element1)) +
-  geom_point(aes(size = Count, fill = MeanLength), shape = 21, color = "grey50") +
-  scale_fill_viridis(option = "magma", direction = -1, name = "Length (Å)") +
-  scale_size_continuous(range = c(2, 8)) +
-  labs(title = "Bond Lengths vs. Weighted Coordination Number",
-       subtitle = "Elements sorted by Average Bond Length",
-       x = "Weighted Coordination Number", y = "Central Element") +
+p83 <- ggplot(wcn_agg_len, aes(x = factor(RoundedWeightedCN), y = Element1,
+                               text = paste("Element:", Element1, "<br>W-CN:", RoundedWeightedCN,
+                                            "<br>Avg Dist:", round(MeanLength, 3), "Å"))) +
+  geom_point(aes(size = Count, color = MeanLength)) +
+  scale_color_viridis(option = "magma", direction = -1, name = "Length") +
+  scale_size_continuous(range = c(2, 10)) +
+  labs(title = "Length vs W-CN (Sorted by Length)", x = "Weighted CN", y = "Element") +
   theme_minimal()
+
+ggplotly(p83, tooltip = "text")
 ```
 
-## 9. Chalcogen-Specific Heatmaps
-
-Targeting **S, Se, Te**. Axes are sorted by Atomic Number.
+## 9. Chalcogen-Specific Analysis
 
 ```{r chalcogen-setup}
 targets <- c("S", "Se", "Te")
 df_center_chalc <- final_bonds_data[Element1 %in% targets]
-df_neighbor_chalc <- final_bonds_data[Element2 %in% targets]
 ```
 
-### 9.1 S, Se, Te Centers (Bond Length)
+### 9.1 S, Se, Te: Bond Lengths (Interactive Bubble)
 
-```{r chalc-center, fig.width=15, fig.height=3}
+**Size:** Number of Observations. **Color:** Mean Distance.
+
+```{r chalc-center-len, fig.width=15, fig.height=5}
 agg_center <- df_center_chalc[, .(MeanDist = mean(Distance), N=.N), by=.(Element1, Z1, Element2, Z2)]
 agg_center <- agg_center[N >= 3]
-
-# Sort by Z
 agg_center[, Element1 := fct_reorder(Element1, Z1)]
 agg_center[, Element2 := fct_reorder(Element2, Z2)]
 
+p91 <- ggplot(agg_center, aes(x = Element2, y = Element1,
+                              text = paste("Center:", Element1, "<br>Neighbor:", Element2,
+                                           "<br>Dist:", round(MeanDist, 3), "Å",
+                                           "<br>Obs:", N))) +
+  geom_point(aes(size = N, color = MeanDist)) +
+  scale_color_viridis(option = "magma", direction = -1, name = "Dist (Å)") +
+  scale_size_continuous(range = c(3, 10), name = "Count") +
+  labs(title = "Bond Lengths: S, Se, Te Centers", x = "Neighbor", y = "Central") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+
+ggplotly(p91, tooltip = "text")
+
+# Heatmap
 ggplot(agg_center, aes(x = Element2, y = Element1, fill = MeanDist)) +
   geom_tile(color = "white") +
   scale_fill_viridis(option = "magma", direction = -1, name = "Dist (Å)") +
@@ -576,9 +532,99 @@ ggplot(agg_center, aes(x = Element2, y = Element1, fill = MeanDist)) +
   coord_fixed()
 ```
 
-### 10. Distribution Analysis
+### 9.2 S, Se, Te: Regular CN
 
-This visualization compares the distribution of bond lengths for the most common coordination numbers (e.g., 4 and 6), allowing us to see the "spread" of bond distances for specific elements.
+**Size:** Number of Observations. **Color:** Mean Geometric CN.
+
+```{r chalc-center-cn, fig.width=15, fig.height=5}
+agg_center_cn <- df_center_chalc[, .(MeanCN = mean(CoordinationNumber), N=.N), 
+                                 by=.(Element1, Z1, Element2, Z2)]
+agg_center_cn <- agg_center_cn[N >= 3]
+agg_center_cn[, Element1 := fct_reorder(Element1, Z1)]
+agg_center_cn[, Element2 := fct_reorder(Element2, Z2)]
+
+p92 <- ggplot(agg_center_cn, aes(x = Element2, y = Element1,
+                                 text = paste("Center:", Element1, "<br>Neighbor:", Element2,
+                                              "<br>Avg CN:", round(MeanCN, 1),
+                                              "<br>Obs:", N))) +
+  geom_point(aes(size = N, color = MeanCN)) +
+  scale_color_viridis(option = "magma", direction = -1, name = "Avg CN") +
+  scale_size_continuous(range = c(3, 10), name = "Count") +
+  labs(title = "Regular CN: S, Se, Te Centers", x = "Neighbor", y = "Central") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+
+ggplotly(p92, tooltip = "text")
+
+# Heatmap
+ggplot(agg_center_cn, aes(x = Element2, y = Element1, fill = MeanCN)) +
+  geom_tile(color = "white") +
+  scale_fill_viridis(option = "magma", direction = -1, name = "Avg CN") +
+  labs(title = "Regular Coordination Number: S, Se, Te Centers", 
+       subtitle = "Sorted by Atomic Number",
+       x = "Neighbor Element", y = "Central Chalcogen") +
+  theme_minimal() +
+  coord_fixed()
+```
+
+### 9.3 S, Se, Te: Weighted CN (Special Aggregation)
+
+**Size:** Average Total CN (Environment size).  
+**Color:** Average Specific Weighted CN (Contribution of Neighbor).
+
+```{r chalc-center-wcn, fig.width=15, fig.height=5}
+# 1. Calculate Total Weighted CN per Central Atom
+total_wcn_per_atom <- final_bonds_data[, .(Total_WCN = sum(CN_Weighted)), by = .(file_name, Atom1)]
+plot_data_wcn <- merge(final_bonds_data, total_wcn_per_atom, by = c("file_name", "Atom1"))
+
+# 2. Filter & Aggregate
+df_plot <- plot_data_wcn[Element1 %in% targets]
+agg_wcn_complex <- df_plot[, .(
+  Avg_Specific_WCN = mean(CN_Weighted), # Color
+  Avg_Total_WCN    = mean(Total_WCN),   # Size
+  N                = .N
+), by = .(Element1, Z1, Element2, Z2)]
+
+agg_wcn_complex <- agg_wcn_complex[N >= 3]
+agg_wcn_complex[, Element1 := fct_reorder(Element1, Z1)]
+agg_wcn_complex[, Element2 := fct_reorder(Element2, Z2)]
+
+p93 <- ggplot(agg_wcn_complex, aes(x = Element2, y = Element1,
+                                   text = paste("Center:", Element1, "<br>Neighbor:", Element2,
+                                                "<br>Specific WCN (Color):", round(Avg_Specific_WCN, 2),
+                                                "<br>Total Env CN (Size):", round(Avg_Total_WCN, 2),
+                                                "<br>Obs:", N))) +
+  geom_point(aes(size = Avg_Total_WCN, color = Avg_Specific_WCN)) +
+  scale_color_viridis(option = "magma", direction = -1, name = "Specific WCN") +
+  scale_size_continuous(range = c(2, 9), name = "Total WCN") +
+  labs(title = "Weighted CN Analysis", x = "Neighbor", y = "Central") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+
+ggplotly(p93, tooltip = "text")
+
+# Aggregate Mean Weighted Coordination Number
+agg_center_wcn <- df_center_chalc[, .(MeanWCN = mean(CN_Weighted), N=.N), 
+                                  by=.(Element1, Z1, Element2, Z2)]
+agg_center_wcn <- agg_center_wcn[N >= 3]
+
+# Sort by Atomic Number (Z)
+agg_center_wcn[, Element1 := fct_reorder(Element1, Z1)]
+agg_center_wcn[, Element2 := fct_reorder(Element2, Z2)]
+
+ggplot(agg_center_wcn, aes(x = Element2, y = Element1, fill = MeanWCN)) +
+  geom_tile(color = "white") +
+  scale_fill_viridis(option = "magma", direction = -1, name = "W-CN") +
+  labs(title = "Weighted Coordination Number: S, Se, Te Centers", 
+       subtitle = "Sorted by Atomic Number (Disorder Corrected)",
+       x = "Neighbor Element", y = "Central Chalcogen") +
+  theme_minimal() +
+  coord_fixed()
+```
+
+## 10. Distribution Analysis
+
+This visualization compares the distribution of bond lengths for the most common coordination numbers (e.g., 4 and 6), allowing us to see the “spread” of bond distances for specific elements.
 
 ```{r viz-distributions, fig.width=12, fig.height=6}
 # --- Distribution Analysis (Violin Plot) ---
@@ -605,65 +651,110 @@ ggplot(violin_data, aes(x = reorder(Element1, Distance), y = Distance)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
-### 11. Advanced Geometry: Length vs. Angle (Corrected)
+## 11. Advanced: Length vs Angle (Grouped by Neighbor Family)
 
-This version adds `allow.cartesian = TRUE` to the merge function and ensures the bond data is unique before joining.
+Faceted by S, Se, Te. Neighbors colored by Periodic Group (Expanded).
 
-```{r viz-advanced-scatter, fig.width=10, fig.height=10, warning=FALSE, message=FALSE}
-# --- 1. Setup Group Metadata ---
-# Map elements to their Periodic Groups
-element_metadata <- data.table(
-  Symbol = c("Li","Na","K","Rb","Cs", "Be","Mg","Ca","Sr","Ba",
-             "B","Al","Ga","In","Tl", "C","Si","Ge","Sn","Pb",
-             "N","P","As","Sb","Bi", "O","S","Se","Te","Po",
-             "F","Cl","Br","I"),
-  Group = c(rep("Group 1", 5), rep("Group 2", 5),
-            rep("Group 13", 5), rep("Group 14", 5), rep("Group 15", 5),
-            rep("Group 16", 5), rep("Group 17", 4))
+```{r viz-advanced-scatter, fig.width=12, fig.height=6, warning=FALSE, message=FALSE}
+# --- 1. Expanded Group Metadata with Split Transition Metals ---
+extended_groups <- data.table(
+  Symbol = c(
+    # Alkali / Alkaline (Groups 1-2)
+    "Li","Na","K","Rb","Cs","Fr","Be","Mg","Ca","Sr","Ba","Ra",
+    
+    # Early Transition Metals (Groups 3-6) - Sc, Ti, V, Cr columns
+    "Sc","Y","La","Ti","Zr","Hf","V","Nb","Ta","Cr","Mo","W",
+    
+    # Late Transition Metals (Groups 7-10) - Mn, Fe, Co, Ni columns
+    "Mn","Tc","Re","Fe","Ru","Os","Co","Rh","Ir","Ni","Pd","Pt",
+    
+    # Coinage & Zinc Groups (Groups 11-12) - Cu, Zn columns
+    "Cu","Ag","Au","Zn","Cd","Hg",
+    
+    # Groups 13-17
+    "B","Al","Ga","In","Tl","C","Si","Ge","Sn","Pb","N","P","As",
+    "Sb","Bi","O","S","Se","Te","Po","F","Cl","Br","I"
+  ),
+  GroupLabel = c(
+    rep("Alkali/Alkaline (Gr 1-2)", 12),
+    rep("Early TMs (Gr 3-6)", 12),
+    rep("Late TMs (Gr 7-10)", 12),
+    rep("Coinage/Zinc (Gr 11-12)", 6),
+    rep("Group 13", 5),
+    rep("Group 14", 5),
+    rep("Group 15", 5),
+    rep("Group 16", 5),
+    rep("Group 17", 4)
+  )
 )
 
-# --- 2. Prepare Data ---
 if (exists("all_angles_data") && nrow(all_angles_data) > 0) {
+  # A. Filter Angles for S, Se, Te centers ONLY
+  target_centers <- c("S", "Se", "Te")
+  # Filter using regex to catch isotopes/labels but stricter check later
+  df_angles_sub <- all_angles_data[CentralAtom %like% "^(S|Se|Te)([0-9]|$|_)"]
   
-  # Prepare unique bond list to prevent accidental duplicates
-  unique_bonds <- unique(final_bonds_data[, .(file_name, Atom1, Atom2, Distance)], 
-                         by = c("file_name", "Atom1", "Atom2"))
-
-  # Join Angles with Bond Lengths
-  # We link: File + CentralAtom + Neighbor -> to get the specific Distance
-  # allow.cartesian = TRUE is required because one bond belongs to multiple angles
-  viz_scatter_data <- merge(
-    all_angles_data, 
-    unique_bonds, 
+  # Extract Base Symbols
+  df_angles_sub[, CenterSym := str_extract(CentralAtom, "^[A-Za-z]+")]
+  df_angles_sub[, NeighborSym := str_extract(Neighbor1, "^[A-Za-z]+")]
+  
+  # Strict filter to keep only S, Se, Te (removes false positives like Sc, Sn)
+  df_angles_sub <- df_angles_sub[CenterSym %in% target_centers]
+  
+  # B. Prepare Bonds for Distance merging
+  unique_bonds <- unique(final_bonds_data[, .(file_name, Atom1, Atom2, Distance)], by = c("file_name", "Atom1", "Atom2"))
+  
+  # C. Merge Angle + Distance
+  plot_data <- merge(
+    df_angles_sub,
+    unique_bonds,
     by.x = c("file_name", "CentralAtom", "Neighbor1"),
     by.y = c("file_name", "Atom1", "Atom2"),
-    allow.cartesian = TRUE 
+    allow.cartesian = TRUE
   )
   
-  # Add Group information
-  viz_scatter_data <- merge(viz_scatter_data, element_metadata, 
-                            by.x = "Element1", by.y = "Symbol", all.x = TRUE)
+  # D. Merge Neighbor Group Info
+  plot_data <- merge(
+    plot_data,
+    extended_groups,
+    by.x = "NeighborSym",
+    by.y = "Symbol",
+    all.x = TRUE
+  )
   
-  # Filter for P-block groups (13-16)
-  target_groups <- c("Group 13", "Group 14", "Group 15", "Group 16")
-  viz_scatter_data_filtered <- viz_scatter_data[Group %in% target_groups]
-
-  # --- 3. Plot ---
-  ggplot(viz_scatter_data_filtered, aes(x = Distance, y = Angle)) +
-    # Points with transparency
-    geom_point(aes(color = Element1), alpha = 0.3, size = 1.5) + 
-    # Density contours
-    geom_density_2d(color = "black", alpha = 0.5) +
-    facet_wrap(~Group, scales = "free") +
-    scale_color_viridis_d(option = "turbo", name = "Central Element") +
-    labs(title = "Bond Length vs. Bond Angle Correlation",
-         subtitle = "Faceted by Periodic Group of Central Atom",
-         x = "Bond Length (Å)",
-         y = "Bond Angle (°)") +
+  # Remove NAs (elements not in our group list, e.g., Lanthanides if not mapped)
+  plot_data <- plot_data[!is.na(GroupLabel)]
+  
+  # E. Sort Central Atom for Plotting Order
+  plot_data[, CenterSym := factor(CenterSym, levels = c("S", "Se", "Te"))]
+  
+  # --- 3. Plotting ---
+  p11 <- ggplot(plot_data, aes(
+    x = Distance,
+    y = Angle,
+    text = paste(
+      "Center:", CentralAtom,
+      "<br>Neighbor:", Neighbor1,
+      "<br>Group:", GroupLabel
+    )
+  )) +
+    geom_point(aes(color = GroupLabel), alpha = 0.4, size = 1) +
+    facet_wrap( ~ CenterSym, scales = "free", ncol = 3) +
+    scale_color_viridis_d(option = "turbo", name = "Neighbor Family") +
+    labs(
+      title = "Bond Length vs Angle Correlation",
+      subtitle = "Faceted by Central Atom (S, Se, Te)",
+      x = "Bond Length (Å)",
+      y = "Bond Angle (°)"
+    ) +
     theme_minimal() +
-    theme(legend.position = "bottom")
-    
+    theme(legend.position = "bottom") +
+    guides(color = guide_legend(override.aes = list(alpha = 1, size = 3)))
+  
+  # Use toWebGL for performance with many points
+  toWebGL(ggplotly(p11, tooltip = "text"))
+  
 } else {
-  cat("Skipping Scatter Plot: No angle data available.\n")
+  cat("No angle data available to plot.\n")
 }
 ```

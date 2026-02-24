@@ -62,13 +62,10 @@ brunner_nn_reciprocal <- function(distances, tol = 0.0) {
 
 #' @title Identify Atomic Bonds using Hoppe's EconNN Method
 #' @description Uses Effective Coordination Numbers (ECoN) and Mean Fictive Ionic Radii (MEFIR).
-#' Matches pymatgen logic regarding MEFIR initialization and iteration.
 #' @param distances A `data.table` of interatomic distances.
 #' @param atomic_coordinates A `data.table` of atomic coordinates used to map species to radii.
 #' @param tol A bond strength cutoff (default 0.2).
-#' @param use_fictive_radius Logical. If `TRUE`, calculates Hoppe's fictive ionic radius based
-#' on the ratio of central/neighbor radii. If `FALSE` (default), uses the raw bond distance,
-#' matching pymatgen's default behavior.
+#' @param use_fictive_radius Logical. If `TRUE`, calculates Hoppe's fictive ionic radius.
 #' @return A `data.table` of bonded pairs.
 #' @family bonding algorithms
 #' @export
@@ -82,14 +79,13 @@ econ_nn <- function(distances,
   dt <- copy(distances)
 
   if (use_fictive_radius) {
-    # Check if OxidationState exists, else create it as numeric NA
     atom_info <- copy(atomic_coordinates)
     if (!"OxidationState" %in% names(atom_info))
       atom_info[, OxidationState := NA_real_]
 
-    # Helper to vectorise get_radius_pymatgen_style
-    get_r_vec <- Vectorize(get_radius_decision_tree,
-                           vectorize.args = c("symbol", "oxidation_state"))
+    get_r_ionic <- Vectorize(get_ionic_radius,
+                             vectorize.args = c("symbol", "oxidation_state"))
+    get_r_def <- Vectorize(get_default_radius, vectorize.args = "symbol")
 
     dt[, `:=`(
       Sym1 = sub("[0-9].*", "", sub("_.*", "", Atom1)),
@@ -98,33 +94,30 @@ econ_nn <- function(distances,
       Parent2 = sub("_.*", "", Atom2)
     )]
 
-    # Merge Oxidation States
     dt[atom_info, on = c("Parent1" = "Label"), OS1 := i.OxidationState]
     dt[atom_info, on = c("Parent2" = "Label"), OS2 := i.OxidationState]
 
-    # Get Radii using standard Pymatgen logic
-    dt[, R1 := get_r_vec(Sym1, OS1, cn = 6)]
-    dt[, R2 := get_r_vec(Sym2, OS2, cn = 6)]
+    dt[, R1 := get_r_ionic(Sym1, OS1, cn = 6)]
+    dt[, R2 := get_r_ionic(Sym2, OS2, cn = 6)]
 
-    # Fictive Radii (Hoppe Eq 1)
+    # Fallbacks for fictive radius math
+    dt[R1 == 0, R1 := get_r_def(Sym1)]
+    dt[R2 == 0, R2 := get_r_def(Sym2)]
+
     dt[, RadiusSum := R1 + R2]
     dt[, FictiveR := ifelse(RadiusSum > 0, Distance * (R1 / RadiusSum), 0)]
   } else {
-    # If not using fictive radius, MEFIR is calculated on raw distances
     dt[, FictiveR := Distance]
   }
 
-  # Iterative MEFIR Solver (matches pymatgen _get_mean_fictive_ionic_radius)
   calc_mefir_group <- function(fictive_r) {
     min_v <- min(fictive_r, na.rm = TRUE)
     if (min_v <= 0 || !is.finite(min_v))
       return(0)
 
     mean_fir <- min_v
-
     for (i in 1:100) {
       prev_mean_fir <- mean_fir
-      # Hoppe Eq 2: w = exp(1 - (fir / min_fir)^6) where min_fir updates to mean
       ratio <- (fictive_r / prev_mean_fir)^6
       w <- exp(1 - ratio)
       sum_w <- sum(w, na.rm = TRUE)
@@ -137,11 +130,8 @@ econ_nn <- function(distances,
     return(mean_fir)
   }
 
-  # Calculate MEFIR per Central Atom
   mefir_vals <- dt[, .(MEFIR = calc_mefir_group(FictiveR)), by = Atom1]
   dt[mefir_vals, on = "Atom1", MEFIR := i.MEFIR]
-
-  # Calculate Final Weight
   dt[, Weight := ifelse(MEFIR > 0, exp(1 - (FictiveR / MEFIR)^6), 0)]
 
   return(dt[Weight > tol, .(Atom1, Atom2, Distance, DeltaX, DeltaY, DeltaZ, Weight)])
@@ -149,10 +139,6 @@ econ_nn <- function(distances,
 
 #' @title Identify Atomic Bonds using Voronoi Tessellation
 #' @description Performs 3D Voronoi analysis on the supercell.
-#' strictly mapping Asymmetric Unit atoms to their Supercell equivalents for processing.
-#' Ensures potential neighbors are within cutoff to avoid edge artifacts.
-#' Uses QJ (Joggled input) to handle degenerate structures (FCC/BCC) and filters/merges
-#' the resulting micro-faces to produce accurate Solid Angles.
 #' @param atomic_coordinates A `data.table` of the primary (asymmetric) atom set.
 #' @param expanded_coords A `data.table` of atoms in the expanded supercell.
 #' @param unit_cell_metrics A `data.table` with cell parameters.
@@ -181,33 +167,22 @@ voronoi_nn <- function(atomic_coordinates,
 
   M <- matrix(
     c(
-      a,
-      b * cos(gamma),
-      c * cos(beta),
-      0,
-      b * sin(gamma),
-      c * (cos(alpha) - cos(beta) * cos(gamma)) / sin(gamma),
-      0,
-      0,
-      c * v / sin(gamma)
+      a, b * cos(gamma), c * cos(beta),
+      0, b * sin(gamma), c * (cos(alpha) - cos(beta) * cos(gamma)) / sin(gamma),
+      0, 0, c * v / sin(gamma)
     ),
     nrow = 3,
     byrow = TRUE
   )
 
   coords_mat <- as.matrix(expanded_coords[, .(x_a, y_b, z_c)]) %*% t(M)
-  if (anyNA(coords_mat))
-    return(NULL)
+  if (anyNA(coords_mat)) return(NULL)
 
-  # 2. Delaunay Tessellation ("QJ" is crucial)
-  # QJ handles degeneracy (cospherical points in FCC/BCC) by perturbing input.
-  # This creates micro-faces which must be merged/filtered later.
+  # 2. Delaunay Tessellation ("QJ" is crucial to prevent crashes on symmetric grids)
   tess <- tryCatch({
     geometry::delaunayn(coords_mat, options = "QJ Pp")
-  }, error = function(e)
-    NULL)
-  if (is.null(tess))
-    return(NULL)
+  }, error = function(e) NULL)
+  if (is.null(tess)) return(NULL)
 
   # 3. Calculate Circumcenters
   n_tets <- nrow(tess)
@@ -215,7 +190,6 @@ voronoi_nn <- function(atomic_coordinates,
   for (i in 1:n_tets) {
     circumcenters[i, ] <- calculate_circumcenter(coords_mat[tess[i, ], ])
   }
-
   atom_to_tets <- split(rep(1:n_tets, 4), as.vector(tess))
 
   # 4. Identify Asymmetric Unit Atoms
@@ -227,11 +201,7 @@ voronoi_nn <- function(atomic_coordinates,
     diffs <- t(t(exp_frac) - asy_frac[i, ])
     dists_sq <- rowSums(diffs^2)
     match_idx <- which.min(dists_sq)
-    # Match tolerance aligned with 1e-4 deduplication
-    if (dists_sq[match_idx] < 1e-5)
-      target_indices[i] <- match_idx
-    else
-      target_indices[i] <- NA
+    if (dists_sq[match_idx] < 1e-5) target_indices[i] <- match_idx else target_indices[i] <- NA
   }
   target_indices <- na.omit(target_indices)
 
@@ -244,115 +214,92 @@ voronoi_nn <- function(atomic_coordinates,
     prim_label <- sub("_[0-9-]+_[0-9-]+_[0-9-]+$", "", full_label)
 
     my_tets <- atom_to_tets[[as.character(center_idx)]]
-    if (is.null(my_tets))
-      next
+    if (is.null(my_tets)) next
 
     potential_neighbors <- unique(as.vector(tess[my_tets, ]))
     potential_neighbors <- potential_neighbors[potential_neighbors != center_idx]
-    if (length(potential_neighbors) == 0)
-      next
+    if (length(potential_neighbors) == 0) next
 
-    # CRITICAL FILTERING STEP:
-    # Filter neighbors by cutoff (removes long connections to surface atoms)
-    dists <- sqrt(rowSums((t(
-      t(coords_mat[potential_neighbors, , drop = FALSE]) - center_coords
-    ))^2))
-
+    dists <- sqrt(rowSums((t(t(coords_mat[potential_neighbors, , drop = FALSE]) - center_coords))^2))
     valid_mask <- dists <= cutoff
     neighbor_indices <- potential_neighbors[valid_mask]
 
     for (neigh_idx in neighbor_indices) {
       shared_tets <- intersect(my_tets, atom_to_tets[[as.character(neigh_idx)]])
-      if (length(shared_tets) < 3)
-        next
+      if (length(shared_tets) < 3) next
 
       raw_verts <- circumcenters[shared_tets, , drop = FALSE]
       raw_verts <- na.omit(raw_verts)
-      if (nrow(raw_verts) < 3)
-        next
+      if (nrow(raw_verts) < 3) next
 
       normal <- coords_mat[neigh_idx, ] - center_coords
       dist_sq <- sum(normal^2)
-      if (is.na(dist_sq) || dist_sq < 1e-12)
-        next
+      if (is.na(dist_sq) || dist_sq < 1e-12) next
 
-      # --- FIX 1: DEDUPLICATE VERTICES (Handle QJ Noise) ---
       unique_verts <- raw_verts[1, , drop = FALSE]
       if (nrow(raw_verts) > 1) {
         for (k in 2:nrow(raw_verts)) {
           pt <- raw_verts[k, ]
-          dists <- sqrt(rowSums(t(t(
-            unique_verts
-          ) - pt)^2))
-          if (all(dists > 1e-5)) {
+          dists_v <- sqrt(rowSums(t(t(unique_verts) - pt)^2))
+          if (all(dists_v > 1e-5)) {
             unique_verts <- rbind(unique_verts, pt)
           } else {
-            # Average with existing to smooth QJ noise
-            match_idx <- which.min(dists)
+            match_idx <- which.min(dists_v)
             unique_verts[match_idx, ] <- (unique_verts[match_idx, ] + pt) / 2
           }
         }
       }
+      if (nrow(unique_verts) < 3) next
 
-      if (nrow(unique_verts) < 3)
-        next
-
-      # --- FIX 2: ORDER VERTICES ---
-      # Define plane basis vectors u, v
       face_centroid <- colMeans(unique_verts)
-      u <- if (abs(normal[1]) < 0.9)
-        c(1, 0, 0)
-      else
-        c(0, 1, 0)
+      u <- if (abs(normal[1]) < 0.9) c(1, 0, 0) else c(0, 1, 0)
       u <- cross_product(normal, u)
       u <- u / sqrt(sum(u^2))
       v <- cross_product(normal, u)
       v <- v / sqrt(sum(v^2))
 
-      # Calculate angles for ordering
       rel <- t(t(unique_verts) - face_centroid)
       angles <- atan2(rel %*% v, rel %*% u)
-
-      # Order vertices BEFORE calculating Area OR Solid Angle
       face_verts_ordered <- unique_verts[order(angles), , drop = FALSE]
 
-      # --- FIX 3: CALCULATE METRICS ON ORDERED POLYGON ---
       sa <- calculate_solid_angle(center_coords, face_verts_ordered)
 
       area <- 0
       n_fv <- nrow(face_verts_ordered)
-
       for (k in 1:n_fv) {
         p1 <- face_centroid
         p2 <- face_verts_ordered[k, ]
-        p3 <- face_verts_ordered[if (k == n_fv)
-          1
-          else
-            k + 1, ]
+        p3 <- face_verts_ordered[if (k == n_fv) 1 else k + 1, ]
         cp <- cross_product(p2 - p1, p3 - p1)
         area <- area + 0.5 * sqrt(sum(cp^2))
       }
 
-      # Filter micro-faces created by QJ option (Joggle)
-      if (area < 1e-5 || sa < 1e-5)
-        next
+      if (area < 1e-10 || sa < 1e-10) next
 
       results_list[[length(results_list) + 1]] <- list(
-        Atom1 = prim_label,
-        Atom2 = expanded_coords$Label[neigh_idx],
-        Distance = sqrt(dist_sq),
-        SolidAngle = sa,
-        Area = area,
-        DeltaX = normal[1],
-        DeltaY = normal[2],
-        DeltaZ = normal[3]
+        Atom1 = prim_label, Atom2 = expanded_coords$Label[neigh_idx],
+        Distance = sqrt(dist_sq), SolidAngle = sa, Area = area,
+        DeltaX = normal[1], DeltaY = normal[2], DeltaZ = normal[3]
       )
     }
   }
 
-  if (length(results_list) == 0)
-    return(NULL)
-  dt <- rbindlist(results_list)
+  if (length(results_list) == 0) return(NULL)
+  raw_dt <- rbindlist(results_list)
+
+  # Reconstruct true mathematical faces by summing the shattered shards belonging to the same atom pair.
+  dt <- raw_dt[, .(
+    Distance = min(Distance),
+    SolidAngle = sum(SolidAngle),
+    Area = sum(Area),
+    DeltaX = mean(DeltaX),
+    DeltaY = mean(DeltaY),
+    DeltaZ = mean(DeltaZ)
+  ), by = .(Atom1, Atom2)]
+
+  # Apply the physical filter now that the faces are reconstructed
+  dt <- dt[Area >= 1e-5 & SolidAngle >= 1e-5]
+  if (nrow(dt) == 0) return(NULL)
 
   dt[, MaxSA := max(SolidAngle, na.rm = TRUE), by = Atom1]
   dt[, Weight := ifelse(MaxSA > 0, SolidAngle / MaxSA, 0)]
@@ -361,28 +308,17 @@ voronoi_nn <- function(atomic_coordinates,
 }
 
 #' @title Identify Atomic Bonds using CrystalNN
-#' @description Poer of Pymatgen's `CrystalNN` algorithm from the ground up.
-#' It uses a Voronoi-based algorithm and solid angle weights to determine the
-#' probability of various coordination environments. It modifies probability using
-#' smooth distance cutoffs and Pauling electronegativity differences. The output
-#' is either the most probable coordination environment (`weighted_cn = FALSE`)
-#' or a weighted list of coordination environments (`weighted_cn = TRUE`).
+#' @description Rebuild of Pymatgen's `CrystalNN` algorithm from the ground up.
 #' @param distances Ignored (CrystalNN generates its own Voronoi basis).
 #' @param atomic_coordinates Primary atom set.
 #' @param expanded_coords Expanded supercell.
 #' @param unit_cell_metrics Cell parameters.
-#' @param cutoff_length Numeric. Cutoff in Angstroms for initial neighbor search
-#' (default 7.0).
-#' @param x_diff_weight Numeric. Electronegativity difference weight (default 3.0).
-#' @param porous_adjustment Logical. If TRUE, adjusts Voronoi weights to
-#' better describe layered / porous structures (default TRUE).
-#' @param distance_cutoffs Numeric vector. Penalizes neighbor distances greater than
-#' sum of covalent radii plus these cutoffs. Set to NULL to disable.
-#' @param cation_anion Logical. If TRUE, restricts bonding targets to sites
-#' with opposite or zero charge (requires oxidation states).
-#' @param weighted_cn Logical. If FALSE (default), returns neighbors for the
-#' most probable coordination environment with weight 1.0. If TRUE, returns all
-#' potential neighbors with fractional probabilities.
+#' @param cutoff_length Numeric. Cutoff in Angstroms for initial neighbor search.
+#' @param x_diff_weight Numeric. Electronegativity difference weight.
+#' @param porous_adjustment Logical. If TRUE, adjusts Voronoi weights.
+#' @param distance_cutoffs Numeric vector. Penalizes neighbor distances greater than sum of radii.
+#' @param cation_anion Logical. Restrictions targets to opposite charge.
+#' @param weighted_cn Logical. Return fractional probabilities vs strict max probability.
 #' @return A `data.table` of bonded pairs.
 #' @family bonding algorithms
 #' @export
@@ -397,37 +333,25 @@ crystal_nn <- function(distances,
                        cation_anion = FALSE,
                        weighted_cn = FALSE) {
 
-  # 1. Get Base Voronoi Neighbors
-  base <- voronoi_nn(
-    atomic_coordinates,
-    expanded_coords,
-    unit_cell_metrics,
-    cutoff = cutoff_length,
-    tol = 0
-  )
-  if (is.null(base) || nrow(base) == 0)
-    return(NULL)
+  base <- voronoi_nn(atomic_coordinates, expanded_coords, unit_cell_metrics, cutoff = cutoff_length, tol = 0)
+  if (is.null(base) || nrow(base) == 0) return(NULL)
 
   dt <- copy(base)
   dt[, `:=`(Sym1 = sub("[0-9].*", "", sub("_.*", "", Atom1)),
             Sym2 = sub("[0-9].*", "", sub("_.*", "", Atom2)))]
 
-  # Merge Oxidation States if available (for radii/EN logic)
   atom_info <- copy(atomic_coordinates)
-  if (!"OxidationState" %in% names(atom_info))
-    atom_info[, OxidationState := NA_real_]
+  if (!"OxidationState" %in% names(atom_info)) atom_info[, OxidationState := NA_real_]
 
   dt[, Parent1 := sub("_.*", "", Atom1)]
   dt[, Parent2 := sub("_.*", "", Atom2)]
   dt[atom_info, on = c("Parent1" = "Label"), OS1 := i.OxidationState]
   dt[atom_info, on = c("Parent2" = "Label"), OS2 := i.OxidationState]
 
-  # --- Optional: Cation/Anion constraint ---
   if (cation_anion) {
     if (all(is.na(dt$OS1)) || all(is.na(dt$OS2))) {
       warning("CrystalNN: cation_anion=TRUE but oxidation states are missing. Ignoring constraint.")
     } else {
-      # Keep if opposite charge, if one is neutral (0), or if NA to fail gracefully
       dt <- dt[is.na(OS1) | is.na(OS2) | (OS1 * OS2 <= 0)]
       if (nrow(dt) == 0) return(NULL)
     }
@@ -444,10 +368,8 @@ crystal_nn <- function(distances,
   if (!is.null(x_diff_weight) && x_diff_weight > 0) {
     dt[, EN1 := get_electronegativity(Sym1)]
     dt[, EN2 := get_electronegativity(Sym2)]
-
     dt[, ChemMod := 1 + x_diff_weight * sqrt(abs(EN1 - EN2) / 3.3)]
-    dt[is.na(ChemMod), ChemMod := 1.0]
-
+    dt[is.na(ChemMod), ChemMod := 1.0] # Failsafe if element missing from Pauling Table
     dt[, RawScore := RawScore * ChemMod]
   }
 
@@ -457,25 +379,17 @@ crystal_nn <- function(distances,
 
   # --- Step 4: Distance Cutoffs ---
   if (!is.null(distance_cutoffs)) {
-    atomic_rads <- get_radii_data()
+    get_r_ionic <- Vectorize(get_ionic_radius, vectorize.args = c("symbol", "oxidation_state"))
+    get_r_def <- Vectorize(get_default_radius, vectorize.args = "symbol")
 
-    get_r_vec <- Vectorize(get_radius_decision_tree,
-                           vectorize.args = c("symbol", "oxidation_state"))
+    dt[, R1 := get_r_ionic(Sym1, OS1, cn = 6)]
+    dt[, R2 := get_r_ionic(Sym2, OS2, cn = 6)]
 
-    dt[, R1 := get_r_vec(Sym1, OS1, cn = 6)]
-    dt[, R2 := get_r_vec(Sym2, OS2, cn = 6)]
+    # Pymatgen logic: if EITHER atom lacks an ionic radius, fallback to covalent for BOTH
+    dt[, UseDefault := (R1 == 0 | R2 == 0)]
 
-    get_default_r <- Vectorize(function(sym) {
-      r <- atomic_rads[Symbol == sym & Type == "covalent"]$Radius
-      if (length(r) == 0)
-        r <- atomic_rads[Symbol == sym & Type == "atomic"]$Radius
-      if (length(r) == 0)
-        return(0)
-      return(r[1])
-    }, vectorize.args = "sym")
-
-    dt[R1 == 0, R1 := get_default_r(Sym1)]
-    dt[R2 == 0, R2 := get_default_r(Sym2)]
+    dt[UseDefault == TRUE, R1 := get_r_def(Sym1)]
+    dt[UseDefault == TRUE, R2 := get_r_def(Sym2)]
 
     dt[, Diameter := R1 + R2]
     dt[, CutLow := Diameter + distance_cutoffs[1]]
@@ -496,8 +410,6 @@ crystal_nn <- function(distances,
   dt <- dt[Weight > 0]
   if (nrow(dt) == 0) return(NULL)
 
-  # Internal function to get an integral between two bounds of a unit semicircle.
-  # Used in algorithm to determine bond probabilities.
   semicircle_integral <- function(x1, x2) {
     radius <- 1.0
     calc_area <- function(x) {
@@ -516,21 +428,13 @@ crystal_nn <- function(distances,
     sub_dt <- sub_dt[order(-Weight)]
 
     if (weighted_cn) {
-      # Mathematical simplification of pymatgen algorithm: The fractional weight of
-      # a neighbor is the sum of the probabilities of all coordination environments
-      # it participates in. Because the discrete CN probability bins partition the
-      # interval [0, 1], this exactly simplifies to the integral of the unit
-      # semicircle starting from the neighbor's weight down to 0.0.
       sub_dt[, FinalWeight := semicircle_integral(Weight, 0.0)]
       return(sub_dt)
-
     } else {
-      # Map distinct weights into discrete Coordination Environments (CN probabilities)
       w_vals <- sub_dt$Weight
       dist_bins <- unique(w_vals)
       dist_bins <- c(dist_bins, 0.0)
-
-      cn_weights <- numeric(nrow(sub_dt) + 1) # index 1 = CN0, index 2 = CN1, etc.
+      cn_weights <- numeric(nrow(sub_dt) + 1)
 
       for (i in seq_len(length(dist_bins) - 1)) {
         x1 <- dist_bins[i]
@@ -540,17 +444,14 @@ crystal_nn <- function(distances,
         cn_weights[cn + 1] <- cn_weights[cn + 1] + prob
       }
 
-      cn_weights[1] <- max(0, 1.0 - sum(cn_weights)) # CN0 (No coordinated neighbors)
+      cn_weights[1] <- max(0, 1.0 - sum(cn_weights))
       best_cn <- which.max(cn_weights) - 1
 
-      if (best_cn == 0) {
-        return(NULL)
-      } else {
-        # Standard approach: Fix CN rigidly at the most probable value and assign a weight of 1
-        res <- head(sub_dt, best_cn)
-        res[, FinalWeight := 1.0]
-        return(res)
-      }
+      if (best_cn == 0) return(NULL)
+
+      res <- head(sub_dt, best_cn)
+      res[, FinalWeight := 1.0]
+      return(res)
     }
   })
 
