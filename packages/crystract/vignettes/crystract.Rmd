@@ -254,7 +254,7 @@ Identifying which atoms are "bonded" is key to determining the
 -   **`brunner`**: Identifies bonds by finding the largest gap in the reciprocal distances. Matches `pymatgen.analysis.local_env.BrunnerNNReciprocal`.
 -   **`econ`**: Uses Hoppe's iterative method to calculate Effective Coordination Numbers, weighting neighbor contributions exponentially by distance.
 -   **`voronoi`**: Performs a 3D Voronoi tessellation to find neighbors sharing a face. *Note: `crystract` calculates these faces using the Delaunay dual. Results may slightly differ from exact Voronoi tessellation implementations (like Voro++) due to geometric handling of degenerate, co-planar vertices.*
--   **`crystal_nn`**: A sophisticated approach combining Voronoi solid angles, ionic radii distance cutoffs, and electronegativity weights. *Note: This is a ground-up rebuild of Pymatgen's `CrystalNN` logic and is currently in active testing.*
+-   **`crystal_nn`**: A sophisticated approach combining Voronoi solid angles, ionic radii distance cutoffs, and electronegativity weights.
 
 Let's run each algorithm to demonstrate:
 
