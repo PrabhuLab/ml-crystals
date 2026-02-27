@@ -273,6 +273,11 @@ utils::globalVariables(
 
     # Internal
     "pauling_en",
-    "shannon_radii"
+    "shannon_radii",
+    "NeighborSite",
+    "get_default_radius",
+    "get_ionic_radius",
+    "m_i"
+
   )
 )

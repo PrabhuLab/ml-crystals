@@ -3,8 +3,6 @@ title: "Using the crystract Package for Crystallographic Analysis"
 author: "Don Ngo, Julia Maria Hubner, Anirudh Prabhu"
 date: "`r Sys.Date()`"
 output:
-  pdf_document:
-    toc: true
   rmarkdown::html_vignette:
     toc: true
 vignette: >
