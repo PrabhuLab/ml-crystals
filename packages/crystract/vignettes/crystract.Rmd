@@ -69,7 +69,18 @@ The `analyze_cif_files()` function (and its single-file counterpart `analyze_sin
 
 ```{r full-pipeline-with-comments, eval=TRUE}
 # IMPORTANT: Update this path to point to your own downloaded CIF file.
+# 1. Try to find the file in the installed package
 cif_path <- system.file("extdata", "1590946.cif", package = "crystract")
+
+# 2. If that fails, look in the source directory
+if (cif_path == "") {
+  cif_path <- "../inst/extdata/1590946.cif"
+}
+
+# 3. Final check to provide a clear error if both fail
+if (!file.exists(cif_path)) {
+  stop("Could not find 1590946.cif in installed package or inst/extdata/")
+}
 
 # Run the pipeline on our single example file, extracting multiple bonding types at once
 analysis_results <- analyze_single_cif(
