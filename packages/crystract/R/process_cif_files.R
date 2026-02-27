@@ -57,7 +57,9 @@ read_cif_files <- function(file_paths) {
 #' @title Analyze the Content of a Single CIF File
 #' @description The core worker function that orchestrates the analysis pipeline
 #'   for a single crystal structure's data. It dynamically adjusts supercell
-#'   size based on the requested bonding algorithms to ensure Voronoi accuracy.
+#'   size and coordinate sets based on the requested bonding algorithms.
+#'   For geometric algorithms (Voronoi/CrystalNN), it automatically merges atoms
+#'   occupying the same site to ensure mathematical validity.
 #' @param cif_content Either a `data.table` containing the lines of a CIF file,
 #'   OR a character string specifying the file path to a CIF file.
 #' @param file_name The name of the original CIF file, used for labeling output.
@@ -131,25 +133,33 @@ analyze_single_cif <- function(cif_content,
 
   # --- Step 4: Calculations, Transformations, and Expansions ---
   if (perform_calcs_and_transforms) {
+    # 4a. Standard Transformation (Keeps partially occupied atoms separate)
     transformed_coords <- apply_symmetry_operations(atomic_coordinates,
                                                     symmetry_operations,
                                                     unit_cell_metrics,
                                                     tolerance = tolerance)
 
-    # DYNAMIC EXPANSION LOGIC
-    # Constrain logic: only expand > 3x3x3 if Voronoi/CrystalNN are requested
-    expansion_factors <- c(1, 1, 1) # Default 3x3x3 (-1:1)
-
+    # 4b. Identify needs for Geometric (Collapsed) Algorithms
     needs_voronoi <- any(c("voronoi", "crystal_nn") %in% bonding_algorithms)
 
     if (needs_voronoi) {
-      # Voronoi needs typically 13.0 Angstroms coverage
-      voronoi_cutoff <- 13.0
-      expansion_factors <- calculate_expansion_factors(unit_cell_metrics, voronoi_cutoff)
+      # Merge partial occupancy sites in the asymmetric unit for tessellation algorithms
+      collapsed_atomic_coords <- merge_partial_occupancy_sites(atomic_coordinates, tolerance)
+      collapsed_transformed_coords <- apply_symmetry_operations(collapsed_atomic_coords,
+                                                                symmetry_operations,
+                                                                unit_cell_metrics,
+                                                                tolerance = tolerance)
+      # Geometric algorithms need a larger coverage (13.0 Angstroms)
+      voronoi_factors <- calculate_expansion_factors(unit_cell_metrics, 13.0)
+      collapsed_expanded_coords <- expand_transformed_coords(collapsed_transformed_coords, voronoi_factors)
     }
 
+    # 4c. Standard Expansion (Used for MinDist, Brunner, EconNN)
+    # Default 3x3x3 image grid (-1 to 1)
+    expansion_factors <- c(1, 1, 1)
     expanded_coords <- expand_transformed_coords(transformed_coords, expansion_factors)
 
+    # Distance calculation for algorithms using standard coordinates
     distances <- calculate_distances(atomic_coordinates,
                                      expanded_coords,
                                      unit_cell_metrics,
@@ -161,38 +171,49 @@ analyze_single_cif <- function(cif_content,
       length(bonding_algorithms) > 0 &&
       !"none" %in% bonding_algorithms) {
     for (algo in unique(bonding_algorithms)) {
-      current_bonds <- switch(
-        algo,
-        "minimum_distance" = minimum_distance(distances, delta = minimum_distance_delta),
-        "brunner" = brunner_nn_reciprocal(distances),
-        "econ" = econ_nn(distances, atomic_coordinates),
-        "voronoi" = voronoi_nn(atomic_coordinates, expanded_coords, unit_cell_metrics),
-        "crystal_nn" = crystal_nn(
-          distances,
-          atomic_coordinates,
-          expanded_coords,
-          unit_cell_metrics
-        ),
-        {
-          warning(paste("Invalid algorithm '", algo, "' ignored.", sep = ""))
+      # Determine which coordinate set and algorithm logic to apply
+      if (algo %in% c("voronoi", "crystal_nn")) {
+        # GEOMETRIC ALGORITHMS: Use Collapsed Data
+        current_bonds <- switch(
+          algo,
+          "voronoi" = voronoi_nn(
+            collapsed_atomic_coords,
+            collapsed_expanded_coords,
+            unit_cell_metrics
+          ),
+          "crystal_nn" = crystal_nn(
+            distances,
+            # Note: crystal_nn uses distances for EN math, but primary coords for tessellation
+            collapsed_atomic_coords,
+            collapsed_expanded_coords,
+            unit_cell_metrics
+          )
+        )
+        ref_coords <- collapsed_atomic_coords
+        ref_expanded <- collapsed_expanded_coords
+      } else {
+        # CHEMICAL ALGORITHMS: Use Standard Separated Data
+        current_bonds <- switch(
+          algo,
+          "minimum_distance" = minimum_distance(distances, delta = minimum_distance_delta),
+          "brunner" = brunner_nn_reciprocal(distances),
+          "econ" = econ_nn(distances, atomic_coordinates),
           NULL
-        }
-      )
+        )
+        ref_coords <- atomic_coordinates
+        ref_expanded <- expanded_coords
+      }
 
       if (!is.null(current_bonds) && nrow(current_bonds) > 0) {
         out_algo_name <- algo
 
         if (perform_error_propagation) {
-          current_bonds <- propagate_distance_error(current_bonds,
-                                                    atomic_coordinates,
-                                                    unit_cell_metrics)
+          current_bonds <- propagate_distance_error(current_bonds, ref_coords, unit_cell_metrics)
         }
 
-        # --- Calculate Coordination Numbers (Standard and Weighted) ---
-        # This function handles the "Occupancy == 1" skip logic and the "> 1" validation
-        cn_table <- calculate_weighted_neighbor_counts(current_bonds, atomic_coordinates)
+        # Coordination counts use the respective coordinate table (standard vs collapsed)
+        cn_table <- calculate_weighted_neighbor_counts(current_bonds, ref_coords)
 
-        # If NULL is returned, it means occupancies > 1 were found. Discard file.
         if (is.null(cn_table)) {
           warning(
             paste(
@@ -205,25 +226,21 @@ analyze_single_cif <- function(cif_content,
           return(NULL)
         }
 
-        # Store the bonds and the new CN table (contains both CN and WeightedCN)
         algo_results[[paste0("bonds_", out_algo_name)]] <- list(current_bonds)
         algo_results[[paste0("cn_", out_algo_name)]] <- list(cn_table)
 
         if (calculate_bond_angles) {
           current_angles <- calculate_angles(current_bonds,
-                                             atomic_coordinates,
-                                             expanded_coords,
+                                             ref_coords,
+                                             ref_expanded,
                                              unit_cell_metrics)
 
           if (perform_error_propagation &&
-              !is.null(current_angles) &&
-              nrow(current_angles) > 0) {
-            current_angles <- propagate_angle_error(
-              current_angles,
-              atomic_coordinates,
-              expanded_coords,
-              unit_cell_metrics
-            )
+              !is.null(current_angles) && nrow(current_angles) > 0) {
+            current_angles <- propagate_angle_error(current_angles,
+                                                    ref_coords,
+                                                    ref_expanded,
+                                                    unit_cell_metrics)
           }
           algo_results[[paste0("angles_", out_algo_name)]] <- list(current_angles)
         }

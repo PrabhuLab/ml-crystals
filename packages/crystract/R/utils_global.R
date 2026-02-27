@@ -277,7 +277,13 @@ utils::globalVariables(
     "NeighborSite",
     "get_default_radius",
     "get_ionic_radius",
-    "m_i"
+    "m_i",
+    "OccupancyError",
+    "ThermalParam",
+    "TypeSymbol",
+    "gx",
+    "gy",
+    "gz"
 
   )
 )

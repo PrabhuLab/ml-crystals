@@ -480,3 +480,58 @@ snap_to_fraction <- function(vals,
 
   return(snapped_vals)
 }
+
+#' @title Merge Partial Occupancy Sites (Internal)
+#' @description Identifies atoms in the asymmetric unit that share the same
+#'   fractional coordinates and merges them into a single representative site.
+#'   This is required for Voronoi and CrystalNN to function with disordered structures.
+#' @param atomic_coordinates A `data.table` of atomic coordinates.
+#' @param tolerance Numeric. Snap tolerance for identifying overlapping sites.
+#' @return A `data.table` with overlapping atoms combined into single labels.
+#' @noRd
+merge_partial_occupancy_sites <- function(atomic_coordinates, tolerance = 1e-4) {
+  if (is.null(atomic_coordinates) ||
+      nrow(atomic_coordinates) == 0)
+    return(atomic_coordinates)
+
+  # 1. Create grouping keys based on snapped coordinates
+  dt <- copy(atomic_coordinates)
+  dt[, `:=`(
+    gx = snap_to_fraction(x_a, tolerance = tolerance, wrap = TRUE),
+    gy = snap_to_fraction(y_b, tolerance = tolerance, wrap = TRUE),
+    gz = snap_to_fraction(z_c, tolerance = tolerance, wrap = TRUE)
+  )]
+
+  # 2. Check if there are actually any overlapping sites
+  overlap_check <- dt[, .N, by = .(gx, gy, gz)]
+  if (all(overlap_check$N == 1))
+    return(atomic_coordinates)
+
+  # 3. Merge overlapping sites
+  collapsed <- dt[, .(
+    Label = paste(Label, collapse = "_"),
+    TypeSymbol = if (all(is.na(TypeSymbol)))
+      NA_character_
+    else
+      paste(na.omit(TypeSymbol), collapse = "/"),
+    WyckoffSymbol = WyckoffSymbol[1],
+    WyckoffMultiplicity = WyckoffMultiplicity[1],
+    OxidationState = mean(OxidationState, na.rm = TRUE),
+    ThermalParam = mean(ThermalParam, na.rm = TRUE),
+    Occupancy = sum(Occupancy),
+    OccupancyError = if (all(is.na(OccupancyError)))
+      NA_real_
+    else
+      sqrt(sum(OccupancyError^2, na.rm = TRUE)),
+    x_a = x_a[1],
+    y_b = y_b[1],
+    z_c = z_c[1],
+    x_error = x_error[1],
+    y_error = y_error[1],
+    z_error = z_error[1]
+  ), by = .(gx, gy, gz)]
+
+  collapsed[, c("gx", "gy", "gz") := NULL]
+
+  return(collapsed)
+}
