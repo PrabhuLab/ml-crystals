@@ -1,6 +1,9 @@
 # Identify Atomic Bonds using CrystalNN
 
-Rebuild of Pymatgen's `CrystalNN` algorithm from the ground up.
+Port of Pymatgen's `CrystalNN` weighting logic. Includes Porosity,
+Electronegativity, and Distance penalties. Uses specific Decision Tree
+logic for radii (Shannon -\> Covalent -\> Atomic) per pymatgen's
+fallback logic.
 
 ## Usage
 
@@ -12,10 +15,8 @@ crystal_nn(
   unit_cell_metrics,
   cutoff_length = 7,
   x_diff_weight = 3,
-  porous_adjustment = TRUE,
-  distance_cutoffs = c(0.5, 1),
-  cation_anion = FALSE,
-  weighted_cn = FALSE
+  porosity_adjustment = TRUE,
+  distance_cutoffs = c(0.5, 1)
 )
 ```
 
@@ -23,7 +24,7 @@ crystal_nn(
 
 - distances:
 
-  Ignored (CrystalNN generates its own Voronoi basis).
+  Ignored.
 
 - atomic_coordinates:
 
@@ -39,28 +40,19 @@ crystal_nn(
 
 - cutoff_length:
 
-  Numeric. Cutoff in Angstroms for initial neighbor search.
+  Voronoi cutoff. Default 7.0 matches Pymatgen CrystalNN default.
 
 - x_diff_weight:
 
-  Numeric. Electronegativity difference weight.
+  Electronegativity weight (default 3.0).
 
-- porous_adjustment:
+- porosity_adjustment:
 
-  Logical. If TRUE, adjusts Voronoi weights.
+  Logical (default TRUE).
 
 - distance_cutoffs:
 
-  Numeric vector. Penalizes neighbor distances greater than sum of
-  radii.
-
-- cation_anion:
-
-  Logical. Restrictions targets to opposite charge.
-
-- weighted_cn:
-
-  Logical. Return fractional probabilities vs strict max probability.
+  Vector c(0.5, 1.0).
 
 ## Value
 

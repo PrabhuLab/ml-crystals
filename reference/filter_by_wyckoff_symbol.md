@@ -67,6 +67,7 @@ Other property calculators:
 [`calculate_angles()`](https://prabhulab.github.io/ml-crystals/reference/calculate_angles.md),
 [`calculate_distances()`](https://prabhulab.github.io/ml-crystals/reference/calculate_distances.md),
 [`calculate_neighbor_counts()`](https://prabhulab.github.io/ml-crystals/reference/calculate_neighbor_counts.md),
+[`calculate_weighted_neighbor_counts()`](https://prabhulab.github.io/ml-crystals/reference/calculate_weighted_neighbor_counts.md),
 [`filter_atoms_by_symbol()`](https://prabhulab.github.io/ml-crystals/reference/filter_atoms_by_symbol.md),
 [`filter_by_elements()`](https://prabhulab.github.io/ml-crystals/reference/filter_by_elements.md)
 

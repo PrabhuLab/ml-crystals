@@ -21,6 +21,8 @@ Functions for geometry and crystallography calculations.
   : Calculate Bond Angles
 - [`calculate_neighbor_counts()`](https://prabhulab.github.io/ml-crystals/reference/calculate_neighbor_counts.md)
   : Calculate Coordination Numbers
+- [`calculate_weighted_neighbor_counts()`](https://prabhulab.github.io/ml-crystals/reference/calculate_weighted_neighbor_counts.md)
+  : Calculate Weighted Coordination Numbers
 - [`calculate_weighted_average_network_distance()`](https://prabhulab.github.io/ml-crystals/reference/calculate_weighted_average_network_distance.md)
   : Calculate Weighted Average Network Bond Distance
 

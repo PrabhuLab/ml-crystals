@@ -4,7 +4,6 @@
 <url><loc>https://prabhulab.github.io/ml-crystals/CONTRIBUTING.html</loc></url>
 <url><loc>https://prabhulab.github.io/ml-crystals/LICENSE-text.html</loc></url>
 <url><loc>https://prabhulab.github.io/ml-crystals/LICENSE.html</loc></url>
-<url><loc>https://prabhulab.github.io/ml-crystals/articles/clathrates.html</loc></url>
 <url><loc>https://prabhulab.github.io/ml-crystals/articles/crystract.html</loc></url>
 <url><loc>https://prabhulab.github.io/ml-crystals/articles/index.html</loc></url>
 <url><loc>https://prabhulab.github.io/ml-crystals/authors.html</loc></url>
@@ -19,6 +18,7 @@
 <url><loc>https://prabhulab.github.io/ml-crystals/reference/calculate_expansion_factors.html</loc></url>
 <url><loc>https://prabhulab.github.io/ml-crystals/reference/calculate_neighbor_counts.html</loc></url>
 <url><loc>https://prabhulab.github.io/ml-crystals/reference/calculate_weighted_average_network_distance.html</loc></url>
+<url><loc>https://prabhulab.github.io/ml-crystals/reference/calculate_weighted_neighbor_counts.html</loc></url>
 <url><loc>https://prabhulab.github.io/ml-crystals/reference/covalent_radii.html</loc></url>
 <url><loc>https://prabhulab.github.io/ml-crystals/reference/crystal_nn.html</loc></url>
 <url><loc>https://prabhulab.github.io/ml-crystals/reference/crystract-package.html</loc></url>
