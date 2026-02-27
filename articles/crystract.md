@@ -87,10 +87,10 @@ str(analysis_results, max.level = 2)
 #>   ..$ :Classes 'data.table' and 'data.frame':    12 obs. of  5 variables:
 #>   .. ..- attr(*, ".internal.selfref")=<externalptr> 
 #>  $ expanded_coords        :List of 1
-#>   ..$ :Classes 'data.table' and 'data.frame':    2100 obs. of  8 variables:
+#>   ..$ :Classes 'data.table' and 'data.frame':    324 obs. of  8 variables:
 #>   .. ..- attr(*, ".internal.selfref")=<externalptr> 
 #>  $ distances              :List of 1
-#>   ..$ :Classes 'data.table' and 'data.frame':    6297 obs. of  6 variables:
+#>   ..$ :Classes 'data.table' and 'data.frame':    969 obs. of  6 variables:
 #>   .. ..- attr(*, ".internal.selfref")=<externalptr> 
 #>  $ bonds_minimum_distance :List of 1
 #>   ..$ :Classes 'data.table' and 'data.frame':    14 obs. of  8 variables:

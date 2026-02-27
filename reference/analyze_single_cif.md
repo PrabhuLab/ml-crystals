@@ -2,7 +2,9 @@
 
 The core worker function that orchestrates the analysis pipeline for a
 single crystal structure's data. It dynamically adjusts supercell size
-based on the requested bonding algorithms to ensure Voronoi accuracy.
+and coordinate sets based on the requested bonding algorithms. For
+geometric algorithms (Voronoi/CrystalNN), it automatically merges atoms
+occupying the same site to ensure mathematical validity.
 
 ## Usage
 
