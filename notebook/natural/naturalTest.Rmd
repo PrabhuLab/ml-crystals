@@ -364,6 +364,45 @@ if (exists("high_cn_diagnosis") && nrow(high_cn_diagnosis) > 0) {
 }
 ```
 
+## 5.2 File-Level Weighted CN Summary
+
+This table provides a site-by-site breakdown of both the **Geometric Coordination Number** (calculated by the Minimum Distance algorithm) and the **Weighted Coordination Number** (which accounts for site occupancy/disorder). 
+
+Use the search box to find specific files or the column filters to isolate specific elements or high/low coordination environments.
+
+```{r wcn-file-table}
+if (exists("final_bonds_data") && nrow(final_bonds_data) > 0) {
+  # Aggregate the bond data to the atom-site level
+  wcn_summary <- unique(final_bonds_data[, .(
+    File = file_name,
+    Site = Atom1,
+    Element = Element1,
+    `Geometric CN` = CoordinationNumber,
+    `Weighted CN` = round(CN_Weighted, 3)
+  )])
+
+  # Sort by file name for easier navigation
+  wcn_summary <- wcn_summary[order(File, Site)]
+
+  # Display as interactive table
+  datatable(
+    wcn_summary,
+    filter = 'top',
+    extensions = 'Buttons',
+    options = list(
+      pageLength = 10,
+      autoWidth = TRUE,
+      dom = 'Bfrtip',
+      buttons = c('copy', 'csv', 'excel'),
+      columnDefs = list(list(className = 'dt-center', targets = "_all"))
+    ),
+    caption = "Summary of Coordination Numbers per Atomic Site"
+  )
+} else {
+  cat("No bond data available to generate summary table.")
+}
+```
+
 ## 7. Global Visualization (Interactive)
 
 ### 7.1 Pairwise Bond Lengths
