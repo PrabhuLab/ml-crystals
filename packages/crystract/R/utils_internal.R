@@ -321,14 +321,7 @@ is_metal <- function(symbols) {
 #' @return Numeric vector of electronegativities.
 #' @noRd
 get_electronegativity <- function(symbols) {
-  # Load data from the provided CSV
-  en_data <- load_ext_data("pauling_electronegativity_stable_elements.csv")
-  if (is.null(en_data)) {
-    warning("pauling_electronegativity_stable_elements.csv not found.")
-    return(rep(NA_real_, length(symbols)))
-  }
-
-  vals <- en_data$PaulingElectronegativity[match(symbols, en_data$Symbol)]
+  vals <- pauling_en$PaulingElectronegativity[match(symbols, pauling_en$Symbol)]
   return(vals)
 }
 
