@@ -42,7 +42,7 @@ jobs:
           pkgdown::build_site_github_pages(
             pkg = "packages/crystract",
             new_process = FALSE,
-            install = FALSE
+            install = TRUE
           )
         shell: Rscript {0}
 
