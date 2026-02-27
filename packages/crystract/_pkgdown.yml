@@ -28,6 +28,7 @@ reference:
   - calculate_distances
   - calculate_angles
   - calculate_neighbor_counts
+  - calculate_weighted_neighbor_counts
   - calculate_weighted_average_network_distance
 - title: Error Propagation
   desc: Functions to propagate uncertainties through calculations.
