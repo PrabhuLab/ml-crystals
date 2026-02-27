@@ -16,28 +16,6 @@ through the analysis of a single file step-by-step, explaining the
 underlying functions, the crystallographic principles, and the
 mathematical formulas they employ.
 
-### A Note on Example Data
-
-Due to licensing restrictions, the example CIF files from the ICSD are
-no longer bundled with the `crystract` package. To follow the examples
-in this vignette, you must download the required data yourself.
-
-1.  **Find Required Files**: A complete list of necessary files can be
-    found in the `required_ICSD_files.csv` file at the root of the
-    `ml-crystals` repository. For this introductory vignette, you will
-    need **ICSD \#422**.
-2.  **Download Data**: Access the [ICSD
-    database](https://icsd.fiz-karlsruhe.de/) (requires a license) and
-    download the `.cif` file for entry 422.
-3.  **Store the File**: Save the file as `ICSD422.cif` in a known
-    location on your computer.
-4.  **Update Paths**: In the code examples below, you will need to
-    replace the placeholder path `"path/to/your/ICSD422.cif"` with the
-    actual path to your downloaded file.
-
-**To run the code chunks yourself, you must also remove the `eval=TRUE`
-option from the chunk headers.**
-
 ### Setup: Loading the Package
 
 First, we load the `crystract` package.
@@ -362,6 +340,7 @@ a **supercell** (in this case, 3x3x3) by translating the primary unit
 cell atoms by integer vectors $(i,j,k)$, where $i,j,k$ each range from
 -1 to 1. An atom at fractional coordinate $(x,y,z)$ generates new
 coordinates:
+
 $$\left( x_{exp},y_{exp},z_{exp} \right) = (x + i,y + j,z + k)$$
 
 ``` r
@@ -502,24 +481,27 @@ coordinates must first be converted to an orthogonal Cartesian system.
 1.  **Fractional to Cartesian Conversion:** A fractional coordinate
     $\left( \mathbf{x}_{f} \right)$ is converted to a Cartesian
     coordinate $\left( \mathbf{x}_{c} \right)$ via a transformation
-    matrix $\mathbf{M}$: $$\begin{pmatrix}
-    x_{c} \\
-    y_{c} \\
-    z_{c}
-    \end{pmatrix} = \mathbf{M} \cdot \begin{pmatrix}
-    x_{f} \\
-    y_{f} \\
-    z_{f}
-    \end{pmatrix}\quad\text{where}\quad\mathbf{M} = \begin{pmatrix}
-    a & {b\cos\gamma} & {c\cos\beta} \\
-    0 & {b\sin\gamma} & \frac{c\left( \cos\alpha - \cos\beta\cos\gamma \right)}{\sin\gamma} \\
-    0 & 0 & \frac{V}{ab\sin\gamma}
-    \end{pmatrix}$$ where $V$ is the unit cell volume.
+    matrix $\mathbf{M}$:
+
+$$\begin{pmatrix}
+x_{c} \\
+y_{c} \\
+z_{c}
+\end{pmatrix} = \mathbf{M} \cdot \begin{pmatrix}
+x_{f} \\
+y_{f} \\
+z_{f}
+\end{pmatrix}\quad\text{where}\quad\mathbf{M} = \begin{pmatrix}
+a & {b\cos\gamma} & {c\cos\beta} \\
+0 & {b\sin\gamma} & \frac{c\left( \cos\alpha - \cos\beta\cos\gamma \right)}{\sin\gamma} \\
+0 & 0 & \frac{V}{ab\sin\gamma}
+\end{pmatrix}$$ where $V$ is the unit cell volume.
 
 2.  **Angle via Dot Product:** With atoms in Cartesian space, the angle
     $\theta$ between vectors $\overset{\rightarrow}{u}$ (from B to A)
     and $\overset{\rightarrow}{v}$ (from B to C) is:
-    $$\theta = \arccos\left( \frac{\overset{\rightarrow}{u} \cdot \overset{\rightarrow}{v}}{\left| \overset{\rightarrow}{u} \right|\left| \overset{\rightarrow}{v} \right|} \right)$$
+
+$$\theta = \arccos\left( \frac{\overset{\rightarrow}{u} \cdot \overset{\rightarrow}{v}}{\left| \overset{\rightarrow}{u} \right|\left| \overset{\rightarrow}{v} \right|} \right)$$
 
 The `calculate_angles` function implements this for all possible bond
 angles around each central atom. We’ll pass it our `bonds_min` results:
@@ -556,6 +538,7 @@ The uncertainty, $\sigma_{f}$, in a calculated value $f$ that depends on
 several uncorrelated variables $p_{i}$ (each with uncertainty
 $\sigma_{p_{i}}$) is found using the sum of squares of the partial
 derivatives:
+
 $$\sigma_{f}^{2} = \sum\limits_{i}\left( \frac{\partial f}{\partial p_{i}}\sigma_{p_{i}} \right)^{2}$$
 
 ##### Uncertainty in Interatomic Distance ($\sigma_{d}$)
@@ -566,6 +549,7 @@ the 12 variables that define the distance:
 $\{ a,b,c,\alpha,\beta,\gamma,x_{f1},y_{f1},z_{f1},x_{f2},y_{f2},z_{f2}\}$.
 Letting $\Delta x = x_{f1} - x_{f2}$, etc., the partial derivatives are,
 for example:
+
 $$\frac{\partial d}{\partial a} = \frac{1}{2d}\left( 2a(\Delta x)^{2} + 2b(\Delta x)(\Delta y)\cos\gamma + 2c(\Delta x)(\Delta z)\cos\beta \right)$$
 
 ##### Uncertainty in Bond Angle ($\sigma_{\theta}$)
@@ -802,8 +786,9 @@ by symmetry). - $\text{occ}_{j}$ is the **site occupancy** (accounts for
 disorder; 1.0 for a fully occupied site). - $n_{j}$ is the
 **coordination number** (the number of bonds for an atom at site *j*). -
 $S_{j}$ is the **sum of all bond distances** for a single atom at site
-*j*. It is calculated as: \$\$ \large S_j = \sum\_{i=1}^{n_j} d\_{ij}
-\$\$
+*j*. It is calculated as:
+
+\$\$ \large S_j = \sum\_{i=1}^{n_j} d\_{ij} \$\$
 
 The numerator,
 $\sum_{j}\left( m_{j} \cdot \text{occ}_{j} \cdot S_{j} \right)$,

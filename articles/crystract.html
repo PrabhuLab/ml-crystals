@@ -80,34 +80,6 @@ will walk through the analysis of a single file step-by-step, explaining
 the underlying functions, the crystallographic principles, and the
 mathematical formulas they employ.</p>
 <div class="section level3">
-<h3 id="a-note-on-example-data">A Note on Example Data<a class="anchor" aria-label="anchor" href="#a-note-on-example-data"></a>
-</h3>
-<p>Due to licensing restrictions, the example CIF files from the ICSD
-are no longer bundled with the <code>crystract</code> package. To follow
-the examples in this vignette, you must download the required data
-yourself.</p>
-<ol style="list-style-type: decimal">
-<li>
-<strong>Find Required Files</strong>: A complete list of necessary
-files can be found in the <code>required_ICSD_files.csv</code> file at
-the root of the <code>ml-crystals</code> repository. For this
-introductory vignette, you will need <strong>ICSD #422</strong>.</li>
-<li>
-<strong>Download Data</strong>: Access the <a href="https://icsd.fiz-karlsruhe.de/" class="external-link">ICSD database</a> (requires a
-license) and download the <code>.cif</code> file for entry 422.</li>
-<li>
-<strong>Store the File</strong>: Save the file as
-<code>ICSD422.cif</code> in a known location on your computer.</li>
-<li>
-<strong>Update Paths</strong>: In the code examples below, you will
-need to replace the placeholder path
-<code>"path/to/your/ICSD422.cif"</code> with the actual path to your
-downloaded file.</li>
-</ol>
-<p><strong>To run the code chunks yourself, you must also remove the
-<code>eval=TRUE</code> option from the chunk headers.</strong></p>
-</div>
-<div class="section level3">
 <h3 id="setup-loading-the-package">Setup: Loading the Package<a class="anchor" aria-label="anchor" href="#setup-loading-the-package"></a>
 </h3>
 <p>First, we load the <code>crystract</code> package.</p>
@@ -438,8 +410,8 @@ where
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>i</mi><mo>,</mo><mi>j</mi><mo>,</mo><mi>k</mi></mrow><annotation encoding="application/x-tex">i, j, k</annotation></semantics></math>
 each range from -1 to 1. An atom at fractional coordinate
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">(</mo><mi>x</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>z</mi><mo stretchy="true" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(x, y, z)</annotation></semantics></math>
-generates new coordinates:
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>x</mi><mrow><mi>e</mi><mi>x</mi><mi>p</mi></mrow></msub><mo>,</mo><msub><mi>y</mi><mrow><mi>e</mi><mi>x</mi><mi>p</mi></mrow></msub><mo>,</mo><msub><mi>z</mi><mrow><mi>e</mi><mi>x</mi><mi>p</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>x</mi><mo>+</mo><mi>i</mi><mo>,</mo><mi>y</mi><mo>+</mo><mi>j</mi><mo>,</mo><mi>z</mi><mo>+</mo><mi>k</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">
+generates new coordinates:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>x</mi><mrow><mi>e</mi><mi>x</mi><mi>p</mi></mrow></msub><mo>,</mo><msub><mi>y</mi><mrow><mi>e</mi><mi>x</mi><mi>p</mi></mrow></msub><mo>,</mo><msub><mi>z</mi><mrow><mi>e</mi><mi>x</mi><mi>p</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>x</mi><mo>+</mo><mi>i</mi><mo>,</mo><mi>y</mi><mo>+</mo><mi>j</mi><mo>,</mo><mi>z</mi><mo>+</mo><mi>k</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">
 (x_{exp}, y_{exp}, z_{exp}) = (x + i, y + j, z + k)
 </annotation></semantics></math></p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
@@ -523,8 +495,9 @@ implements several robust, geometric, and mathematical approaches:</p>
 <strong><code>minimum_distance</code></strong>: Defines a custom
 distance cutoff for each central atom
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>i</mi><annotation encoding="application/x-tex">i</annotation></semantics></math>:
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>d</mi><mi>i</mi><mtext mathvariant="normal">cut</mtext></msubsup><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>+</mo><mi>δ</mi><mo stretchy="true" form="postfix">)</mo></mrow><msubsup><mi>d</mi><mi>i</mi><mtext mathvariant="normal">min</mtext></msubsup></mrow><annotation encoding="application/x-tex"> d_i^\text{cut} = (1+\delta) d_i^\text{min} </annotation></semantics></math>
-Here,
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>d</mi><mi>i</mi><mtext mathvariant="normal">cut</mtext></msubsup><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>+</mo><mi>δ</mi><mo stretchy="true" form="postfix">)</mo></mrow><msubsup><mi>d</mi><mi>i</mi><mtext mathvariant="normal">min</mtext></msubsup></mrow><annotation encoding="application/x-tex"> 
+d_i^\text{cut} = (1+\delta) d_i^\text{min} 
+</annotation></semantics></math> Here,
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>d</mi><mi>i</mi><mtext mathvariant="normal">min</mtext></msubsup><annotation encoding="application/x-tex">d_i^\text{min}</annotation></semantics></math>
 is the shortest distance from atom
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>i</mi><annotation encoding="application/x-tex">i</annotation></semantics></math>
@@ -593,35 +566,39 @@ electronegativity weights.</li>
 fractional coordinates must first be converted to an orthogonal
 Cartesian system.</p>
 <ol style="list-style-type: decimal">
-<li><p><strong>Fractional to Cartesian Conversion:</strong> A fractional
+<li>
+<strong>Fractional to Cartesian Conversion:</strong> A fractional
 coordinate
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>𝐱</mi><mi>f</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(\mathbf{x}_f)</annotation></semantics></math>
 is converted to a Cartesian coordinate
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>𝐱</mi><mi>c</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(\mathbf{x}_c)</annotation></semantics></math>
 via a transformation matrix
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝐌</mi><annotation encoding="application/x-tex">\mathbf{M}</annotation></semantics></math>:
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mo stretchy="true" form="prefix">(</mo><mtable><mtr><mtd columnalign="center" style="text-align: center"><msub><mi>x</mi><mi>c</mi></msub></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"><msub><mi>y</mi><mi>c</mi></msub></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"><msub><mi>z</mi><mi>c</mi></msub></mtd></mtr></mtable><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mi>𝐌</mi><mo>⋅</mo><mrow><mo stretchy="true" form="prefix">(</mo><mtable><mtr><mtd columnalign="center" style="text-align: center"><msub><mi>x</mi><mi>f</mi></msub></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"><msub><mi>y</mi><mi>f</mi></msub></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"><msub><mi>z</mi><mi>f</mi></msub></mtd></mtr></mtable><mo stretchy="true" form="postfix">)</mo></mrow><mspace width="1.0em"></mspace><mtext mathvariant="normal">where</mtext><mspace width="1.0em"></mspace><mi>𝐌</mi><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><mtable><mtr><mtd columnalign="center" style="text-align: center"><mi>a</mi></mtd><mtd columnalign="center" style="text-align: center"><mi>b</mi><mo>cos</mo><mi>γ</mi></mtd><mtd columnalign="center" style="text-align: center"><mi>c</mi><mo>cos</mo><mi>β</mi></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"><mn>0</mn></mtd><mtd columnalign="center" style="text-align: center"><mi>b</mi><mo>sin</mo><mi>γ</mi></mtd><mtd columnalign="center" style="text-align: center"><mfrac><mrow><mi>c</mi><mrow><mo stretchy="true" form="prefix">(</mo><mo>cos</mo><mi>α</mi><mo>−</mo><mo>cos</mo><mi>β</mi><mo>cos</mo><mi>γ</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><mrow><mo>sin</mo><mi>γ</mi></mrow></mfrac></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"><mn>0</mn></mtd><mtd columnalign="center" style="text-align: center"><mn>0</mn></mtd><mtd columnalign="center" style="text-align: center"><mfrac><mi>V</mi><mrow><mi>a</mi><mi>b</mi><mo>sin</mo><mi>γ</mi></mrow></mfrac></mtd></mtr></mtable><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">
-\begin{pmatrix} x_c \\ y_c \\ z_c \end{pmatrix} = \mathbf{M} \cdot \begin{pmatrix} x_f \\ y_f \\ z_f \end{pmatrix} \quad \text{where} \quad
-\mathbf{M} = \begin{pmatrix}
-a &amp; b \cos\gamma &amp; c \cos\beta \\
-0 &amp; b \sin\gamma &amp; \frac{c(\cos\alpha - \cos\beta \cos\gamma)}{\sin\gamma} \\
-0 &amp; 0 &amp; \frac{V}{ab\sin\gamma}
-\end{pmatrix}
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝐌</mi><annotation encoding="application/x-tex">\mathbf{M}</annotation></semantics></math>:</li>
+</ol>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mo stretchy="true" form="prefix">(</mo><mtable><mtr><mtd columnalign="center" style="text-align: center"><msub><mi>x</mi><mi>c</mi></msub></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"><msub><mi>y</mi><mi>c</mi></msub></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"><msub><mi>z</mi><mi>c</mi></msub></mtd></mtr></mtable><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mi>𝐌</mi><mo>⋅</mo><mrow><mo stretchy="true" form="prefix">(</mo><mtable><mtr><mtd columnalign="center" style="text-align: center"><msub><mi>x</mi><mi>f</mi></msub></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"><msub><mi>y</mi><mi>f</mi></msub></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"><msub><mi>z</mi><mi>f</mi></msub></mtd></mtr></mtable><mo stretchy="true" form="postfix">)</mo></mrow><mspace width="1.0em"></mspace><mtext mathvariant="normal">where</mtext><mspace width="1.0em"></mspace><mi>𝐌</mi><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><mtable><mtr><mtd columnalign="center" style="text-align: center"><mi>a</mi></mtd><mtd columnalign="center" style="text-align: center"><mi>b</mi><mo>cos</mo><mi>γ</mi></mtd><mtd columnalign="center" style="text-align: center"><mi>c</mi><mo>cos</mo><mi>β</mi></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"><mn>0</mn></mtd><mtd columnalign="center" style="text-align: center"><mi>b</mi><mo>sin</mo><mi>γ</mi></mtd><mtd columnalign="center" style="text-align: center"><mfrac><mrow><mi>c</mi><mrow><mo stretchy="true" form="prefix">(</mo><mo>cos</mo><mi>α</mi><mo>−</mo><mo>cos</mo><mi>β</mi><mo>cos</mo><mi>γ</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><mrow><mo>sin</mo><mi>γ</mi></mrow></mfrac></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"><mn>0</mn></mtd><mtd columnalign="center" style="text-align: center"><mn>0</mn></mtd><mtd columnalign="center" style="text-align: center"><mfrac><mi>V</mi><mrow><mi>a</mi><mi>b</mi><mo>sin</mo><mi>γ</mi></mrow></mfrac></mtd></mtr></mtable><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">
+    \begin{pmatrix} x_c \\ y_c \\ z_c \end{pmatrix} = \mathbf{M} \cdot \begin{pmatrix} x_f \\ y_f \\ z_f \end{pmatrix} \quad \text{where} \quad
+    \mathbf{M} = \begin{pmatrix}
+    a &amp; b \cos\gamma &amp; c \cos\beta \\
+    0 &amp; b \sin\gamma &amp; \frac{c(\cos\alpha - \cos\beta \cos\gamma)}{\sin\gamma} \\
+    0 &amp; 0 &amp; \frac{V}{ab\sin\gamma}
+    \end{pmatrix}
 </annotation></semantics></math> where
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>V</mi><annotation encoding="application/x-tex">V</annotation></semantics></math>
-is the unit cell volume.</p></li>
-<li><p><strong>Angle via Dot Product:</strong> With atoms in Cartesian
+is the unit cell volume.</p>
+<ol start="2" style="list-style-type: decimal">
+<li>
+<strong>Angle via Dot Product:</strong> With atoms in Cartesian
 space, the angle
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>θ</mi><annotation encoding="application/x-tex">\theta</annotation></semantics></math>
 between vectors
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi>u</mi><mo accent="true">→</mo></mover><annotation encoding="application/x-tex">\vec{u}</annotation></semantics></math>
 (from B to A) and
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi>v</mi><mo accent="true">→</mo></mover><annotation encoding="application/x-tex">\vec{v}</annotation></semantics></math>
-(from B to C) is:
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>θ</mi><mo>=</mo><mo>arccos</mo><mrow><mo stretchy="true" form="prefix">(</mo><mfrac><mrow><mover><mi>u</mi><mo accent="true">→</mo></mover><mo>⋅</mo><mover><mi>v</mi><mo accent="true">→</mo></mover></mrow><mrow><mrow><mo stretchy="true" form="prefix">|</mo><mover><mi>u</mi><mo accent="true">→</mo></mover><mo stretchy="true" form="postfix">|</mo></mrow><mrow><mo stretchy="true" form="prefix">|</mo><mover><mi>v</mi><mo accent="true">→</mo></mover><mo stretchy="true" form="postfix">|</mo></mrow></mrow></mfrac><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">
-\theta = \arccos\left( \frac{\vec{u} \cdot \vec{v}}{|\vec{u}| |\vec{v}|} \right)
-</annotation></semantics></math></p></li>
+(from B to C) is:</li>
 </ol>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>θ</mi><mo>=</mo><mo>arccos</mo><mrow><mo stretchy="true" form="prefix">(</mo><mfrac><mrow><mover><mi>u</mi><mo accent="true">→</mo></mover><mo>⋅</mo><mover><mi>v</mi><mo accent="true">→</mo></mover></mrow><mrow><mrow><mo stretchy="true" form="prefix">|</mo><mover><mi>u</mi><mo accent="true">→</mo></mover><mo stretchy="true" form="postfix">|</mo></mrow><mrow><mo stretchy="true" form="prefix">|</mo><mover><mi>v</mi><mo accent="true">→</mo></mover><mo stretchy="true" form="postfix">|</mo></mrow></mrow></mfrac><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">
+\theta = \arccos\left( \frac{\vec{u} \cdot \vec{v}}{|\vec{u}| |\vec{v}|} \right)
+</annotation></semantics></math></p>
 <p>The <code>calculate_angles</code> function implements this for all
 possible bond angles around each central atom. We’ll pass it our
 <code>bonds_min</code> results:</p>
@@ -659,8 +636,8 @@ that depends on several uncorrelated variables
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>p</mi><mi>i</mi></msub><annotation encoding="application/x-tex">p_i</annotation></semantics></math>
 (each with uncertainty
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>σ</mi><msub><mi>p</mi><mi>i</mi></msub></msub><annotation encoding="application/x-tex">\sigma_{p_i}</annotation></semantics></math>)
-is found using the sum of squares of the partial derivatives:
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>σ</mi><mi>f</mi><mn>2</mn></msubsup><mo>=</mo><munder><mo>∑</mo><mi>i</mi></munder><msup><mrow><mo stretchy="true" form="prefix">(</mo><mfrac><mrow><mi>∂</mi><mi>f</mi></mrow><mrow><mi>∂</mi><msub><mi>p</mi><mi>i</mi></msub></mrow></mfrac><msub><mi>σ</mi><msub><mi>p</mi><mi>i</mi></msub></msub><mo stretchy="true" form="postfix">)</mo></mrow><mn>2</mn></msup></mrow><annotation encoding="application/x-tex">
+is found using the sum of squares of the partial derivatives:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>σ</mi><mi>f</mi><mn>2</mn></msubsup><mo>=</mo><munder><mo>∑</mo><mi>i</mi></munder><msup><mrow><mo stretchy="true" form="prefix">(</mo><mfrac><mrow><mi>∂</mi><mi>f</mi></mrow><mrow><mi>∂</mi><msub><mi>p</mi><mi>i</mi></msub></mrow></mfrac><msub><mi>σ</mi><msub><mi>p</mi><mi>i</mi></msub></msub><mo stretchy="true" form="postfix">)</mo></mrow><mn>2</mn></msup></mrow><annotation encoding="application/x-tex">
 \sigma_f^2 = \sum_i \left( \frac{\partial f}{\partial p_i} \sigma_{p_i} \right)^2
 </annotation></semantics></math></p>
 <div class="section level5">
@@ -677,8 +654,8 @@ are the 12 variables that define the distance:
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">{</mo><mi>a</mi><mo>,</mo><mi>b</mi><mo>,</mo><mi>c</mi><mo>,</mo><mi>α</mi><mo>,</mo><mi>β</mi><mo>,</mo><mi>γ</mi><mo>,</mo><msub><mi>x</mi><mrow><mi>f</mi><mn>1</mn></mrow></msub><mo>,</mo><msub><mi>y</mi><mrow><mi>f</mi><mn>1</mn></mrow></msub><mo>,</mo><msub><mi>z</mi><mrow><mi>f</mi><mn>1</mn></mrow></msub><mo>,</mo><msub><mi>x</mi><mrow><mi>f</mi><mn>2</mn></mrow></msub><mo>,</mo><msub><mi>y</mi><mrow><mi>f</mi><mn>2</mn></mrow></msub><mo>,</mo><msub><mi>z</mi><mrow><mi>f</mi><mn>2</mn></mrow></msub><mo stretchy="false" form="postfix">}</mo></mrow><annotation encoding="application/x-tex">\{a, b, c, \alpha, \beta, \gamma, x_{f1}, y_{f1}, z_{f1}, x_{f2}, y_{f2}, z_{f2}\}</annotation></semantics></math>.
 Letting
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>Δ</mi><mi>x</mi><mo>=</mo><msub><mi>x</mi><mrow><mi>f</mi><mn>1</mn></mrow></msub><mo>−</mo><msub><mi>x</mi><mrow><mi>f</mi><mn>2</mn></mrow></msub></mrow><annotation encoding="application/x-tex">\Delta x = x_{f1} - x_{f2}</annotation></semantics></math>,
-etc., the partial derivatives are, for example:
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mfrac><mrow><mi>∂</mi><mi>d</mi></mrow><mrow><mi>∂</mi><mi>a</mi></mrow></mfrac><mo>=</mo><mfrac><mn>1</mn><mrow><mn>2</mn><mi>d</mi></mrow></mfrac><mrow><mo stretchy="true" form="prefix">(</mo><mn>2</mn><mi>a</mi><msup><mrow><mo stretchy="true" form="prefix">(</mo><mi>Δ</mi><mi>x</mi><mo stretchy="true" form="postfix">)</mo></mrow><mn>2</mn></msup><mo>+</mo><mn>2</mn><mi>b</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>Δ</mi><mi>x</mi><mo stretchy="true" form="postfix">)</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mi>Δ</mi><mi>y</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>cos</mo><mi>γ</mi><mo>+</mo><mn>2</mn><mi>c</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>Δ</mi><mi>x</mi><mo stretchy="true" form="postfix">)</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mi>Δ</mi><mi>z</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>cos</mo><mi>β</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">
+etc., the partial derivatives are, for example:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mfrac><mrow><mi>∂</mi><mi>d</mi></mrow><mrow><mi>∂</mi><mi>a</mi></mrow></mfrac><mo>=</mo><mfrac><mn>1</mn><mrow><mn>2</mn><mi>d</mi></mrow></mfrac><mrow><mo stretchy="true" form="prefix">(</mo><mn>2</mn><mi>a</mi><msup><mrow><mo stretchy="true" form="prefix">(</mo><mi>Δ</mi><mi>x</mi><mo stretchy="true" form="postfix">)</mo></mrow><mn>2</mn></msup><mo>+</mo><mn>2</mn><mi>b</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>Δ</mi><mi>x</mi><mo stretchy="true" form="postfix">)</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mi>Δ</mi><mi>y</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>cos</mo><mi>γ</mi><mo>+</mo><mn>2</mn><mi>c</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>Δ</mi><mi>x</mi><mo stretchy="true" form="postfix">)</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mi>Δ</mi><mi>z</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>cos</mo><mi>β</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">
 \frac{\partial d}{\partial a} = \frac{1}{2d} \left( 2a(\Delta x)^2 + 2b(\Delta x)(\Delta y)\cos\gamma + 2c(\Delta x)(\Delta z)\cos\beta \right)
 </annotation></semantics></math></p>
 </div>
@@ -914,7 +891,8 @@ is the <strong>coordination number</strong> (the number of bonds for an
 atom at site <em>j</em>). -
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>S</mi><mi>j</mi></msub><annotation encoding="application/x-tex">S_j</annotation></semantics></math>
 is the <strong>sum of all bond distances</strong> for a single atom at
-site <em>j</em>. It is calculated as: <span class="math display">$$
+site <em>j</em>. It is calculated as:</p>
+<p><span class="math display">$$
 \large S_j = \sum_{i=1}^{n_j} d_{ij}
 $$</span></p>
 <p>The numerator,
