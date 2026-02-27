@@ -308,17 +308,18 @@ voronoi_nn <- function(atomic_coordinates,
 }
 
 #' @title Identify Atomic Bonds using CrystalNN
-#' @description Rebuild of Pymatgen's `CrystalNN` algorithm from the ground up.
-#' @param distances Ignored (CrystalNN generates its own Voronoi basis).
+#' @description Port of Pymatgen's `CrystalNN` weighting logic. Includes Porosity,
+#' Electronegativity, and Distance penalties.
+#' Uses specific Decision Tree logic for radii (Shannon -> Covalent -> Atomic) per
+#' pymatgen's fallback logic.
+#' @param distances Ignored.
 #' @param atomic_coordinates Primary atom set.
 #' @param expanded_coords Expanded supercell.
 #' @param unit_cell_metrics Cell parameters.
-#' @param cutoff_length Numeric. Cutoff in Angstroms for initial neighbor search.
-#' @param x_diff_weight Numeric. Electronegativity difference weight.
-#' @param porous_adjustment Logical. If TRUE, adjusts Voronoi weights.
-#' @param distance_cutoffs Numeric vector. Penalizes neighbor distances greater than sum of radii.
-#' @param cation_anion Logical. Restrictions targets to opposite charge.
-#' @param weighted_cn Logical. Return fractional probabilities vs strict max probability.
+#' @param cutoff_length Voronoi cutoff. Default 7.0 matches Pymatgen CrystalNN default.
+#' @param x_diff_weight Electronegativity weight (default 3.0).
+#' @param porosity_adjustment Logical (default TRUE).
+#' @param distance_cutoffs Vector c(0.5, 1.0).
 #' @return A `data.table` of bonded pairs.
 #' @family bonding algorithms
 #' @export
@@ -327,49 +328,54 @@ crystal_nn <- function(distances,
                        expanded_coords,
                        unit_cell_metrics,
                        cutoff_length = 7.0,
+                       # Pymatgen default for CrystalNN is 7.0 (search_cutoff)
                        x_diff_weight = 3.0,
-                       porous_adjustment = TRUE,
-                       distance_cutoffs = c(0.5, 1.0),
-                       cation_anion = FALSE,
-                       weighted_cn = FALSE) {
-
-  base <- voronoi_nn(atomic_coordinates, expanded_coords, unit_cell_metrics, cutoff = cutoff_length, tol = 0)
-  if (is.null(base) || nrow(base) == 0) return(NULL)
+                       porosity_adjustment = TRUE,
+                       distance_cutoffs = c(0.5, 1.0)) {
+  # 1. Get Base Voronoi Neighbors
+  base <- voronoi_nn(
+    atomic_coordinates,
+    expanded_coords,
+    unit_cell_metrics,
+    cutoff = cutoff_length,
+    tol = 0
+  )
+  if (is.null(base) || nrow(base) == 0)
+    return(NULL)
 
   dt <- copy(base)
   dt[, `:=`(Sym1 = sub("[0-9].*", "", sub("_.*", "", Atom1)),
             Sym2 = sub("[0-9].*", "", sub("_.*", "", Atom2)))]
 
+  # Merge Oxidation States if available (for radii/EN logic)
   atom_info <- copy(atomic_coordinates)
-  if (!"OxidationState" %in% names(atom_info)) atom_info[, OxidationState := NA_real_]
+  if (!"OxidationState" %in% names(atom_info))
+    atom_info[, OxidationState := NA_real_]
 
   dt[, Parent1 := sub("_.*", "", Atom1)]
   dt[, Parent2 := sub("_.*", "", Atom2)]
   dt[atom_info, on = c("Parent1" = "Label"), OS1 := i.OxidationState]
   dt[atom_info, on = c("Parent2" = "Label"), OS2 := i.OxidationState]
 
-  if (cation_anion) {
-    if (all(is.na(dt$OS1)) || all(is.na(dt$OS2))) {
-      warning("CrystalNN: cation_anion=TRUE but oxidation states are missing. Ignoring constraint.")
-    } else {
-      dt <- dt[is.na(OS1) | is.na(OS2) | (OS1 * OS2 <= 0)]
-      if (nrow(dt) == 0) return(NULL)
-    }
-  }
-
-  # --- Step 1: Porous Adjustment ---
-  if (porous_adjustment) {
+  # --- Step 1: Porosity Adjustment ---
+  # Pymatgen Logic: x['weight'] *= x['poly_info']['solid_angle'] / x['poly_info']['area']
+  # Since x['weight'] IS the SolidAngle (from VoronoiNN),
+  # result = SolidAngle * (SolidAngle / Area) = SolidAngle^2 / Area.
+  if (porosity_adjustment) {
     dt[, RawScore := ifelse(Area > 1e-8, (SolidAngle * SolidAngle) / Area, SolidAngle)]
   } else {
     dt[, RawScore := SolidAngle]
   }
 
   # --- Step 2: Chemical Adjustment (Electronegativity) ---
-  if (!is.null(x_diff_weight) && x_diff_weight > 0) {
+  if (x_diff_weight > 0) {
     dt[, EN1 := get_electronegativity(Sym1)]
     dt[, EN2 := get_electronegativity(Sym2)]
+
+    # 3.3 is max deltaX constant from pymatgen
     dt[, ChemMod := 1 + x_diff_weight * sqrt(abs(EN1 - EN2) / 3.3)]
-    dt[is.na(ChemMod), ChemMod := 1.0] # Failsafe if element missing from Pauling Table
+    dt[is.na(ChemMod), ChemMod := 1.0]
+
     dt[, RawScore := RawScore * ChemMod]
   }
 
@@ -377,87 +383,52 @@ crystal_nn <- function(distances,
   dt[, MaxScore := max(RawScore, na.rm = TRUE), by = Atom1]
   dt[, Weight := ifelse(MaxScore > 0, RawScore / MaxScore, 0)]
 
-  # --- Step 4: Distance Cutoffs ---
+  # --- Step 4: Distance Cutoffs (Penalty applied AFTER normalization) ---
   if (!is.null(distance_cutoffs)) {
-    get_r_ionic <- Vectorize(get_ionic_radius, vectorize.args = c("symbol", "oxidation_state"))
-    get_r_def <- Vectorize(get_default_radius, vectorize.args = "symbol")
+    # DEFINE atomic_rads IN LOCAL SCOPE FOR Vectorize TO FIND
+    atomic_rads <- get_radii_data()
 
-    dt[, R1 := get_r_ionic(Sym1, OS1, cn = 6)]
-    dt[, R2 := get_r_ionic(Sym2, OS2, cn = 6)]
+    get_r_vec <- Vectorize(get_radius_decision_tree,
+                           vectorize.args = c("symbol", "oxidation_state"))
 
-    # Pymatgen logic: if EITHER atom lacks an ionic radius, fallback to covalent for BOTH
-    dt[, UseDefault := (R1 == 0 | R2 == 0)]
+    # Use Decision Tree Logic: Shannon -> Covalent -> Atomic
+    dt[, R1 := get_r_vec(Sym1, OS1, cn = 6)]
+    dt[, R2 := get_r_vec(Sym2, OS2, cn = 6)]
 
-    dt[UseDefault == TRUE, R1 := get_r_def(Sym1)]
-    dt[UseDefault == TRUE, R2 := get_r_def(Sym2)]
+    # Pymatgen Logic: If specific radii failed (returned 0 by fallback),
+    # fallback to default Covalent/Atomic
+    get_default_r <- Vectorize(function(sym) {
+      r <- atomic_rads[Symbol == sym & Type == "covalent"]$Radius
+      if (length(r) == 0)
+        r <- atomic_rads[Symbol == sym & Type == "atomic"]$Radius
+      if (length(r) == 0)
+        return(0)
+      return(r[1])
+    }, vectorize.args = "sym")
+
+    dt[R1 == 0, R1 := get_default_r(Sym1)]
+    dt[R2 == 0, R2 := get_default_r(Sym2)]
 
     dt[, Diameter := R1 + R2]
     dt[, CutLow := Diameter + distance_cutoffs[1]]
     dt[, CutHigh := Diameter + distance_cutoffs[2]]
 
-    dt[, DistMod := data.table::fcase(
-      Distance <= CutLow, 1.0,
-      Distance >= CutHigh, 0.0,
-      default = 0.5 * (cos((Distance - CutLow) / (CutHigh - CutLow) * pi) + 1)
-    )]
+    # Calculate penalty
+    dt[, DistMod := data.table::fcase(Distance <= CutLow,
+                                      1.0,
+                                      Distance >= CutHigh,
+                                      0.0,
+                                      default = 0.5 * (cos((Distance - CutLow) / (CutHigh - CutLow) * pi
+                                      ) + 1))]
     dt[is.na(DistMod), DistMod := 0]
 
     dt[, Weight := Weight * DistMod]
   }
 
-  # --- Step 5: Semicircle Integral and CN Probability ---
+  # --- Step 5: Pymatgen Rounding Logic ---
+  # Pymatgen explicitly rounds weights to 3 decimal places.
+  # This acts as a filter for very small weights (e.g., 0.0004 -> 0).
   dt[, Weight := round(Weight, 3)]
-  dt <- dt[Weight > 0]
-  if (nrow(dt) == 0) return(NULL)
 
-  semicircle_integral <- function(x1, x2) {
-    radius <- 1.0
-    calc_area <- function(x) {
-      res <- numeric(length(x))
-      res[x >= 1.0] <- 0.25 * pi * radius^2
-      res[x <= 0.0] <- 0.0
-      mid <- x > 0.0 & x < 1.0
-      x_m <- x[mid]
-      res[mid] <- 0.5 * (x_m * sqrt(radius^2 - x_m^2) + radius^2 * atan(x_m / sqrt(radius^2 - x_m^2)))
-      return(res)
-    }
-    return((calc_area(x1) - calc_area(x2)) / (0.25 * pi * radius^2))
-  }
-
-  result_list <- lapply(split(dt, dt$Atom1), function(sub_dt) {
-    sub_dt <- sub_dt[order(-Weight)]
-
-    if (weighted_cn) {
-      sub_dt[, FinalWeight := semicircle_integral(Weight, 0.0)]
-      return(sub_dt)
-    } else {
-      w_vals <- sub_dt$Weight
-      dist_bins <- unique(w_vals)
-      dist_bins <- c(dist_bins, 0.0)
-      cn_weights <- numeric(nrow(sub_dt) + 1)
-
-      for (i in seq_len(length(dist_bins) - 1)) {
-        x1 <- dist_bins[i]
-        x2 <- dist_bins[i + 1]
-        prob <- semicircle_integral(x1, x2)
-        cn <- sum(w_vals >= x1)
-        cn_weights[cn + 1] <- cn_weights[cn + 1] + prob
-      }
-
-      cn_weights[1] <- max(0, 1.0 - sum(cn_weights))
-      best_cn <- which.max(cn_weights) - 1
-
-      if (best_cn == 0) return(NULL)
-
-      res <- head(sub_dt, best_cn)
-      res[, FinalWeight := 1.0]
-      return(res)
-    }
-  })
-
-  final_dt <- rbindlist(result_list)
-  if (nrow(final_dt) == 0) return(NULL)
-
-  final_dt[, Weight := FinalWeight]
-  return(final_dt[, .(Atom1, Atom2, Distance, DeltaX, DeltaY, DeltaZ, Weight)])
+  return(dt[Weight > 0, .(Atom1, Atom2, Distance, DeltaX, DeltaY, DeltaZ, Weight)])
 }

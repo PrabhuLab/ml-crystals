@@ -11,14 +11,12 @@ crystal_nn(
   unit_cell_metrics,
   cutoff_length = 7,
   x_diff_weight = 3,
-  porous_adjustment = TRUE,
-  distance_cutoffs = c(0.5, 1),
-  cation_anion = FALSE,
-  weighted_cn = FALSE
+  porosity_adjustment = TRUE,
+  distance_cutoffs = c(0.5, 1)
 )
 }
 \arguments{
-\item{distances}{Ignored (CrystalNN generates its own Voronoi basis).}
+\item{distances}{Ignored.}
 
 \item{atomic_coordinates}{Primary atom set.}
 
@@ -26,23 +24,22 @@ crystal_nn(
 
 \item{unit_cell_metrics}{Cell parameters.}
 
-\item{cutoff_length}{Numeric. Cutoff in Angstroms for initial neighbor search.}
+\item{cutoff_length}{Voronoi cutoff. Default 7.0 matches Pymatgen CrystalNN default.}
 
-\item{x_diff_weight}{Numeric. Electronegativity difference weight.}
+\item{x_diff_weight}{Electronegativity weight (default 3.0).}
 
-\item{porous_adjustment}{Logical. If TRUE, adjusts Voronoi weights.}
+\item{porosity_adjustment}{Logical (default TRUE).}
 
-\item{distance_cutoffs}{Numeric vector. Penalizes neighbor distances greater than sum of radii.}
-
-\item{cation_anion}{Logical. Restrictions targets to opposite charge.}
-
-\item{weighted_cn}{Logical. Return fractional probabilities vs strict max probability.}
+\item{distance_cutoffs}{Vector c(0.5, 1.0).}
 }
 \value{
 A \code{data.table} of bonded pairs.
 }
 \description{
-Rebuild of Pymatgen's \code{CrystalNN} algorithm from the ground up.
+Port of Pymatgen's \code{CrystalNN} weighting logic. Includes Porosity,
+Electronegativity, and Distance penalties.
+Uses specific Decision Tree logic for radii (Shannon -> Covalent -> Atomic) per
+pymatgen's fallback logic.
 }
 \seealso{
 Other bonding algorithms: 

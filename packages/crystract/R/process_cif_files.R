@@ -188,8 +188,25 @@ analyze_single_cif <- function(cif_content,
                                                     unit_cell_metrics)
         }
 
+        # --- Calculate Coordination Numbers (Standard and Weighted) ---
+        # This function handles the "Occupancy == 1" skip logic and the "> 1" validation
+        cn_table <- calculate_weighted_neighbor_counts(current_bonds, atomic_coordinates)
+
+        # If NULL is returned, it means occupancies > 1 were found. Discard file.
+        if (is.null(cn_table)) {
+          warning(
+            paste(
+              "Discarding '",
+              file_name,
+              "': fractional occupancies sum to > 1.0.",
+              sep = ""
+            )
+          )
+          return(NULL)
+        }
+
+        # Store the bonds and the new CN table (contains both CN and WeightedCN)
         algo_results[[paste0("bonds_", out_algo_name)]] <- list(current_bonds)
-        cn_table <- calculate_neighbor_counts(current_bonds)
         algo_results[[paste0("cn_", out_algo_name)]] <- list(cn_table)
 
         if (calculate_bond_angles) {

@@ -376,26 +376,12 @@ extract_atomic_coordinates <- function(cif_content, chemical_formula = NA) {
     site_ox_vals <- atom_type_info$OxidationState[match_idx]
   }
 
-  # --- 8b. Snap Coordinates to Ideal Fractions (Pymatgen Logic) ---
-  # Pymatgen CifParser rounds coordinates close to 1/3, 2/3 to avoid precision issues
-  snap_coordinate <- function(val, tolerance = 1e-4) {
-    if (is.na(val)) return(val)
-
-    # Check 1/3
-    if (abs(val * 3 - 1) < tolerance) return(1/3)
-    # Check 2/3
-    if (abs(val * 3 - 2) < tolerance) return(2/3)
-
-    # Check 0 and 1 (Standard rounding)
-    if (abs(val) < tolerance) return(0.0)
-    if (abs(val - 1) < tolerance) return(0.0) # Wrap 1 to 0
-
-    return(val)
-  }
-
-  x_vals <- sapply(x_data$value, snap_coordinate)
-  y_vals <- sapply(y_data$value, snap_coordinate)
-  z_vals <- sapply(z_data$value, snap_coordinate)
+  # --- 8b. Snap Coordinates and Occupancies to Ideal Fractions ---
+  # Ensures exact boundaries to prevent downstream float-comparison issues
+  x_vals <- snap_to_fraction(x_data$value, wrap = TRUE)
+  y_vals <- snap_to_fraction(y_data$value, wrap = TRUE)
+  z_vals <- snap_to_fraction(z_data$value, wrap = TRUE)
+  occ_vals <- snap_to_fraction(occ_data$value, wrap = FALSE)
 
   # --- 9. Build Initial DataTable ---
   atomic_coordinates <- data.table::data.table(
@@ -414,11 +400,11 @@ extract_atomic_coordinates <- function(cif_content, chemical_formula = NA) {
       NA_real_,
     OxidationState = site_ox_vals,
     ThermalParam = thermal_val,
-    Occupancy = occ_data$value,
+    Occupancy = occ_vals,
     OccupancyError = occ_data$error,
-    x_a = x_data$value,
-    y_b = y_data$value,
-    z_c = z_data$value,
+    x_a = x_vals,
+    y_b = y_vals,
+    z_c = z_vals,
     x_error = x_data$error,
     y_error = y_data$error,
     z_error = z_data$error

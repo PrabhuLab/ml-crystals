@@ -33,6 +33,7 @@ expanded set, using the metric tensor for accuracy.
 Other property calculators: 
 \code{\link{calculate_angles}()},
 \code{\link{calculate_neighbor_counts}()},
+\code{\link{calculate_weighted_neighbor_counts}()},
 \code{\link{filter_atoms_by_symbol}()},
 \code{\link{filter_by_elements}()},
 \code{\link{filter_by_wyckoff_symbol}()}

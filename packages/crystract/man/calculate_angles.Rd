@@ -31,6 +31,7 @@ of its bonded neighbors.
 Other property calculators: 
 \code{\link{calculate_distances}()},
 \code{\link{calculate_neighbor_counts}()},
+\code{\link{calculate_weighted_neighbor_counts}()},
 \code{\link{filter_atoms_by_symbol}()},
 \code{\link{filter_by_elements}()},
 \code{\link{filter_by_wyckoff_symbol}()}

@@ -84,6 +84,97 @@ calculate_neighbor_counts <- function(bonded_pairs_table) {
   return(neighbor_counts)
 }
 
+#' @title Calculate Weighted Coordination Numbers
+#' @description Counts the weighted number of nearest neighbors for each central atom based on
+#'   a table of bonded pairs, accounting for the fractional occupancy of the neighbor sites.
+#'   This is particularly useful for analyzing disordered crystal structures.
+#'
+#'   If all occupancies are 1.0, this efficiently returns the standard coordination number.
+#'   If the fractional occupancies on any single crystallographic site sum to greater than 1.0,
+#'   this indicates an invalid or physically impossible structure; the function will throw a
+#'   warning and return `NULL` so the file can be discarded by the analysis pipeline.
+#'
+#' @param bonded_pairs_table A `data.table` of bonded pairs (e.g., from `minimum_distance`).
+#' @param atomic_coordinates A `data.table` of asymmetric atoms from `extract_atomic_coordinates`.
+#' @return A `data.table` with columns 'Atom', 'CoordinationNumber', and 'WeightedCoordinationNumber'.
+#'   Returns `NULL` if the occupancies sum to > 1 on any shared site.
+#' @family property calculators
+#' @export
+calculate_weighted_neighbor_counts <- function(bonded_pairs_table, atomic_coordinates) {
+  if (is.null(bonded_pairs_table) || nrow(bonded_pairs_table) == 0) {
+    return(
+      data.table(
+        Atom = character(),
+        CoordinationNumber = integer(),
+        WeightedCoordinationNumber = numeric()
+      )
+    )
+  }
+
+  coords <- copy(atomic_coordinates)
+
+  # Ensure Occupancy column exists and handle NAs
+  if (!"Occupancy" %in% names(coords)) {
+    coords[, Occupancy := 1.0]
+  } else {
+    coords[is.na(Occupancy), Occupancy := 1.0]
+  }
+
+  # --- 1. VALIDATION ---
+  # Check if fractional occupancies sum to > 1 at any physical crystallographic site.
+  # Grouping by exact snapped coordinates identifies atoms sharing the same site.
+  site_occ <- coords[, .(SumOccupancy = sum(Occupancy)), by = .(x_a, y_b, z_c)]
+
+  # We use 1.01 to allow for minor floating-point rounding errors (e.g., 1/3 + 2/3)
+  if (any(site_occ$SumOccupancy > 1.01)) {
+    warning(
+      "Fractional occupancies add up to greater than 1.0 on one or more sites. Discarding file."
+    )
+    return(NULL)
+  }
+
+  # --- 2. OPTIMIZATION ---
+  # If all occupancies are fully occupied (1.0), skip the fractional math (WCN == CN)
+  if (all(abs(coords$Occupancy - 1.0) < 1e-5)) {
+    neighbor_counts <- bonded_pairs_table[, .(CoordinationNumber = .N,
+                                              WeightedCoordinationNumber = as.numeric(.N)), by = .(Atom1)]
+
+    setnames(neighbor_counts, "Atom1", "Atom")
+    return(neighbor_counts)
+  }
+
+  # --- 3. CALCULATE WEIGHTED CN ---
+  work_dt <- copy(bonded_pairs_table)
+
+  # Extract the parent site label (e.g., "Fe1" from "Fe1_1_0_0")
+  work_dt[, NeighborSite := sub("_.*", "", Atom2)]
+
+  # Count how many times a specific asymmetric site appears as a neighbor (multiplicity m_i)
+  site_counts <- work_dt[, .(m_i = .N), by = .(Atom1, NeighborSite)]
+
+  # Merge occupancy info from the asymmetric unit coordinates
+  site_counts <- merge(
+    site_counts,
+    coords[, .(Label, Occupancy)],
+    by.x = "NeighborSite",
+    by.y = "Label",
+    all.x = TRUE
+  )
+
+  # Handle any missing occupancies resulting from the merge just in case
+  site_counts[is.na(Occupancy), Occupancy := 1.0]
+
+  # Weighted Sum: Sum(Multiplicity * Occupancy)
+  w_cn <- site_counts[, .(
+    CoordinationNumber = sum(m_i),
+    WeightedCoordinationNumber = sum(m_i * Occupancy)
+  ), by = .(Atom1)]
+
+  setnames(w_cn, "Atom1", "Atom")
+
+  return(w_cn)
+}
+
 #' @title Calculate Bond Angles
 #' @description Calculates all bond angles centered on each atom, formed by pairs
 #'   of its bonded neighbors.

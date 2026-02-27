@@ -136,10 +136,12 @@ merge_sites_pbc <- function(atomic_coordinates,
   # Deduplicate: take first entry of each cluster, but with the averaged coordinates
   merged_dt <- unique(work_dt, by = "ClusterID")
 
-  # Wrap back to unit cell [0, 1)
-  merged_dt[, `:=`(x_a = x_a %% 1,
-                   y_b = y_b %% 1,
-                   z_c = z_c %% 1)]
+  # Wrap back to unit cell[0, 1) and snap strictly
+  merged_dt[, `:=`(
+    x_a = snap_to_fraction(x_a, wrap = TRUE),
+    y_b = snap_to_fraction(y_b, wrap = TRUE),
+    z_c = snap_to_fraction(z_c, wrap = TRUE)
+  )]
   merged_dt[, ClusterID := NULL]
 
   return(merged_dt)
@@ -200,9 +202,9 @@ apply_symmetry_operations <- function(atomic_coordinates,
       data.table(
         Label = paste(lbl, j, sep = "_"),
         SymOp = j,
-        x_a = safe_eval(op_x, val_x, val_y, val_z) %% 1,
-        y_b = safe_eval(op_y, val_x, val_y, val_z) %% 1,
-        z_c = safe_eval(op_z, val_x, val_y, val_z) %% 1
+        x_a = snap_to_fraction(safe_eval(op_x, val_x, val_y, val_z), wrap = TRUE),
+        y_b = snap_to_fraction(safe_eval(op_y, val_x, val_y, val_z), wrap = TRUE),
+        z_c = snap_to_fraction(safe_eval(op_z, val_x, val_y, val_z), wrap = TRUE)
       )
     })
     rbindlist(new_coords)
@@ -312,9 +314,14 @@ expand_transformed_coords <- function(transformed_coords,
               Tz = cell_shift$z)]
     # Make labels unique for the supercell images
     dt[, Label := paste(Label, Tx, Ty, Tz, sep = "_")]
-    dt[, `:=`(x_a = x_a + Tx,
-              y_b = y_b + Ty,
-              z_c = z_c + Tz)]
+
+    # Apply snapping without cell wrap to ensure clean negative / greater than 1 floats
+    dt[, `:=`(
+      x_a = snap_to_fraction(x_a + Tx, wrap = FALSE),
+      y_b = snap_to_fraction(y_b + Ty, wrap = FALSE),
+      z_c = snap_to_fraction(z_c + Tz, wrap = FALSE)
+    )]
+
     return(dt)
   }))
 

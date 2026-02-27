@@ -269,6 +269,10 @@ utils::globalVariables(
     "N",
 
     # Unit cell metrics used in apply_symmetry_operations
-    "unit_cell_metrics"
+    "unit_cell_metrics",
+
+    # Internal
+    "pauling_en",
+    "shannon_radii"
   )
 )
