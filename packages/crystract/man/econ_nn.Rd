@@ -29,6 +29,15 @@ ac <- data.table::data.table(Label = c("Si1", "O1", "O2"),
                              OxidationState = c(4, -2, -2))
 econ_nn(dists, ac)
 }
+\references{
+Hoppe, R. (1979). "Effective Coordination Numbers (ECoN) and Mean Fictive Ionic
+Radii (MEFIR)." \emph{Zeitschrift Für Kristallographie}, 150(1–4), 23–52.
+\doi{10.1524/zkri.1979.150.14.23}
+
+Shannon, R. D. (1976). "Revised Effective Ionic Radii and Systematic Studies of
+Interatomic Distances in Halides and Chalcogenides." \emph{Acta Crystallographica
+Section A}, 32(5), 751–767. \doi{10.1107/S0567739476001551}
+}
 \seealso{
 Other bonding algorithms: 
 \code{\link{brunner_nn_reciprocal}()},

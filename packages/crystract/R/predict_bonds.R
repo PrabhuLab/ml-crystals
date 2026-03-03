@@ -36,6 +36,10 @@ minimum_distance <- function(distances, delta = 0.1) {
 #' @param distances A `data.table` of interatomic distances.
 #' @param tol A small distance offset (default 0.0) to add to the cutoff.
 #' @return A `data.table` of bonded pairs.
+#' @references
+#' Brunner, G. O. (1977). "A Definition of Coordination and Its Relevance in the
+#' Structure Types AlB2 and NiAs." \emph{Acta Crystallographica Section A}, 33(1),
+#' 226–227. \doi{10.1107/S0567739477000461}
 #' @family bonding algorithms
 #' @export
 #' @examples
@@ -77,6 +81,14 @@ brunner_nn_reciprocal <- function(distances, tol = 0.0) {
 #' @param tol A bond strength cutoff (default 0.2).
 #' @param use_fictive_radius Logical. If `TRUE`, calculates Hoppe's fictive ionic radius.
 #' @return A `data.table` of bonded pairs.
+#' @references
+#' Hoppe, R. (1979). "Effective Coordination Numbers (ECoN) and Mean Fictive Ionic
+#' Radii (MEFIR)." \emph{Zeitschrift Für Kristallographie}, 150(1–4), 23–52.
+#' \doi{10.1524/zkri.1979.150.14.23}
+#'
+#' Shannon, R. D. (1976). "Revised Effective Ionic Radii and Systematic Studies of
+#' Interatomic Distances in Halides and Chalcogenides." \emph{Acta Crystallographica
+#' Section A}, 32(5), 751–767. \doi{10.1107/S0567739476001551}
 #' @family bonding algorithms
 #' @export
 #' @examples
@@ -164,6 +176,12 @@ econ_nn <- function(distances,
 #' @param cutoff Distance cutoff (default 13.0).
 #' @param tol Tolerance for solid angle weights (default 0).
 #' @return A `data.table` of bonded pairs.
+#' @references
+#' O'Keeffe, M. (1979). "A Proposed Rigorous Definition of Coordination Number."
+#' \emph{Acta Crystallographica Section A}, 35(5), 772–775. \doi{10.1107/S0567739479001711}
+#'
+#' Aurenhammer, F., Klein, R., & Lee, D.-T. (2013). \emph{Voronoi Diagrams and
+#' Delaunay Triangulations}. World Scientific Publishing Company.
 #' @family bonding algorithms
 #' @export
 #' @examples
@@ -384,6 +402,18 @@ voronoi_nn <- function(atomic_coordinates,
 #' @param porosity_adjustment Logical (default TRUE).
 #' @param distance_cutoffs Vector c(0.5, 1.0).
 #' @return A `data.table` of bonded pairs.
+#' @references
+#' Shannon, R. D. (1976). "Revised effective ionic radii and systematic studies of
+#' interatomic distances in halides and chalcogenides." \emph{Acta Crystallographica
+#' Section A}, 32(5), 751-767.
+#'
+#' Pauling, L. (1960). \emph{The Nature of the Chemical Bond and the Structure of
+#' Molecules and Crystals: An Introduction to Modern Structural Chemistry}.
+#' Cornell University Press.
+#'
+#' Pan, H., Ganose, A. M., Horton, M., et al. (2021). "Benchmarking Coordination Number
+#' Prediction Algorithms on Inorganic Crystal Structures." \emph{Inorganic Chemistry},
+#' 60(3), 1590–1603. \doi{10.1021/acs.inorgchem.0c02996}
 #' @family bonding algorithms
 #' @export
 #' @examples

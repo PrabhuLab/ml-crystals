@@ -14,6 +14,16 @@ CrystalNN, Voronoi), determine nearest neighbor counts, and calculate bond
 angles. Facilitates the preparation of crystallographic data for further
 analysis, including machine learning applications in materials science.
 }
+\references{
+Shannon, R. D. (1976). "Revised effective ionic radii and systematic studies of
+interatomic distances in halides and chalcogenides." \emph{Acta Crystallographica
+Section A: Crystal Physics, Diffraction, Theoretical and General Crystallography},
+32(5), 751-767.
+
+Pauling, L. (1960). \emph{The Nature of the Chemical Bond and the Structure of
+Molecules and Crystals: An Introduction to Modern Structural Chemistry} (Vol. 18).
+Cornell University Press.
+}
 \seealso{
 Useful links:
 \itemize{

@@ -12,7 +12,7 @@
 
 <meta name="author" content="Don Ngo, Julia Maria Hubner, Anirudh Prabhu" />
 
-<meta name="date" content="2026-02-26" />
+<meta name="date" content="2026-03-03" />
 
 <title>Using the crystract Package for Crystallographic Analysis</title>
 
@@ -342,15 +342,13 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <h1 class="title toc-ignore">Using the crystract Package for
 Crystallographic Analysis</h1>
 <h4 class="author">Don Ngo, Julia Maria Hubner, Anirudh Prabhu</h4>
-<h4 class="date">2026-02-26</h4>
+<h4 class="date">2026-03-03</h4>
 
 
 <div id="TOC">
 <ul>
 <li><a href="#introduction" id="toc-introduction">Introduction</a>
 <ul>
-<li><a href="#a-note-on-example-data" id="toc-a-note-on-example-data">A
-Note on Example Data</a></li>
 <li><a href="#setup-loading-the-package" id="toc-setup-loading-the-package">Setup: Loading the Package</a></li>
 </ul></li>
 <li><a href="#the-core-crystract-workflow" id="toc-the-core-crystract-workflow">1. The Core <code>crystract</code>
@@ -396,29 +394,6 @@ structured format suitable for large-scale data analysis.</p>
 will walk through the analysis of a single file step-by-step, explaining
 the underlying functions, the crystallographic principles, and the
 mathematical formulas they employ.</p>
-<div id="a-note-on-example-data" class="section level3">
-<h3>A Note on Example Data</h3>
-<p>Due to licensing restrictions, the example CIF files from the ICSD
-are no longer bundled with the <code>crystract</code> package. To follow
-the examples in this vignette, you must download the required data
-yourself.</p>
-<ol style="list-style-type: decimal">
-<li><strong>Find Required Files</strong>: A complete list of necessary
-files can be found in the <code>required_ICSD_files.csv</code> file at
-the root of the <code>ml-crystals</code> repository. For this
-introductory vignette, you will need <strong>ICSD #422</strong>.</li>
-<li><strong>Download Data</strong>: Access the <a href="https://icsd.fiz-karlsruhe.de/">ICSD database</a> (requires a
-license) and download the <code>.cif</code> file for entry 422.</li>
-<li><strong>Store the File</strong>: Save the file as
-<code>ICSD422.cif</code> in a known location on your computer.</li>
-<li><strong>Update Paths</strong>: In the code examples below, you will
-need to replace the placeholder path
-<code>&quot;path/to/your/ICSD422.cif&quot;</code> with the actual path to your
-downloaded file.</li>
-</ol>
-<p><strong>To run the code chunks yourself, you must also remove the
-<code>eval=TRUE</code> option from the chunk headers.</strong></p>
-</div>
 <div id="setup-loading-the-package" class="section level3">
 <h3>Setup: Loading the Package</h3>
 <p>First, we load the <code>crystract</code> package.</p>
@@ -468,8 +443,8 @@ specify which bonding algorithms to run simultaneously.</p>
 <span id="cb2-26"><a href="#cb2-26" tabindex="-1"></a><span class="co">#&gt;  $ database_code          : chr &quot;depnum_ccdc_archive CCDC 1590946&quot;</span></span>
 <span id="cb2-27"><a href="#cb2-27" tabindex="-1"></a><span class="co">#&gt;  $ chemical_formula       : chr &quot;Si1 Sr2&quot;</span></span>
 <span id="cb2-28"><a href="#cb2-28" tabindex="-1"></a><span class="co">#&gt;  $ structure_type         : logi NA</span></span>
-<span id="cb2-29"><a href="#cb2-29" tabindex="-1"></a><span class="co">#&gt;  $ space_group_name       : logi NA</span></span>
-<span id="cb2-30"><a href="#cb2-30" tabindex="-1"></a><span class="co">#&gt;  $ space_group_number     : logi NA</span></span>
+<span id="cb2-29"><a href="#cb2-29" tabindex="-1"></a><span class="co">#&gt;  $ space_group_name       : chr &quot;P n m a&quot;</span></span>
+<span id="cb2-30"><a href="#cb2-30" tabindex="-1"></a><span class="co">#&gt;  $ space_group_number     : chr &quot;62&quot;</span></span>
 <span id="cb2-31"><a href="#cb2-31" tabindex="-1"></a><span class="co">#&gt;  $ unit_cell_metrics      :List of 1</span></span>
 <span id="cb2-32"><a href="#cb2-32" tabindex="-1"></a><span class="co">#&gt;   ..$ :Classes &#39;data.table&#39; and &#39;data.frame&#39;:    1 obs. of  12 variables:</span></span>
 <span id="cb2-33"><a href="#cb2-33" tabindex="-1"></a><span class="co">#&gt;   .. ..- attr(*, &quot;.internal.selfref&quot;)=&lt;externalptr&gt; </span></span>
@@ -483,10 +458,10 @@ specify which bonding algorithms to run simultaneously.</p>
 <span id="cb2-41"><a href="#cb2-41" tabindex="-1"></a><span class="co">#&gt;   ..$ :Classes &#39;data.table&#39; and &#39;data.frame&#39;:    12 obs. of  5 variables:</span></span>
 <span id="cb2-42"><a href="#cb2-42" tabindex="-1"></a><span class="co">#&gt;   .. ..- attr(*, &quot;.internal.selfref&quot;)=&lt;externalptr&gt; </span></span>
 <span id="cb2-43"><a href="#cb2-43" tabindex="-1"></a><span class="co">#&gt;  $ expanded_coords        :List of 1</span></span>
-<span id="cb2-44"><a href="#cb2-44" tabindex="-1"></a><span class="co">#&gt;   ..$ :Classes &#39;data.table&#39; and &#39;data.frame&#39;:    2100 obs. of  8 variables:</span></span>
+<span id="cb2-44"><a href="#cb2-44" tabindex="-1"></a><span class="co">#&gt;   ..$ :Classes &#39;data.table&#39; and &#39;data.frame&#39;:    324 obs. of  8 variables:</span></span>
 <span id="cb2-45"><a href="#cb2-45" tabindex="-1"></a><span class="co">#&gt;   .. ..- attr(*, &quot;.internal.selfref&quot;)=&lt;externalptr&gt; </span></span>
 <span id="cb2-46"><a href="#cb2-46" tabindex="-1"></a><span class="co">#&gt;  $ distances              :List of 1</span></span>
-<span id="cb2-47"><a href="#cb2-47" tabindex="-1"></a><span class="co">#&gt;   ..$ :Classes &#39;data.table&#39; and &#39;data.frame&#39;:    6297 obs. of  6 variables:</span></span>
+<span id="cb2-47"><a href="#cb2-47" tabindex="-1"></a><span class="co">#&gt;   ..$ :Classes &#39;data.table&#39; and &#39;data.frame&#39;:    969 obs. of  6 variables:</span></span>
 <span id="cb2-48"><a href="#cb2-48" tabindex="-1"></a><span class="co">#&gt;   .. ..- attr(*, &quot;.internal.selfref&quot;)=&lt;externalptr&gt; </span></span>
 <span id="cb2-49"><a href="#cb2-49" tabindex="-1"></a><span class="co">#&gt;  $ bonds_minimum_distance :List of 1</span></span>
 <span id="cb2-50"><a href="#cb2-50" tabindex="-1"></a><span class="co">#&gt;   ..$ :Classes &#39;data.table&#39; and &#39;data.frame&#39;:    14 obs. of  8 variables:</span></span>
@@ -633,7 +608,7 @@ information.</p>
 <span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Chemical Formula:&quot;</span>, chemical_formula, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
 <span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a><span class="co">#&gt; Chemical Formula: Si1 Sr2</span></span>
 <span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Space Group:&quot;</span>, space_group_name, <span class="st">&quot;(No.&quot;</span>, space_group_number, <span class="st">&quot;)</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
-<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a><span class="co">#&gt; Space Group: NA (No. NA )</span></span></code></pre></div>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a><span class="co">#&gt; Space Group: P n m a (No. 62 )</span></span></code></pre></div>
 <p>Next, <code>extract_unit_cell_metrics()</code> extracts the six
 parameters that define the shape and size of the unit cell: the lengths
 of its three axes (<span class="math inline">\(a\)</span>, <span class="math inline">\(b\)</span>, <span class="math inline">\(c\)</span>) and the angles between them (<span class="math inline">\(\alpha\)</span>, <span class="math inline">\(\beta\)</span>, <span class="math inline">\(\gamma\)</span>). Their experimental uncertainties
@@ -725,7 +700,8 @@ in adjacent unit cells. The <code>expand_transformed_coords</code>
 function generates a <strong>supercell</strong> (in this case, 3x3x3) by
 translating the primary unit cell atoms by integer vectors <span class="math inline">\((i, j, k)\)</span>, where <span class="math inline">\(i, j, k\)</span> each range from -1 to 1. An atom
 at fractional coordinate <span class="math inline">\((x, y, z)\)</span>
-generates new coordinates: <span class="math display">\[
+generates new coordinates:</p>
+<p><span class="math display">\[
 (x_{exp}, y_{exp}, z_{exp}) = (x + i, y + j, z + k)
 \]</span></p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="co"># Apply symmetry to generate all atoms in the primary unit cell</span></span>
@@ -802,10 +778,11 @@ implements several robust, geometric, and mathematical approaches:</p>
 <ul>
 <li><strong><code>minimum_distance</code></strong>: Defines a custom
 distance cutoff for each central atom <span class="math inline">\(i\)</span>: <span class="math display">\[
-d_i^\text{cut} = (1+\delta) d_i^\text{min} \]</span> Here, <span class="math inline">\(d_i^\text{min}\)</span> is the shortest distance
-from atom <span class="math inline">\(i\)</span> to any other atom, and
-<span class="math inline">\(\delta\)</span> is a tolerance parameter
-(default is 0.1).</li>
+d_i^\text{cut} = (1+\delta) d_i^\text{min}
+\]</span> Here, <span class="math inline">\(d_i^\text{min}\)</span> is
+the shortest distance from atom <span class="math inline">\(i\)</span>
+to any other atom, and <span class="math inline">\(\delta\)</span> is a
+tolerance parameter (default is 0.1).</li>
 <li><strong><code>brunner</code></strong>: Identifies bonds by finding
 the largest gap in the reciprocal distances. Matches
 <code>pymatgen.analysis.local_env.BrunnerNNReciprocal</code>.</li>
@@ -861,28 +838,32 @@ electronegativity weights.</li>
 fractional coordinates must first be converted to an orthogonal
 Cartesian system.</p>
 <ol style="list-style-type: decimal">
-<li><p><strong>Fractional to Cartesian Conversion:</strong> A fractional
+<li><strong>Fractional to Cartesian Conversion:</strong> A fractional
 coordinate <span class="math inline">\((\mathbf{x}_f)\)</span> is
 converted to a Cartesian coordinate <span class="math inline">\((\mathbf{x}_c)\)</span> via a transformation
-matrix <span class="math inline">\(\mathbf{M}\)</span>: <span class="math display">\[
-\begin{pmatrix} x_c \\ y_c \\ z_c \end{pmatrix} = \mathbf{M} \cdot
+matrix <span class="math inline">\(\mathbf{M}\)</span>:</li>
+</ol>
+<p><span class="math display">\[
+    \begin{pmatrix} x_c \\ y_c \\ z_c \end{pmatrix} = \mathbf{M} \cdot
 \begin{pmatrix} x_f \\ y_f \\ z_f \end{pmatrix} \quad \text{where} \quad
-\mathbf{M} = \begin{pmatrix}
-a &amp; b \cos\gamma &amp; c \cos\beta \\
-0 &amp; b \sin\gamma &amp; \frac{c(\cos\alpha - \cos\beta
+    \mathbf{M} = \begin{pmatrix}
+    a &amp; b \cos\gamma &amp; c \cos\beta \\
+    0 &amp; b \sin\gamma &amp; \frac{c(\cos\alpha - \cos\beta
 \cos\gamma)}{\sin\gamma} \\
-0 &amp; 0 &amp; \frac{V}{ab\sin\gamma}
-\end{pmatrix}
+    0 &amp; 0 &amp; \frac{V}{ab\sin\gamma}
+    \end{pmatrix}
 \]</span> where <span class="math inline">\(V\)</span> is the unit cell
-volume.</p></li>
-<li><p><strong>Angle via Dot Product:</strong> With atoms in Cartesian
+volume.</p>
+<ol start="2" style="list-style-type: decimal">
+<li><strong>Angle via Dot Product:</strong> With atoms in Cartesian
 space, the angle <span class="math inline">\(\theta\)</span> between
 vectors <span class="math inline">\(\vec{u}\)</span> (from B to A) and
-<span class="math inline">\(\vec{v}\)</span> (from B to C) is: <span class="math display">\[
+<span class="math inline">\(\vec{v}\)</span> (from B to C) is:</li>
+</ol>
+<p><span class="math display">\[
 \theta = \arccos\left( \frac{\vec{u} \cdot \vec{v}}{|\vec{u}| |\vec{v}|}
 \right)
-\]</span></p></li>
-</ol>
+\]</span></p>
 <p>The <code>calculate_angles</code> function implements this for all
 possible bond angles around each central atom. We’ll pass it our
 <code>bonds_min</code> results:</p>
@@ -914,7 +895,8 @@ calculated distances and angles.</p>
 calculated value <span class="math inline">\(f\)</span> that depends on
 several uncorrelated variables <span class="math inline">\(p_i\)</span>
 (each with uncertainty <span class="math inline">\(\sigma_{p_i}\)</span>) is found using the sum of
-squares of the partial derivatives: <span class="math display">\[
+squares of the partial derivatives:</p>
+<p><span class="math display">\[
 \sigma_f^2 = \sum_i \left( \frac{\partial f}{\partial p_i} \sigma_{p_i}
 \right)^2
 \]</span></p>
@@ -926,7 +908,8 @@ The input parameters <span class="math inline">\(p_i\)</span> are the 12
 variables that define the distance: <span class="math inline">\(\{a, b,
 c, \alpha, \beta, \gamma, x_{f1}, y_{f1}, z_{f1}, x_{f2}, y_{f2},
 z_{f2}\}\)</span>. Letting <span class="math inline">\(\Delta x = x_{f1}
-- x_{f2}\)</span>, etc., the partial derivatives are, for example: <span class="math display">\[
+- x_{f2}\)</span>, etc., the partial derivatives are, for example:</p>
+<p><span class="math display">\[
 \frac{\partial d}{\partial a} = \frac{1}{2d} \left( 2a(\Delta x)^2 +
 2b(\Delta x)(\Delta y)\cos\gamma + 2c(\Delta x)(\Delta z)\cos\beta
 \right)
@@ -1145,7 +1128,8 @@ occupied site). - <span class="math inline">\(n_j\)</span> is the
 <strong>coordination number</strong> (the number of bonds for an atom at
 site <em>j</em>). - <span class="math inline">\(S_j\)</span> is the
 <strong>sum of all bond distances</strong> for a single atom at site
-<em>j</em>. It is calculated as: <span class="math display">\[
+<em>j</em>. It is calculated as:</p>
+<p><span class="math display">\[
 \large S_j = \sum_{i=1}^{n_j} d_{ij}
 \]</span></p>
 <p>The numerator, <span class="math inline">\(\sum_j (m_j \cdot

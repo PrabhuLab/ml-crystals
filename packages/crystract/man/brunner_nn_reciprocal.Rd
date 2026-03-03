@@ -24,6 +24,11 @@ dists <- data.table::data.table(Atom1 = c("A", "A"), Atom2 = c("B", "C"),
                                 DeltaX = c(1, 0), DeltaY = c(0, 1), DeltaZ = c(0, 0))
 brunner_nn_reciprocal(dists)
 }
+\references{
+Brunner, G. O. (1977). "A Definition of Coordination and Its Relevance in the
+Structure Types AlB2 and NiAs." \emph{Acta Crystallographica Section A}, 33(1),
+226–227. \doi{10.1107/S0567739477000461}
+}
 \seealso{
 Other bonding algorithms: 
 \code{\link{crystal_nn}()},
