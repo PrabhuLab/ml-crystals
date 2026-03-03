@@ -23,3 +23,13 @@ accounting for Periodic Boundary Conditions (PBC). This mimics pymatgen's
 \code{Structure.merge_sites} logic: it performs hierarchical clustering and then
 averages the coordinates of the merged sites, taking care of PBC wrapping.
 }
+\examples{
+ac <- data.table::data.table(Label = c("A", "B"),
+                             x_a = c(0, 0.00001),
+                             y_b = c(0, 0),
+                             z_c = c(0, 0))
+uc <- data.table::data.table(`_cell_length_a` = 10, `_cell_length_b` = 10,
+                             `_cell_length_c` = 10, `_cell_angle_alpha` = 90,
+                             `_cell_angle_beta` = 90, `_cell_angle_gamma` = 90)
+merge_sites_pbc(ac, uc, tol = 1e-4)
+}

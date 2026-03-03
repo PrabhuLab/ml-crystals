@@ -18,6 +18,13 @@ Parses the unit cell parameters (lengths a, b, c and angles
 alpha, beta, gamma) and their associated standard uncertainties from CIF
 content.
 }
+\examples{
+cif_path <- system.file("extdata", "1590946.cif", package = "crystract")
+if (file.exists(cif_path)) {
+  cif_content <- read_cif_files(cif_path)[[1]]
+  extract_unit_cell_metrics(cif_content)
+}
+}
 \seealso{
 Other extractors: 
 \code{\link{extract_atomic_coordinates}()},

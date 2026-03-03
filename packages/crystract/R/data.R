@@ -13,6 +13,8 @@
 #' @source J. Emsley. The Elements. Third edition 1998, Oxford University Press.
 #' As provided by Julia-Maria Huebner.
 #' @export
+#' @examples
+#' head(covalent_radii)
 "covalent_radii"
 
 #' @keywords internal

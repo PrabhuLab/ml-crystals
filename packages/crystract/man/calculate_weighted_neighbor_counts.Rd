@@ -25,6 +25,14 @@ If the fractional occupancies on any single crystallographic site sum to greater
 this indicates an invalid or physically impossible structure; the function will throw a
 warning and return \code{NULL} so the file can be discarded by the analysis pipeline.
 }
+\examples{
+bp <- data.table::data.table(Atom1 = c("Si1", "Si1"),
+                             Atom2 = c("O1_1_0_0", "O2_1_0_0"))
+ac <- data.table::data.table(Label = c("Si1", "O1", "O2"),
+                             Occupancy = c(1.0, 0.5, 0.5),
+                             x_a=c(0,0,0), y_b=c(0,0,0), z_c=c(0,0,0))
+calculate_weighted_neighbor_counts(bp, ac)
+}
 \seealso{
 Other property calculators: 
 \code{\link{calculate_angles}()},

@@ -15,6 +15,13 @@ A character string of the database code, or \code{NA} if not found.
 \description{
 Extracts the database code identifier (e.g., from \verb{_database_code_}) from the CIF.
 }
+\examples{
+cif_path <- system.file("extdata", "1590946.cif", package = "crystract")
+if (file.exists(cif_path)) {
+  cif_content <- read_cif_files(cif_path)[[1]]
+  extract_database_code(cif_content)
+}
+}
 \seealso{
 Other extractors: 
 \code{\link{extract_atomic_coordinates}()},

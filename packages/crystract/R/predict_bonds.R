@@ -7,6 +7,11 @@
 #' @return A `data.table` of bonded pairs.
 #' @family bonding algorithms
 #' @export
+#' @examples
+#' dists <- data.table::data.table(Atom1 = c("A", "A"), Atom2 = c("B", "C"),
+#'                                 Distance = c(1.5, 2.5),
+#'                                 DeltaX = c(1, 0), DeltaY = c(0, 1), DeltaZ = c(0, 0))
+#' minimum_distance(dists, delta = 0.1)
 minimum_distance <- function(distances, delta = 0.1) {
   if (nrow(distances) == 0)
     return(distances)
@@ -33,6 +38,11 @@ minimum_distance <- function(distances, delta = 0.1) {
 #' @return A `data.table` of bonded pairs.
 #' @family bonding algorithms
 #' @export
+#' @examples
+#' dists <- data.table::data.table(Atom1 = c("A", "A"), Atom2 = c("B", "C"),
+#'                                 Distance = c(1.5, 2.5),
+#'                                 DeltaX = c(1, 0), DeltaY = c(0, 1), DeltaZ = c(0, 0))
+#' brunner_nn_reciprocal(dists)
 brunner_nn_reciprocal <- function(distances, tol = 0.0) {
   if (nrow(distances) == 0)
     return(distances)
@@ -69,6 +79,13 @@ brunner_nn_reciprocal <- function(distances, tol = 0.0) {
 #' @return A `data.table` of bonded pairs.
 #' @family bonding algorithms
 #' @export
+#' @examples
+#' dists <- data.table::data.table(Atom1 = c("Si1", "Si1"), Atom2 = c("O1", "O2"),
+#'                                 Distance = c(1.6, 2.0),
+#'                                 DeltaX = c(1, 0), DeltaY = c(0, 1), DeltaZ = c(0, 0))
+#' ac <- data.table::data.table(Label = c("Si1", "O1", "O2"),
+#'                              OxidationState = c(4, -2, -2))
+#' econ_nn(dists, ac)
 econ_nn <- function(distances,
                     atomic_coordinates,
                     tol = 0.2,
@@ -83,9 +100,11 @@ econ_nn <- function(distances,
     if (!"OxidationState" %in% names(atom_info))
       atom_info[, OxidationState := NA_real_]
 
-    get_r_ionic <- Vectorize(get_ionic_radius,
+    get_r_ionic <- Vectorize(get_radius_pymatgen_style,
                              vectorize.args = c("symbol", "oxidation_state"))
-    get_r_def <- Vectorize(get_default_radius, vectorize.args = "symbol")
+    get_r_def <- Vectorize(function(sym)
+      get_radius_pymatgen_style(sym, NA_real_, 6),
+      vectorize.args = "sym")
 
     dt[, `:=`(
       Sym1 = sub("[0-9].*", "", sub("_.*", "", Atom1)),
@@ -147,6 +166,14 @@ econ_nn <- function(distances,
 #' @return A `data.table` of bonded pairs.
 #' @family bonding algorithms
 #' @export
+#' @examples
+#' \donttest{
+#' cif_path <- system.file("extdata", "1590946.cif", package = "crystract")
+#' if (file.exists(cif_path)) {
+#'   res <- analyze_single_cif(cif_path, bonding_algorithms = "voronoi")
+#'   print(head(res$bonds_voronoi[[1]]))
+#' }
+#' }
 voronoi_nn <- function(atomic_coordinates,
                        expanded_coords,
                        unit_cell_metrics,
@@ -167,22 +194,31 @@ voronoi_nn <- function(atomic_coordinates,
 
   M <- matrix(
     c(
-      a, b * cos(gamma), c * cos(beta),
-      0, b * sin(gamma), c * (cos(alpha) - cos(beta) * cos(gamma)) / sin(gamma),
-      0, 0, c * v / sin(gamma)
+      a,
+      b * cos(gamma),
+      c * cos(beta),
+      0,
+      b * sin(gamma),
+      c * (cos(alpha) - cos(beta) * cos(gamma)) / sin(gamma),
+      0,
+      0,
+      c * v / sin(gamma)
     ),
     nrow = 3,
     byrow = TRUE
   )
 
   coords_mat <- as.matrix(expanded_coords[, .(x_a, y_b, z_c)]) %*% t(M)
-  if (anyNA(coords_mat)) return(NULL)
+  if (anyNA(coords_mat))
+    return(NULL)
 
   # 2. Delaunay Tessellation ("QJ" is crucial to prevent crashes on symmetric grids)
   tess <- tryCatch({
     geometry::delaunayn(coords_mat, options = "QJ Pp")
-  }, error = function(e) NULL)
-  if (is.null(tess)) return(NULL)
+  }, error = function(e)
+    NULL)
+  if (is.null(tess))
+    return(NULL)
 
   # 3. Calculate Circumcenters
   n_tets <- nrow(tess)
@@ -201,7 +237,10 @@ voronoi_nn <- function(atomic_coordinates,
     diffs <- t(t(exp_frac) - asy_frac[i, ])
     dists_sq <- rowSums(diffs^2)
     match_idx <- which.min(dists_sq)
-    if (dists_sq[match_idx] < 1e-5) target_indices[i] <- match_idx else target_indices[i] <- NA
+    if (dists_sq[match_idx] < 1e-5)
+      target_indices[i] <- match_idx
+    else
+      target_indices[i] <- NA
   }
   target_indices <- na.omit(target_indices)
 
@@ -214,33 +253,42 @@ voronoi_nn <- function(atomic_coordinates,
     prim_label <- sub("_[0-9-]+_[0-9-]+_[0-9-]+$", "", full_label)
 
     my_tets <- atom_to_tets[[as.character(center_idx)]]
-    if (is.null(my_tets)) next
+    if (is.null(my_tets))
+      next
 
     potential_neighbors <- unique(as.vector(tess[my_tets, ]))
     potential_neighbors <- potential_neighbors[potential_neighbors != center_idx]
-    if (length(potential_neighbors) == 0) next
+    if (length(potential_neighbors) == 0)
+      next
 
-    dists <- sqrt(rowSums((t(t(coords_mat[potential_neighbors, , drop = FALSE]) - center_coords))^2))
+    dists <- sqrt(rowSums((t(
+      t(coords_mat[potential_neighbors, , drop = FALSE]) - center_coords
+    ))^2))
     valid_mask <- dists <= cutoff
     neighbor_indices <- potential_neighbors[valid_mask]
 
     for (neigh_idx in neighbor_indices) {
       shared_tets <- intersect(my_tets, atom_to_tets[[as.character(neigh_idx)]])
-      if (length(shared_tets) < 3) next
+      if (length(shared_tets) < 3)
+        next
 
       raw_verts <- circumcenters[shared_tets, , drop = FALSE]
       raw_verts <- na.omit(raw_verts)
-      if (nrow(raw_verts) < 3) next
+      if (nrow(raw_verts) < 3)
+        next
 
       normal <- coords_mat[neigh_idx, ] - center_coords
       dist_sq <- sum(normal^2)
-      if (is.na(dist_sq) || dist_sq < 1e-12) next
+      if (is.na(dist_sq) || dist_sq < 1e-12)
+        next
 
       unique_verts <- raw_verts[1, , drop = FALSE]
       if (nrow(raw_verts) > 1) {
         for (k in 2:nrow(raw_verts)) {
           pt <- raw_verts[k, ]
-          dists_v <- sqrt(rowSums(t(t(unique_verts) - pt)^2))
+          dists_v <- sqrt(rowSums(t(t(
+            unique_verts
+          ) - pt)^2))
           if (all(dists_v > 1e-5)) {
             unique_verts <- rbind(unique_verts, pt)
           } else {
@@ -249,10 +297,14 @@ voronoi_nn <- function(atomic_coordinates,
           }
         }
       }
-      if (nrow(unique_verts) < 3) next
+      if (nrow(unique_verts) < 3)
+        next
 
       face_centroid <- colMeans(unique_verts)
-      u <- if (abs(normal[1]) < 0.9) c(1, 0, 0) else c(0, 1, 0)
+      u <- if (abs(normal[1]) < 0.9)
+        c(1, 0, 0)
+      else
+        c(0, 1, 0)
       u <- cross_product(normal, u)
       u <- u / sqrt(sum(u^2))
       v <- cross_product(normal, u)
@@ -269,22 +321,32 @@ voronoi_nn <- function(atomic_coordinates,
       for (k in 1:n_fv) {
         p1 <- face_centroid
         p2 <- face_verts_ordered[k, ]
-        p3 <- face_verts_ordered[if (k == n_fv) 1 else k + 1, ]
+        p3 <- face_verts_ordered[if (k == n_fv)
+          1
+          else
+            k + 1, ]
         cp <- cross_product(p2 - p1, p3 - p1)
         area <- area + 0.5 * sqrt(sum(cp^2))
       }
 
-      if (area < 1e-10 || sa < 1e-10) next
+      if (area < 1e-10 || sa < 1e-10)
+        next
 
       results_list[[length(results_list) + 1]] <- list(
-        Atom1 = prim_label, Atom2 = expanded_coords$Label[neigh_idx],
-        Distance = sqrt(dist_sq), SolidAngle = sa, Area = area,
-        DeltaX = normal[1], DeltaY = normal[2], DeltaZ = normal[3]
+        Atom1 = prim_label,
+        Atom2 = expanded_coords$Label[neigh_idx],
+        Distance = sqrt(dist_sq),
+        SolidAngle = sa,
+        Area = area,
+        DeltaX = normal[1],
+        DeltaY = normal[2],
+        DeltaZ = normal[3]
       )
     }
   }
 
-  if (length(results_list) == 0) return(NULL)
+  if (length(results_list) == 0)
+    return(NULL)
   raw_dt <- rbindlist(results_list)
 
   # Reconstruct true mathematical faces by summing the shattered shards belonging to the same atom pair.
@@ -299,7 +361,8 @@ voronoi_nn <- function(atomic_coordinates,
 
   # Apply the physical filter now that the faces are reconstructed
   dt <- dt[Area >= 1e-5 & SolidAngle >= 1e-5]
-  if (nrow(dt) == 0) return(NULL)
+  if (nrow(dt) == 0)
+    return(NULL)
 
   dt[, MaxSA := max(SolidAngle, na.rm = TRUE), by = Atom1]
   dt[, Weight := ifelse(MaxSA > 0, SolidAngle / MaxSA, 0)]
@@ -323,6 +386,14 @@ voronoi_nn <- function(atomic_coordinates,
 #' @return A `data.table` of bonded pairs.
 #' @family bonding algorithms
 #' @export
+#' @examples
+#' \donttest{
+#' cif_path <- system.file("extdata", "1590946.cif", package = "crystract")
+#' if (file.exists(cif_path)) {
+#'   res <- analyze_single_cif(cif_path, bonding_algorithms = "crystal_nn")
+#'   print(head(res$bonds_crystal_nn[[1]]))
+#' }
+#' }
 crystal_nn <- function(distances,
                        atomic_coordinates,
                        expanded_coords,

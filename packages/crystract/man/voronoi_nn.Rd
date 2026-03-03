@@ -29,6 +29,15 @@ A \code{data.table} of bonded pairs.
 \description{
 Performs 3D Voronoi analysis on the supercell.
 }
+\examples{
+\donttest{
+cif_path <- system.file("extdata", "1590946.cif", package = "crystract")
+if (file.exists(cif_path)) {
+  res <- analyze_single_cif(cif_path, bonding_algorithms = "voronoi")
+  print(head(res$bonds_voronoi[[1]]))
+}
+}
+}
 \seealso{
 Other bonding algorithms: 
 \code{\link{brunner_nn_reciprocal}()},

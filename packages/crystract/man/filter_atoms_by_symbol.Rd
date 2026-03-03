@@ -39,9 +39,6 @@ following the selected symbol are not alphabetical letters.
 This function is intended for interactive use.
 }
 \examples{
-# This example demonstrates how the function would work.
-# In a real session, you would call: filter_atoms_by_symbol(my_data)
-
 # 1. Create a sample data.table of bond angles
 sample_angles <- data.table::data.table(
   CentralAtom = c("C1", "C2", "Si1", "Cr1", "O1", "O2", "C"),
@@ -51,10 +48,6 @@ sample_angles <- data.table::data.table(
 )
 
 # 2. In an interactive R session, the function would prompt the user.
-# For example, if the user sees the available symbols (C, Si, Cr, O) and
-# enters "C,Si" at the prompt, the function would return the rows for
-# "C1", "C2", "C", and "Si1".
-
 if (interactive()) {
   filtered_data <- filter_atoms_by_symbol(sample_angles, atom_col = "CentralAtom")
   print(filtered_data)

@@ -6,20 +6,23 @@
 \alias{crystract-package}
 \title{crystract: Tools to Extract Data from CIF Files for Crystallography}
 \description{
-Provides a suite of functions to parse Crystallographic Information
-Files (.cif), extracting essential data such as chemical formulas, unit cell
-parameters, atomic coordinates, and symmetry operations. It also includes
-tools to calculate interatomic distances, identify bonded pairs using various
-algorithms (Minimum Distance, Brunner's, EconNN, CrystalNN, Voronoi), determine nearest
-neighbor counts, and calculate bond angles. The package is designed to
-facilitate the preparation of crystallographic data for further analysis,
-including machine learning applications in materials science.
+Parse Crystallographic Information Files (.cif) and extract essential
+data such as chemical formulas, unit cell parameters, atomic coordinates,
+and symmetry operations. Calculate interatomic distances, identify bonded
+pairs using various algorithms (Minimum Distance, Brunner's, EconNN,
+CrystalNN, Voronoi), determine nearest neighbor counts, and calculate bond
+angles. Facilitates the preparation of crystallographic data for further
+analysis, including machine learning applications in materials science.
 }
 \seealso{
 Useful links:
 \itemize{
   \item \url{https://prabhulab.github.io/ml-crystals/}
 }
+
+}
+\author{
+\strong{Maintainer}: Don Ngo \email{dngo@carnegiescience.edu}
 
 }
 \keyword{internal}

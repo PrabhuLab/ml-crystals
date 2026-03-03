@@ -16,6 +16,11 @@ A \code{data.table} with columns 'Atom' and 'CoordinationNumber'.
 Counts the number of nearest neighbors for each central atom based on
 a table of bonded pairs.
 }
+\examples{
+bp <- data.table::data.table(Atom1 = c("Si1", "Si1", "O1"),
+                             Atom2 = c("O1", "O2", "Si1"))
+calculate_neighbor_counts(bp)
+}
 \seealso{
 Other property calculators: 
 \code{\link{calculate_angles}()},

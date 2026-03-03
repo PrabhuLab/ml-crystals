@@ -27,6 +27,14 @@ A \code{data.table} containing all unique atomic positions in the unit cell.
 \description{
 Generates all symmetry-equivalent atomic positions within the unit cell.
 }
+\examples{
+ac <- data.table::data.table(Label = "A", x_a = 0, y_b = 0, z_c = 0)
+ops <- data.table::data.table(x = c("x", "-x"), y = c("y", "-y"), z = c("z", "-z"))
+uc <- data.table::data.table(`_cell_length_a` = 10, `_cell_length_b` = 10,
+                             `_cell_length_c` = 10, `_cell_angle_alpha` = 90,
+                             `_cell_angle_beta` = 90, `_cell_angle_gamma` = 90)
+apply_symmetry_operations(ac, ops, uc)
+}
 \seealso{
 Other coordinate processors: 
 \code{\link{calculate_expansion_factors}()},

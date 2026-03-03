@@ -48,3 +48,9 @@ size and coordinate sets based on the requested bonding algorithms.
 For geometric algorithms (Voronoi/CrystalNN), it automatically merges atoms
 occupying the same site to ensure mathematical validity.
 }
+\examples{
+cif_path <- system.file("extdata", "1590946.cif", package = "crystract")
+if (file.exists(cif_path)) {
+  res <- analyze_single_cif(cif_path, perform_error_propagation = FALSE)
+}
+}

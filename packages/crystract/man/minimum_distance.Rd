@@ -19,6 +19,12 @@ Identifies bonded atoms by finding the nearest neighbor distance (d_min)
 for each central atom and defining a cutoff distance (d_cut) as
 d_cut = (1 + delta) * d_min.
 }
+\examples{
+dists <- data.table::data.table(Atom1 = c("A", "A"), Atom2 = c("B", "C"),
+                                Distance = c(1.5, 2.5),
+                                DeltaX = c(1, 0), DeltaY = c(0, 1), DeltaZ = c(0, 0))
+minimum_distance(dists, delta = 0.1)
+}
 \seealso{
 Other bonding algorithms: 
 \code{\link{brunner_nn_reciprocal}()},

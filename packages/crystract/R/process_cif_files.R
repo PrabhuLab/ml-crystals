@@ -30,6 +30,11 @@
 #' @param file_paths A character vector of paths to the CIF files.
 #' @return A list of `data.table` objects.
 #' @export
+#' @examples
+#' cif_path <- system.file("extdata", "1590946.cif", package = "crystract")
+#' if (file.exists(cif_path)) {
+#'   cifs <- read_cif_files(cif_path)
+#' }
 read_cif_files <- function(file_paths) {
   # Set the names of the list to the base filenames
   cif_list <- lapply(file_paths, function(fp) {
@@ -74,6 +79,11 @@ read_cif_files <- function(file_paths) {
 #' @param minimum_distance_delta Numeric. Tolerance for min-dist algorithm.
 #' @return A one-row `data.table` with results.
 #' @export
+#' @examples
+#' cif_path <- system.file("extdata", "1590946.cif", package = "crystract")
+#' if (file.exists(cif_path)) {
+#'   res <- analyze_single_cif(cif_path, perform_error_propagation = FALSE)
+#' }
 analyze_single_cif <- function(cif_content,
                                file_name = NULL,
                                perform_extraction = TRUE,
@@ -283,6 +293,17 @@ analyze_single_cif <- function(cif_content,
 #' @param ... Args passed to `analyze_single_cif`.
 #' @return Data.table or output directory path.
 #' @export
+#' @examples
+#' \donttest{
+#' cif_path <- system.file("extdata", "1590946.cif", package = "crystract")
+#' if (file.exists(cif_path)) {
+#'   out_dir <- file.path(tempdir(), "cif_analysis")
+#'   res <- analyze_cif_files(cif_path, output_dir = out_dir, workers = 1)
+#'
+#'   # Clean up
+#'   unlink(out_dir, recursive = TRUE)
+#' }
+#' }
 analyze_cif_files <- function(file_paths,
                               workers = 1,
                               output_dir = NULL,
@@ -442,6 +463,18 @@ analyze_cif_files <- function(file_paths,
 #' @param cols_to_keep Optional character vector of column names to keep.
 #' @return A single `data.table` containing the aggregated results.
 #' @export
+#' @examples
+#' \donttest{
+#' cif_path <- system.file("extdata", "1590946.cif", package = "crystract")
+#' if (file.exists(cif_path)) {
+#'   out_dir <- file.path(tempdir(), "cif_batches")
+#'   analyze_cif_files(cif_path, output_dir = out_dir)
+#'
+#'   aggr <- aggregate_batch_results(out_dir)
+#'
+#'   unlink(out_dir, recursive = TRUE)
+#' }
+#' }
 aggregate_batch_results <- function(input_dir, cols_to_keep = NULL) {
   batch_files <- list.files(path = input_dir,
                             pattern = "^batch_\\d+\\.rds$",
@@ -478,6 +511,18 @@ aggregate_batch_results <- function(input_dir, cols_to_keep = NULL) {
 #' @param overwrite Logical.
 #' @return Invisibly returns output_dir.
 #' @export
+#' @examples
+#' \donttest{
+#' cif_path <- system.file("extdata", "1590946.cif", package = "crystract")
+#' if (file.exists(cif_path)) {
+#'   res <- analyze_single_cif(cif_path)
+#'
+#'   out_dir <- file.path(tempdir(), "cif_csvs")
+#'   export_analysis_to_csv(res, output_dir = out_dir)
+#'
+#'   unlink(out_dir, recursive = TRUE)
+#' }
+#' }
 export_analysis_to_csv <- function(analysis_results, output_dir, overwrite = FALSE) {
   if (!inherits(analysis_results, "data.table") ||
       nrow(analysis_results) == 0) {

@@ -10,6 +10,15 @@
 #' Default is 1e-4.
 #' @return A deduplicated data.table with coordinates averaged.
 #' @export
+#' @examples
+#' ac <- data.table::data.table(Label = c("A", "B"),
+#'                              x_a = c(0, 0.00001),
+#'                              y_b = c(0, 0),
+#'                              z_c = c(0, 0))
+#' uc <- data.table::data.table(`_cell_length_a` = 10, `_cell_length_b` = 10,
+#'                              `_cell_length_c` = 10, `_cell_angle_alpha` = 90,
+#'                              `_cell_angle_beta` = 90, `_cell_angle_gamma` = 90)
+#' merge_sites_pbc(ac, uc, tol = 1e-4)
 merge_sites_pbc <- function(atomic_coordinates,
                             unit_cell_metrics,
                             tol = 1e-4) {
@@ -157,6 +166,13 @@ merge_sites_pbc <- function(atomic_coordinates,
 #' @return A `data.table` containing all unique atomic positions in the unit cell.
 #' @family coordinate processors
 #' @export
+#' @examples
+#' ac <- data.table::data.table(Label = "A", x_a = 0, y_b = 0, z_c = 0)
+#' ops <- data.table::data.table(x = c("x", "-x"), y = c("y", "-y"), z = c("z", "-z"))
+#' uc <- data.table::data.table(`_cell_length_a` = 10, `_cell_length_b` = 10,
+#'                              `_cell_length_c` = 10, `_cell_angle_alpha` = 90,
+#'                              `_cell_angle_beta` = 90, `_cell_angle_gamma` = 90)
+#' apply_symmetry_operations(ac, ops, uc)
 apply_symmetry_operations <- function(atomic_coordinates,
                                       symmetry_operations,
                                       unit_cell_metrics,
@@ -229,6 +245,11 @@ apply_symmetry_operations <- function(atomic_coordinates,
 #' @return A named numeric vector `c(a=..., b=..., c=...)`.
 #' @family coordinate processors
 #' @export
+#' @examples
+#' uc <- data.table::data.table(`_cell_length_a` = 10, `_cell_length_b` = 10,
+#'                              `_cell_length_c` = 10, `_cell_angle_alpha` = 90,
+#'                              `_cell_angle_beta` = 90, `_cell_angle_gamma` = 90)
+#' calculate_expansion_factors(uc, radius = 13.0)
 calculate_expansion_factors <- function(unit_cell_metrics, radius) {
   a <- as.numeric(unit_cell_metrics$`_cell_length_a`)
   b <- as.numeric(unit_cell_metrics$`_cell_length_b`)
@@ -276,6 +297,9 @@ calculate_expansion_factors <- function(unit_cell_metrics, radius) {
 #' @return A `data.table` containing all atomic positions in the expanded supercell.
 #' @family coordinate processors
 #' @export
+#' @examples
+#' tc <- data.table::data.table(Label = "A", x_a = 0, y_b = 0, z_c = 0)
+#' expand_transformed_coords(tc, expansion_factors = c(1, 1, 1))
 expand_transformed_coords <- function(transformed_coords,
                                       expansion_factors = c(1, 1, 1)) {
   if (is.null(transformed_coords) ||

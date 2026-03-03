@@ -15,6 +15,13 @@ A \code{data.table} with symmetry operations. Returns \code{NULL} if not found.
 \description{
 Parses the symmetry operation definitions from the CIF content.
 }
+\examples{
+cif_path <- system.file("extdata", "1590946.cif", package = "crystract")
+if (file.exists(cif_path)) {
+  cif_content <- read_cif_files(cif_path)[[1]]
+  extract_symmetry_operations(cif_content)
+}
+}
 \seealso{
 Other extractors: 
 \code{\link{extract_atomic_coordinates}()},

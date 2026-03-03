@@ -19,6 +19,10 @@ A \code{data.table} containing all atomic positions in the expanded supercell.
 Takes a set of atomic coordinates within a single unit cell and
 replicates them into a supercell grid defined by expansion factors.
 }
+\examples{
+tc <- data.table::data.table(Label = "A", x_a = 0, y_b = 0, z_c = 0)
+expand_transformed_coords(tc, expansion_factors = c(1, 1, 1))
+}
 \seealso{
 Other coordinate processors: 
 \code{\link{apply_symmetry_operations}()},

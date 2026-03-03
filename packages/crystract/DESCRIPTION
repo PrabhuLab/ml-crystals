@@ -1,8 +1,11 @@
 Package: crystract
 Type: Package
 Title: Crystallographic Information File (CIF) Data Processing Tools
-Version: 1.0.1
-Author: Don Ngo <dngo@carnegiescience.edu>
+Version: 1.0.0
+Authors@R: person(given = "Don", 
+                  family = "Ngo", 
+                  email = "dngo@carnegiescience.edu", 
+                  role = c("aut", "cre"))
 Maintainer: Don Ngo <dngo@carnegiescience.edu>
 Description: Provides a suite of functions to parse Crystallographic Information
     Files (.cif), extracting essential data such as chemical formulas, unit cell

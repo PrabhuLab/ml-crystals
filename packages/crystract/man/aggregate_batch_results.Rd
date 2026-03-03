@@ -17,3 +17,16 @@ A single \code{data.table} containing the aggregated results.
 \description{
 Reads all \code{batch_*.rds} files from a directory and combines them.
 }
+\examples{
+\donttest{
+cif_path <- system.file("extdata", "1590946.cif", package = "crystract")
+if (file.exists(cif_path)) {
+  out_dir <- file.path(tempdir(), "cif_batches")
+  analyze_cif_files(cif_path, output_dir = out_dir)
+
+  aggr <- aggregate_batch_results(out_dir)
+
+  unlink(out_dir, recursive = TRUE)
+}
+}
+}

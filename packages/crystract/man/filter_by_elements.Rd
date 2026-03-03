@@ -20,6 +20,11 @@ A \code{data.table} of distances with the specified elements removed.
 Removes any distance pair where at least one of the atoms
 corresponds to a specified list of element symbols.
 }
+\examples{
+dists <- data.table::data.table(Atom1 = "Si1_1_0_0", Atom2 = "O1_1_0_0", Distance = 1.6)
+ac <- data.table::data.table(Label = c("Si1", "O1"))
+filter_by_elements(dists, ac, elements_to_exclude = "O")
+}
 \seealso{
 Other property calculators: 
 \code{\link{calculate_angles}()},

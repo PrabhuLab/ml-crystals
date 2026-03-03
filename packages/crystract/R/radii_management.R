@@ -33,9 +33,6 @@
 #' # 2. Set this table for the current session
 #' set_radii_data(my_radii)
 #'
-#' # Now, any subsequent calls to filter_ghost_distances() will use this table.
-#' # You could, for example, filter based on ionic radii by setting radii_type = "ionic".
-#'
 #' # 3. Reset to the package's default covalent radii table
 #' set_radii_data(NULL)
 #'

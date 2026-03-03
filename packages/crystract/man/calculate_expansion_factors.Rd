@@ -18,6 +18,12 @@ A named numeric vector \code{c(a=..., b=..., c=...)}.
 Computes the number of unit cell repetitions required in each
 direction (a, b, c) to encompass a sphere of a given radius.
 }
+\examples{
+uc <- data.table::data.table(`_cell_length_a` = 10, `_cell_length_b` = 10,
+                             `_cell_length_c` = 10, `_cell_angle_alpha` = 90,
+                             `_cell_angle_beta` = 90, `_cell_angle_gamma` = 90)
+calculate_expansion_factors(uc, radius = 13.0)
+}
 \seealso{
 Other coordinate processors: 
 \code{\link{apply_symmetry_operations}()},

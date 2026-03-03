@@ -19,6 +19,13 @@ Parses atomic site info, including labels, fractional coordinates,
 occupancies, oxidation states, and thermal parameters. It includes logic
 to extract oxidation states from both site tags and type loops.
 }
+\examples{
+cif_path <- system.file("extdata", "1590946.cif", package = "crystract")
+if (file.exists(cif_path)) {
+  cif_content <- read_cif_files(cif_path)[[1]]
+  extract_atomic_coordinates(cif_content)
+}
+}
 \seealso{
 Other extractors: 
 \code{\link{extract_chemical_formula}()},

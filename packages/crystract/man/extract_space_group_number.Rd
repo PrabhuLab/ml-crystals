@@ -15,6 +15,13 @@ A character string of the space group number, or \code{NA} if not found.
 \description{
 Extracts the International Tables space group number (e.g., from \verb{_space_group_IT_number}).
 }
+\examples{
+cif_path <- system.file("extdata", "1590946.cif", package = "crystract")
+if (file.exists(cif_path)) {
+  cif_content <- read_cif_files(cif_path)[[1]]
+  extract_space_group_number(cif_content)
+}
+}
 \seealso{
 Other extractors: 
 \code{\link{extract_atomic_coordinates}()},

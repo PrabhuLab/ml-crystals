@@ -13,7 +13,8 @@ filter_by_wyckoff_symbol(
 }
 \arguments{
 \item{data_table}{A \code{data.table} object, such as one produced by
-\code{minimum_distance} or \code{calculate_angles}.}
+\code{minimum_distance} or
+\code{calculate_angles}.}
 
 \item{atomic_coordinates}{A \code{data.table} from \code{extract_atomic_coordinates}
 containing \code{WyckoffMultiplicity} and \code{WyckoffSymbol} columns.}
@@ -50,19 +51,22 @@ one of the symbols provided in the \code{wyckoff_symbols} vector.
 }
 }
 \examples{
-cif_file <- system.file("extdata", "ICSD422.cif", package = "crystract")
+cif_file <- system.file("extdata", "1590946.cif", package = "crystract")
 if (file.exists(cif_file)) {
   # 1. Perform a standard analysis to get bond and coordinate tables
   cif_content <- read_cif_files(cif_file)[[1]]
   atoms <- extract_atomic_coordinates(cif_content)
   metrics <- extract_unit_cell_metrics(cif_content)
   sym_ops <- extract_symmetry_operations(cif_content)
-  full_cell <- apply_symmetry_operations(atoms, sym_ops)
+  full_cell <- apply_symmetry_operations(atoms, sym_ops, metrics)
   super_cell <- expand_transformed_coords(full_cell)
   dists <- calculate_distances(atoms, super_cell, metrics)
   bonds <- minimum_distance(dists)
 
-  # 2. In ICSD422, all atoms are on the "4c" site.
+  # 2. Mock Wyckoff sites since 1590946 doesn't explicitly declare them
+  atoms[, WyckoffSymbol := "c"]
+  atoms[, WyckoffMultiplicity := 4]
+
   print("Original atomic coordinates showing Wyckoff sites:")
   print(atoms[, .(Label, WyckoffSymbol, WyckoffMultiplicity)])
 

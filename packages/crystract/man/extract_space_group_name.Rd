@@ -15,6 +15,13 @@ A character string of the space group name, or \code{NA} if not found.
 \description{
 Extracts the Hermann-Mauguin space group name (e.g., from \verb{_space_group_name_H-M_alt}).
 }
+\examples{
+cif_path <- system.file("extdata", "1590946.cif", package = "crystract")
+if (file.exists(cif_path)) {
+  cif_content <- read_cif_files(cif_path)[[1]]
+  extract_space_group_name(cif_content)
+}
+}
 \seealso{
 Other extractors: 
 \code{\link{extract_atomic_coordinates}()},

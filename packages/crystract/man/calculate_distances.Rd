@@ -29,6 +29,14 @@ A \code{data.table} of all non-zero distances.
 Computes the distances between a central set of atoms and an
 expanded set, using the metric tensor for accuracy.
 }
+\examples{
+ac <- data.table::data.table(Label = "Si1", x_a = 0, y_b = 0, z_c = 0)
+ec <- data.table::data.table(Label = "O1_1", x_a = 0.5, y_b = 0.5, z_c = 0.5)
+uc <- data.table::data.table(`_cell_length_a` = 10, `_cell_length_b` = 10,
+                             `_cell_length_c` = 10, `_cell_angle_alpha` = 90,
+                             `_cell_angle_beta` = 90, `_cell_angle_gamma` = 90)
+calculate_distances(ac, ec, uc)
+}
 \seealso{
 Other property calculators: 
 \code{\link{calculate_angles}()},

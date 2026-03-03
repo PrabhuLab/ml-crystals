@@ -24,4 +24,7 @@ A data.table containing atomic radii for elements. This data is used for
 estimating plausible bond lengths to filter out non-physical "ghost" distances
 that can occur in disordered structures. Radii are in Angstroms (Å).
 }
+\examples{
+head(covalent_radii)
+}
 \keyword{datasets}

@@ -30,3 +30,15 @@ Data.table or output directory path.
 A high-level wrapper that analyzes CIF files in batch, supporting
 parallel processing and batch-to-disk operations.
 }
+\examples{
+\donttest{
+cif_path <- system.file("extdata", "1590946.cif", package = "crystract")
+if (file.exists(cif_path)) {
+  out_dir <- file.path(tempdir(), "cif_analysis")
+  res <- analyze_cif_files(cif_path, output_dir = out_dir, workers = 1)
+
+  # Clean up
+  unlink(out_dir, recursive = TRUE)
+}
+}
+}

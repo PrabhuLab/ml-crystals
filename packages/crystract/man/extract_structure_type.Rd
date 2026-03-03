@@ -15,6 +15,13 @@ A character string of the structure type, or \code{NA} if not found.
 \description{
 Extracts the structure type name (e.g., from \verb{_chemical_name_structure_type}).
 }
+\examples{
+cif_path <- system.file("extdata", "1590946.cif", package = "crystract")
+if (file.exists(cif_path)) {
+  cif_content <- read_cif_files(cif_path)[[1]]
+  extract_structure_type(cif_content)
+}
+}
 \seealso{
 Other extractors: 
 \code{\link{extract_atomic_coordinates}()},

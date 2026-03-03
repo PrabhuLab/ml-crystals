@@ -41,6 +41,15 @@ Electronegativity, and Distance penalties.
 Uses specific Decision Tree logic for radii (Shannon -> Covalent -> Atomic) per
 pymatgen's fallback logic.
 }
+\examples{
+\donttest{
+cif_path <- system.file("extdata", "1590946.cif", package = "crystract")
+if (file.exists(cif_path)) {
+  res <- analyze_single_cif(cif_path, bonding_algorithms = "crystal_nn")
+  print(head(res$bonds_crystal_nn[[1]]))
+}
+}
+}
 \seealso{
 Other bonding algorithms: 
 \code{\link{brunner_nn_reciprocal}()},

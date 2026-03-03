@@ -10,6 +10,13 @@
 #' @return A `data.table` of all non-zero distances.
 #' @family property calculators
 #' @export
+#' @examples
+#' ac <- data.table::data.table(Label = "Si1", x_a = 0, y_b = 0, z_c = 0)
+#' ec <- data.table::data.table(Label = "O1_1", x_a = 0.5, y_b = 0.5, z_c = 0.5)
+#' uc <- data.table::data.table(`_cell_length_a` = 10, `_cell_length_b` = 10,
+#'                              `_cell_length_c` = 10, `_cell_angle_alpha` = 90,
+#'                              `_cell_angle_beta` = 90, `_cell_angle_gamma` = 90)
+#' calculate_distances(ac, ec, uc)
 calculate_distances <- function(atomic_coordinates,
                                 expanded_coords,
                                 unit_cell_metrics,
@@ -72,6 +79,10 @@ calculate_distances <- function(atomic_coordinates,
 #' @return A `data.table` with columns 'Atom' and 'CoordinationNumber'.
 #' @family property calculators
 #' @export
+#' @examples
+#' bp <- data.table::data.table(Atom1 = c("Si1", "Si1", "O1"),
+#'                              Atom2 = c("O1", "O2", "Si1"))
+#' calculate_neighbor_counts(bp)
 calculate_neighbor_counts <- function(bonded_pairs_table) {
   if (is.null(bonded_pairs_table) || nrow(bonded_pairs_table) == 0) {
     return(data.table(Atom = character(), CoordinationNumber = integer()))
@@ -100,6 +111,13 @@ calculate_neighbor_counts <- function(bonded_pairs_table) {
 #'   Returns `NULL` if the occupancies sum to > 1 on any shared site.
 #' @family property calculators
 #' @export
+#' @examples
+#' bp <- data.table::data.table(Atom1 = c("Si1", "Si1"),
+#'                              Atom2 = c("O1_1_0_0", "O2_1_0_0"))
+#' ac <- data.table::data.table(Label = c("Si1", "O1", "O2"),
+#'                              Occupancy = c(1.0, 0.5, 0.5),
+#'                              x_a=c(0,0,0), y_b=c(0,0,0), z_c=c(0,0,0))
+#' calculate_weighted_neighbor_counts(bp, ac)
 calculate_weighted_neighbor_counts <- function(bonded_pairs_table, atomic_coordinates) {
   if (is.null(bonded_pairs_table) || nrow(bonded_pairs_table) == 0) {
     return(
@@ -185,6 +203,15 @@ calculate_weighted_neighbor_counts <- function(bonded_pairs_table, atomic_coordi
 #' @return A `data.table` of all unique bond angles.
 #' @family property calculators
 #' @export
+#' @examples
+#' bp <- data.table::data.table(Atom1 = c("Si1", "Si1"), Atom2 = c("O1", "O2"))
+#' ac <- data.table::data.table(Label = "Si1", x_a = 0, y_b = 0, z_c = 0)
+#' ec <- data.table::data.table(Label = c("O1", "O2"),
+#'                              x_a = c(1, 0), y_b = c(0, 1), z_c = c(0, 0))
+#' uc <- data.table::data.table(`_cell_length_a` = 10, `_cell_length_b` = 10,
+#'                              `_cell_length_c` = 10, `_cell_angle_alpha` = 90,
+#'                              `_cell_angle_beta` = 90, `_cell_angle_gamma` = 90)
+#' calculate_angles(bp, ac, ec, uc)
 calculate_angles <- function(bonded_pairs,
                              atomic_coordinates,
                              expanded_coords,
@@ -313,6 +340,20 @@ calculate_angles <- function(bonded_pairs,
 #' @return The input `bonded_pairs` data.table with a new 'DistanceError' column.
 #' @family error propagators
 #' @export
+#' @examples
+#' bp <- data.table::data.table(Atom1 = "Si1", Atom2 = "O1_1", Distance = 1.6,
+#'                              DeltaX = 0.1, DeltaY = 0.1, DeltaZ = 0)
+#' ac <- data.table::data.table(Label = c("Si1", "O1"),
+#'                              x_error = c(0.01, 0.01),
+#'                              y_error = c(0.01, 0.01),
+#'                              z_error = c(0.01, 0.01))
+#' uc <- data.table::data.table(`_cell_length_a` = 10, `_cell_length_a_error` = 0.1,
+#'                              `_cell_length_b` = 10, `_cell_length_b_error` = 0.1,
+#'                              `_cell_length_c` = 10, `_cell_length_c_error` = 0.1,
+#'                              `_cell_angle_alpha` = 90, `_cell_angle_alpha_error` = 0,
+#'                              `_cell_angle_beta` = 90, `_cell_angle_beta_error` = 0,
+#'                              `_cell_angle_gamma` = 90, `_cell_angle_gamma_error` = 0)
+#' propagate_distance_error(bp, ac, uc)
 propagate_distance_error <- function(bonded_pairs,
                                      atomic_coordinates,
                                      unit_cell_metrics) {
@@ -434,6 +475,39 @@ propagate_distance_error <- function(bonded_pairs,
 #' @return The input `bond_angles` data.table with a new 'AngleError' column.
 #' @family error propagators
 #' @export
+#' @examples
+#' # 1. Create dummy bond angles
+#' ba <- data.table::data.table(
+#'   CentralAtom = "Si1", Neighbor1 = "O1", Neighbor2 = "O2", Angle = 109.5
+#' )
+#'
+#' # 2. Create dummy atomic coordinates with errors
+#' ac <- data.table::data.table(
+#'   Label = c("Si1", "O1", "O2"),
+#'   x_a = c(0, 0.1, 0), y_b = c(0, 0, 0.1), z_c = c(0, 0, 0),
+#'   x_error = c(0.01, 0.01, 0.01),
+#'   y_error = c(0.01, 0.01, 0.01),
+#'   z_error = c(0.01, 0.01, 0.01)
+#' )
+#'
+#' # 3. Create dummy expanded coordinates
+#' ec <- data.table::data.table(
+#'   Label = c("O1", "O2"),
+#'   x_a = c(0.1, 0), y_b = c(0, 0.1), z_c = c(0, 0)
+#' )
+#'
+#' # 4. Create dummy unit cell metrics
+#' uc <- data.table::data.table(
+#'   `_cell_length_a` = 10, `_cell_length_a_error` = 0.1,
+#'   `_cell_length_b` = 10, `_cell_length_b_error` = 0.1,
+#'   `_cell_length_c` = 10, `_cell_length_c_error` = 0.1,
+#'   `_cell_angle_alpha` = 90, `_cell_angle_alpha_error` = 0,
+#'   `_cell_angle_beta` = 90, `_cell_angle_beta_error` = 0,
+#'   `_cell_angle_gamma` = 90, `_cell_angle_gamma_error` = 0
+#' )
+#'
+#' # 5. Run the error propagation
+#' propagate_angle_error(ba, ac, ec, uc)
 propagate_angle_error <- function(bond_angles,
                                   atomic_coordinates,
                                   expanded_coords,
@@ -653,9 +727,6 @@ propagate_angle_error <- function(bond_angles,
 #' @family property calculators
 #' @export
 #' @examples
-#' # This example demonstrates how the function would work.
-#' # In a real session, you would call: filter_atoms_by_symbol(my_data)
-#'
 #' # 1. Create a sample data.table of bond angles
 #' sample_angles <- data.table::data.table(
 #'   CentralAtom = c("C1", "C2", "Si1", "Cr1", "O1", "O2", "C"),
@@ -665,10 +736,6 @@ propagate_angle_error <- function(bond_angles,
 #' )
 #'
 #' # 2. In an interactive R session, the function would prompt the user.
-#' # For example, if the user sees the available symbols (C, Si, Cr, O) and
-#' # enters "C,Si" at the prompt, the function would return the rows for
-#' # "C1", "C2", "C", and "Si1".
-#'
 #' if (interactive()) {
 #'   filtered_data <- filter_atoms_by_symbol(sample_angles, atom_col = "CentralAtom")
 #'   print(filtered_data)
@@ -745,7 +812,8 @@ filter_atoms_by_symbol <- function(data_table, atom_col = "CentralAtom") {
 #'     one of the symbols provided in the `wyckoff_symbols` vector.
 #'
 #' @param data_table A `data.table` object, such as one produced by
-#'   `minimum_distance` or `calculate_angles`.
+#'   `minimum_distance` or
+#'   `calculate_angles`.
 #' @param atomic_coordinates A `data.table` from `extract_atomic_coordinates`
 #'   containing `WyckoffMultiplicity` and `WyckoffSymbol` columns.
 #' @param atom_col A character string specifying the column in `data_table`
@@ -757,19 +825,22 @@ filter_atoms_by_symbol <- function(data_table, atom_col = "CentralAtom") {
 #' @family property calculators
 #' @export
 #' @examples
-#' cif_file <- system.file("extdata", "ICSD422.cif", package = "crystract")
+#' cif_file <- system.file("extdata", "1590946.cif", package = "crystract")
 #' if (file.exists(cif_file)) {
 #'   # 1. Perform a standard analysis to get bond and coordinate tables
 #'   cif_content <- read_cif_files(cif_file)[[1]]
 #'   atoms <- extract_atomic_coordinates(cif_content)
 #'   metrics <- extract_unit_cell_metrics(cif_content)
 #'   sym_ops <- extract_symmetry_operations(cif_content)
-#'   full_cell <- apply_symmetry_operations(atoms, sym_ops)
+#'   full_cell <- apply_symmetry_operations(atoms, sym_ops, metrics)
 #'   super_cell <- expand_transformed_coords(full_cell)
 #'   dists <- calculate_distances(atoms, super_cell, metrics)
 #'   bonds <- minimum_distance(dists)
 #'
-#'   # 2. In ICSD422, all atoms are on the "4c" site.
+#'   # 2. Mock Wyckoff sites since 1590946 doesn't explicitly declare them
+#'   atoms[, WyckoffSymbol := "c"]
+#'   atoms[, WyckoffMultiplicity := 4]
+#'
 #'   print("Original atomic coordinates showing Wyckoff sites:")
 #'   print(atoms[, .(Label, WyckoffSymbol, WyckoffMultiplicity)])
 #'
@@ -839,6 +910,10 @@ filter_by_wyckoff_symbol <- function(data_table,
 #' @return A `data.table` of distances with the specified elements removed.
 #' @family property calculators
 #' @export
+#' @examples
+#' dists <- data.table::data.table(Atom1 = "Si1_1_0_0", Atom2 = "O1_1_0_0", Distance = 1.6)
+#' ac <- data.table::data.table(Label = c("Si1", "O1"))
+#' filter_by_elements(dists, ac, elements_to_exclude = "O")
 filter_by_elements <- function(distances,
                                atomic_coordinates,
                                elements_to_exclude) {
@@ -896,8 +971,22 @@ filter_by_elements <- function(distances,
 #' @family post-processing
 #' @export
 #' @examples
-#' # This example assumes you have `distances` and `atomic_coordinates` tables.
-#' # See the vignette for a full workflow.
+#' # Create minimal dummy data for demonstration
+#' distances <- data.table::data.table(
+#'   Atom1 = c("Si1_1_0_0", "O1_1_0_0"),
+#'   Atom2 = c("O1_1_0_0", "Si1_1_0_0"),
+#'   Distance = c(1.6, 0.5) # 0.5 is implausibly short
+#' )
+#'
+#' atomic_coords <- data.table::data.table(
+#'   Label = c("Si1", "O1")
+#' )
+#'
+#' # Run the filter
+#' result <- filter_ghost_distances(distances, atomic_coords, margin = 0.1)
+#'
+#' print(result$kept)
+#' print(result$removed)
 filter_ghost_distances <- function(distances,
                                    atomic_coordinates,
                                    margin = 0.1,
@@ -999,7 +1088,6 @@ filter_ghost_distances <- function(distances,
 #' @title Calculate Weighted Average Network Bond Distance
 #' @description Computes a single, representative bond length for a specified atomic
 #'   network. This function precisely implements the validated logic that accounts
-
 #'   for site multiplicity and occupancy of the central atoms.
 #' @param distances A `data.table` of interatomic distances filtered to include
 #'   **only bonded pairs** (e.g., from `minimum_distance`).
@@ -1010,6 +1098,13 @@ filter_ghost_distances <- function(distances,
 #' @return A single numeric value representing the weighted average bond distance.
 #' @family post-processing
 #' @export
+#' @examples
+#' dists <- data.table::data.table(Atom1 = "Si1", Atom2 = "O1", Distance = 1.6)
+#' ac <- data.table::data.table(Label = c("Si1", "O1"),
+#'                              WyckoffMultiplicity = c(4, 4),
+#'                              WyckoffSymbol = c("c", "c"),
+#'                              Occupancy = c(1, 1))
+#' calculate_weighted_average_network_distance(dists, ac, wyckoff_symbols = "4c")
 calculate_weighted_average_network_distance <- function(distances,
                                                         atomic_coordinates,
                                                         wyckoff_symbols) {

@@ -18,6 +18,12 @@ A \code{data.table} of bonded pairs.
 An alternative bonding detection method using the
 largest reciprocal gap. Matches \code{pymatgen.analysis.local_env.BrunnerNNReciprocal}.
 }
+\examples{
+dists <- data.table::data.table(Atom1 = c("A", "A"), Atom2 = c("B", "C"),
+                                Distance = c(1.5, 2.5),
+                                DeltaX = c(1, 0), DeltaY = c(0, 1), DeltaZ = c(0, 0))
+brunner_nn_reciprocal(dists)
+}
 \seealso{
 Other bonding algorithms: 
 \code{\link{crystal_nn}()},

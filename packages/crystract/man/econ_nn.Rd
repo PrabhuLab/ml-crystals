@@ -21,6 +21,14 @@ A \code{data.table} of bonded pairs.
 \description{
 Uses Effective Coordination Numbers (ECoN) and Mean Fictive Ionic Radii (MEFIR).
 }
+\examples{
+dists <- data.table::data.table(Atom1 = c("Si1", "Si1"), Atom2 = c("O1", "O2"),
+                                Distance = c(1.6, 2.0),
+                                DeltaX = c(1, 0), DeltaY = c(0, 1), DeltaZ = c(0, 0))
+ac <- data.table::data.table(Label = c("Si1", "O1", "O2"),
+                             OxidationState = c(4, -2, -2))
+econ_nn(dists, ac)
+}
 \seealso{
 Other bonding algorithms: 
 \code{\link{brunner_nn_reciprocal}()},

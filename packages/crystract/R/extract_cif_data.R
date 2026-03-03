@@ -26,6 +26,12 @@ extract_value <- function(cif_content, pattern, remove_pattern = TRUE) {
 #' @return A character string of the database code, or `NA` if not found.
 #' @family extractors
 #' @export
+#' @examples
+#' cif_path <- system.file("extdata", "1590946.cif", package = "crystract")
+#' if (file.exists(cif_path)) {
+#'   cif_content <- read_cif_files(cif_path)[[1]]
+#'   extract_database_code(cif_content)
+#' }
 extract_database_code <- function (cif_content) {
   extract_value(cif_content, "_database_code_")
 }
@@ -36,6 +42,12 @@ extract_database_code <- function (cif_content) {
 #' @return A character string of the chemical formula, or `NA` if not found.
 #' @family extractors
 #' @export
+#' @examples
+#' cif_path <- system.file("extdata", "1590946.cif", package = "crystract")
+#' if (file.exists(cif_path)) {
+#'   cif_content <- read_cif_files(cif_path)[[1]]
+#'   extract_chemical_formula(cif_content)
+#' }
 extract_chemical_formula <- function(cif_content) {
   extract_value(cif_content, "_chemical_formula_sum")
 }
@@ -46,6 +58,12 @@ extract_chemical_formula <- function(cif_content) {
 #' @return A character string of the structure type, or `NA` if not found.
 #' @family extractors
 #' @export
+#' @examples
+#' cif_path <- system.file("extdata", "1590946.cif", package = "crystract")
+#' if (file.exists(cif_path)) {
+#'   cif_content <- read_cif_files(cif_path)[[1]]
+#'   extract_structure_type(cif_content)
+#' }
 extract_structure_type <- function(cif_content) {
   extract_value(cif_content, "_chemical_name_structure_type")
 }
@@ -56,8 +74,19 @@ extract_structure_type <- function(cif_content) {
 #' @return A character string of the space group name, or `NA` if not found.
 #' @family extractors
 #' @export
+#' @examples
+#' cif_path <- system.file("extdata", "1590946.cif", package = "crystract")
+#' if (file.exists(cif_path)) {
+#'   cif_content <- read_cif_files(cif_path)[[1]]
+#'   extract_space_group_name(cif_content)
+#' }
 extract_space_group_name <- function(cif_content) {
-  extract_value(cif_content, "_space_group_name_H-M_alt")
+  val <- extract_value(cif_content, "_space_group_name_H-M_alt")
+  if (is.na(val))
+    val <- extract_value(cif_content, "_symmetry_space_group_name_H-M")
+  if (is.na(val))
+    val <- extract_value(cif_content, "_space_group_name_H-M")
+  return(val)
 }
 
 #' @title Extract Space Group Number from CIF Content
@@ -66,8 +95,17 @@ extract_space_group_name <- function(cif_content) {
 #' @return A character string of the space group number, or `NA` if not found.
 #' @family extractors
 #' @export
+#' @examples
+#' cif_path <- system.file("extdata", "1590946.cif", package = "crystract")
+#' if (file.exists(cif_path)) {
+#'   cif_content <- read_cif_files(cif_path)[[1]]
+#'   extract_space_group_number(cif_content)
+#' }
 extract_space_group_number <- function(cif_content) {
-  extract_value(cif_content, "_space_group_IT_number")
+  val <- extract_value(cif_content, "_space_group_IT_number")
+  if (is.na(val))
+    val <- extract_value(cif_content, "_symmetry_Int_Tables_number")
+  return(val)
 }
 
 #' @title Extract Unit Cell Metrics
@@ -79,6 +117,12 @@ extract_space_group_number <- function(cif_content) {
 #'   error.
 #' @family extractors
 #' @export
+#' @examples
+#' cif_path <- system.file("extdata", "1590946.cif", package = "crystract")
+#' if (file.exists(cif_path)) {
+#'   cif_content <- read_cif_files(cif_path)[[1]]
+#'   extract_unit_cell_metrics(cif_content)
+#' }
 extract_unit_cell_metrics <- function(cif_content) {
   cell_parameters <- c(
     "_cell_length_a",
@@ -215,6 +259,12 @@ extract_atom_type_info <- function(cif_content) {
 #' @return A `data.table` with atomic coordinate data, or `NULL` if not found.
 #' @family extractors
 #' @export
+#' @examples
+#' cif_path <- system.file("extdata", "1590946.cif", package = "crystract")
+#' if (file.exists(cif_path)) {
+#'   cif_content <- read_cif_files(cif_path)[[1]]
+#'   extract_atomic_coordinates(cif_content)
+#' }
 extract_atomic_coordinates <- function(cif_content, chemical_formula = NA) {
   # --- 0. Pre-fetch Atom Type Info (for Oxidation State Lookup) ---
   atom_type_info <- extract_atom_type_info(cif_content)
@@ -607,6 +657,12 @@ extract_atomic_coordinates <- function(cif_content, chemical_formula = NA) {
 #' @return A `data.table` with symmetry operations. Returns `NULL` if not found.
 #' @family extractors
 #' @export
+#' @examples
+#' cif_path <- system.file("extdata", "1590946.cif", package = "crystract")
+#' if (file.exists(cif_path)) {
+#'   cif_content <- read_cif_files(cif_path)[[1]]
+#'   extract_symmetry_operations(cif_content)
+#' }
 extract_symmetry_operations <- function(cif_content) {
   target_tags <- c("_space_group_symop_operation_xyz",
                    "_symmetry_equiv_pos_as_xyz")

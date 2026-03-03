@@ -41,8 +41,22 @@ range for each atom pair. Any calculated distance falling outside this range
 is particularly useful for cleaning data from disordered crystal structures.
 }
 \examples{
-# This example assumes you have `distances` and `atomic_coordinates` tables.
-# See the vignette for a full workflow.
+# Create minimal dummy data for demonstration
+distances <- data.table::data.table(
+  Atom1 = c("Si1_1_0_0", "O1_1_0_0"),
+  Atom2 = c("O1_1_0_0", "Si1_1_0_0"),
+  Distance = c(1.6, 0.5) # 0.5 is implausibly short
+)
+
+atomic_coords <- data.table::data.table(
+  Label = c("Si1", "O1")
+)
+
+# Run the filter
+result <- filter_ghost_distances(distances, atomic_coords, margin = 0.1)
+
+print(result$kept)
+print(result$removed)
 }
 \seealso{
 Other post-processing: 

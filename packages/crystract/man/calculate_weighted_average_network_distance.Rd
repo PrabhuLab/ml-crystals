@@ -28,6 +28,14 @@ Computes a single, representative bond length for a specified atomic
 network. This function precisely implements the validated logic that accounts
 for site multiplicity and occupancy of the central atoms.
 }
+\examples{
+dists <- data.table::data.table(Atom1 = "Si1", Atom2 = "O1", Distance = 1.6)
+ac <- data.table::data.table(Label = c("Si1", "O1"),
+                             WyckoffMultiplicity = c(4, 4),
+                             WyckoffSymbol = c("c", "c"),
+                             Occupancy = c(1, 1))
+calculate_weighted_average_network_distance(dists, ac, wyckoff_symbols = "4c")
+}
 \seealso{
 Other post-processing: 
 \code{\link{filter_ghost_distances}()},

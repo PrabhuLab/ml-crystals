@@ -27,6 +27,16 @@ A \code{data.table} of all unique bond angles.
 Calculates all bond angles centered on each atom, formed by pairs
 of its bonded neighbors.
 }
+\examples{
+bp <- data.table::data.table(Atom1 = c("Si1", "Si1"), Atom2 = c("O1", "O2"))
+ac <- data.table::data.table(Label = "Si1", x_a = 0, y_b = 0, z_c = 0)
+ec <- data.table::data.table(Label = c("O1", "O2"),
+                             x_a = c(1, 0), y_b = c(0, 1), z_c = c(0, 0))
+uc <- data.table::data.table(`_cell_length_a` = 10, `_cell_length_b` = 10,
+                             `_cell_length_c` = 10, `_cell_angle_alpha` = 90,
+                             `_cell_angle_beta` = 90, `_cell_angle_gamma` = 90)
+calculate_angles(bp, ac, ec, uc)
+}
 \seealso{
 Other property calculators: 
 \code{\link{calculate_distances}()},
