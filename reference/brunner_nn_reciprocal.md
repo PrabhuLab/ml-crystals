@@ -23,6 +23,13 @@ brunner_nn_reciprocal(distances, tol = 0)
 
 A `data.table` of bonded pairs.
 
+## References
+
+Brunner, G. O. (1977). "A Definition of Coordination and Its Relevance
+in the Structure Types AlB2 and NiAs." *Acta Crystallographica Section
+A*, 33(1), 226–227.
+[doi:10.1107/S0567739477000461](https://doi.org/10.1107/S0567739477000461)
+
 ## See also
 
 Other bonding algorithms:

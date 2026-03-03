@@ -54,35 +54,264 @@
 <!-- badges: start -->
 <!-- After setting up, uncomment and update these badges -->
 <!-- [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental) -->
-<!-- [![R-CMD-check](https://github.com/Don-Tat/ml-crystals/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/Don-Tat/ml-crystals/actions/workflows/R-CMD-check.yaml) -->
+<!-- [![R-CMD-check](https://github.com/PrabhuLab/ml-crystals/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/PrabhuLab/ml-crystals/actions/workflows/R-CMD-check.yaml) -->
 <!-- badges: end -->
-<p><strong>crystract</strong> provides a suite of functions to parse Crystallographic Information Files (<code>.cif</code>), extracting essential data such as chemical formulas, unit cell parameters, atomic coordinates, and symmetry operations. It also includes tools to calculate interatomic distances, identify bonded pairs using various algorithms (Minimum Distance, Brunner’s, Hoppe’s), determine nearest neighbor counts, and calculate bond angles. All data is extracted into nested data.tables, which can then be exported as an R Data Structure (RDS) or folders of .csv files. The package is designed to facilitate the preparation of crystallographic data for further analysis, including machine learning applications in materials science.</p>
+<p><strong>crystract</strong> provides a suite of functions to parse Crystallographic Information Files (<code>.cif</code>), extracting essential data such as chemical formulas, unit cell parameters, atomic coordinates, and symmetry operations. It also includes tools to calculate interatomic distances, identify bonded pairs using various algorithms (Minimum Distance, Brunner’s, Hoppe’s, Voronoi, CrystalNN), determine nearest neighbor counts, and calculate bond angles. All data is extracted into nested <code>data.table</code>s, which can then be exported as an R Data Structure (RDS) or folders of .csv files. The package is designed to facilitate the preparation of crystallographic data for further analysis, including machine learning applications in materials science.</p>
 <blockquote>
 <p><strong>Note on Repository Structure</strong></p>
-<p>The <code>crystract</code> package is located within the <code>crystract/</code> subdirectory of the <code>Prabhulab/ml-crystals</code> GitHub repository. You must use the <code>subdir</code> argument during installation, as shown below.</p>
+<p>The <code>crystract</code> package is located within the <code>packages/crystract/</code> subdirectory of the <code>PrabhuLab/ml-crystals</code> GitHub repository. You must use the <code>subdir</code> argument during installation, as shown below.</p>
 </blockquote>
 <div class="section level2">
 <h2 id="key-features">Key Features<a class="anchor" aria-label="anchor" href="#key-features"></a>
 </h2>
 <ul>
-<li><p><strong>Efficient CIF Parsing</strong>: Utilizes <code>data.table</code> for fast and robust extraction of metadata, unit cell parameters, atomic coordinates, and symmetry operations.</p></li>
-<li><p><strong>Symmetry and Supercell Generation</strong>: Applies symmetry operations to generate a full unit cell from the asymmetric unit and expands coordinates into a 3x3x3 supercell for neighbor searching.</p></li>
-<li><p><strong>Geometric Calculations</strong>: Computes interatomic distances using the metric tensor (correct for all crystal systems) and calculates bond angles.</p></li>
-<li><p><strong>Multiple Bonding Algorithms</strong>: Implements several algorithms to identify bonded atoms, including the <code>minimum_distance</code> (default), <code>brunner</code>, and <code>hoppe</code> methods.</p></li>
-<li><p><strong>Rigorous Error Propagation</strong>: Calculates and propagates experimental uncertainties from the CIF file into the final calculated bond lengths and angles.</p></li>
-<li><p><strong>Powerful Post-Processing Tools</strong>: Includes functions to filter results by chemical element, Wyckoff site, or to remove non-physical “ghost” distances caused by site disorder using a customizable atomic radii table.</p></li>
-<li><p><strong>Batch Processing &amp; Export</strong>: The main <code><a href="reference/analyze_cif_files.html">analyze_cif_files()</a></code> function is designed to process hundreds of files in a single run, and results can be easily exported to a structured directory of CSV files with <code><a href="reference/export_analysis_to_csv.html">export_analysis_to_csv()</a></code>.</p></li>
+<li>
+<strong>Efficient CIF Parsing</strong>: Utilizes <code>data.table</code> for fast and robust extraction of metadata, unit cell parameters, atomic coordinates, and symmetry operations.</li>
+<li>
+<strong>Symmetry and Supercell Generation</strong>: Applies symmetry operations to generate a full unit cell from the asymmetric unit and expands coordinates into a 3x3x3 supercell for neighbor searching.</li>
+<li>
+<strong>Geometric Calculations</strong>: Computes interatomic distances using the metric tensor (correct for all crystal systems) and calculates bond angles.</li>
+<li>
+<strong>Multiple Bonding Algorithms</strong>: Implements several algorithms to identify bonded atoms, including the <code>minimum_distance</code> (default), <code>brunner</code>, <code>econ</code> (Hoppe’s), <code>voronoi</code>, and <code>crystal_nn</code> methods.</li>
+<li>
+<strong>Rigorous Error Propagation</strong>: Calculates and propagates experimental uncertainties from the CIF file into the final calculated bond lengths and angles.</li>
+<li>
+<strong>Powerful Post-Processing Tools</strong>: Includes functions to filter results by chemical element, Wyckoff site, or to remove non-physical “ghost” distances caused by site disorder using a customizable atomic radii table.</li>
+<li>
+<strong>Batch Processing &amp; Export</strong>: The main <code><a href="reference/analyze_cif_files.html">analyze_cif_files()</a></code> function is designed to process hundreds of files in a single run, and results can be easily exported to a structured directory of CSV files with <code><a href="reference/export_analysis_to_csv.html">export_analysis_to_csv()</a></code>.</li>
 </ul>
+<hr>
+</div>
+<div class="section level2">
+<h2 id="workflow-overview">Workflow Overview<a class="anchor" aria-label="anchor" href="#workflow-overview"></a>
+</h2>
+<p>The following diagram illustrates the primary data pipeline in <code>crystract</code>, from raw CIF input to final CSV export.</p>
+<div align="center">
+<p><img src="reference/figures/workflow_diagram.png" width="90%" alt="crystract Workflow Diagram"></p>
+</div>
+<hr>
+</div>
+<div class="section level2">
+<h2 id="best-practices--decision-logic">Best Practices &amp; Decision Logic<a class="anchor" aria-label="anchor" href="#best-practices--decision-logic"></a>
+</h2>
+<p>To assist researchers in configuring <code>crystract</code> for their specific datasets, we provide the following decision trees for selecting atomic radii and choosing the most appropriate bonding algorithm.</p>
 <div class="section level3">
-<h3 id="here-is-a-comprehensive-data-dictionary-for-the-crystract-package">Here is a comprehensive Data Dictionary for the <strong>crystract</strong> package.<a class="anchor" aria-label="anchor" href="#here-is-a-comprehensive-data-dictionary-for-the-crystract-package"></a>
+<h3 id="id_1-choosing-a-bonding-algorithm">1. Choosing a Bonding Algorithm<a class="anchor" aria-label="anchor" href="#id_1-choosing-a-bonding-algorithm"></a>
 </h3>
-<p>It is organized into three sections: 1. <strong>Master Analysis Object</strong>: The main output structure returned by <code><a href="reference/analyze_cif_files.html">analyze_cif_files()</a></code> and <code><a href="reference/analyze_single_cif.html">analyze_single_cif()</a></code>. 2. <strong>Nested Data Tables</strong>: The specific structure of the sub-tables contained within the list-columns of the Master Object. 3. <strong>Reference Data</strong>: The structure of auxiliary tables like atomic radii.</p>
+<p>When invoking <code>analyze_cif_files(..., bonding_algorithms = c(...))</code>, we recommend choosing your target algorithm based on the chemical makeup of your structure and the electronegativity differences (<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>Δ</mi><mi>E</mi><mi>N</mi></mrow><annotation encoding="application/x-tex">\Delta EN</annotation></semantics></math>) of the expected bonds.</p>
+<div align="center">
+<p><img src="reference/figures/bonding_logic.png" width="60%" alt="Bonding Algorithm Selection Logic"></p>
+</div>
+</div>
+<div class="section level3">
+<h3 id="id_2-atomic-radii-selection">2. Atomic Radii Selection<a class="anchor" aria-label="anchor" href="#id_2-atomic-radii-selection"></a>
+</h3>
+<p>When utilizing functions like <code><a href="reference/filter_ghost_distances.html">filter_ghost_distances()</a></code> or algorithms that rely on distance cutoffs, <code>crystract</code> employs an internal logic to select the most appropriate atomic radius. You can also override this by injecting your own custom radii dictionary via <code><a href="reference/set_radii_data.html">set_radii_data()</a></code>.</p>
+<div align="center">
+<p><img src="reference/figures/radii_logic.png" width="70%" alt="Atomic Radii Selection Logic"></p>
+</div>
+<hr>
+</div>
+</div>
+<div class="section level2">
+<h2 id="quickstart-a-complete-workflow--real-outputs">Quickstart: A Complete Workflow &amp; Real Outputs<a class="anchor" aria-label="anchor" href="#quickstart-a-complete-workflow--real-outputs"></a>
+</h2>
+<p>The <code><a href="reference/analyze_single_cif.html">analyze_single_cif()</a></code> (and its batch counterpart <code><a href="reference/analyze_cif_files.html">analyze_cif_files()</a></code>) provides a complete, one-step workflow. Here we run it on an example crystal structure included inside the package itself, demonstrating the exact data outputs you can expect.</p>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://prabhulab.github.io/ml-crystals/">crystract</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://r-datatable.com" class="external-link">data.table</a></span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># 1. Load the built-in demo CIF file (Strontium Silicide)</span></span>
+<span><span class="va">cif_path</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"1590946.cif"</span>, package <span class="op">=</span> <span class="st">"crystract"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># 2. Analyze the file</span></span>
+<span><span class="co"># This single function handles parsing, supercell expansion, geometric calculations, </span></span>
+<span><span class="co"># bonding detection, and error propagation.</span></span>
+<span><span class="va">analysis_results</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/analyze_single_cif.html">analyze_single_cif</a></span><span class="op">(</span></span>
+<span>  <span class="va">cif_path</span>,</span>
+<span>  bonding_algorithms <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"minimum_distance"</span>, <span class="st">"crystal_nn"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<div class="section level3">
+<h3 id="id_1-extracted-metadata">1. Extracted Metadata<a class="anchor" aria-label="anchor" href="#id_1-extracted-metadata"></a>
+</h3>
+<p>The returned object is a single row <code>data.table</code> containing both high-level metadata and list-columns storing the detailed extracted measurements.</p>
+<table class="table">
+<colgroup>
+<col width="48%">
+<col width="25%">
+<col width="25%">
+</colgroup>
+<thead><tr class="header">
+<th align="left">database_code</th>
+<th align="left">chemical_formula</th>
+<th align="left">space_group_name</th>
+</tr></thead>
+<tbody><tr class="odd">
+<td align="left">depnum_ccdc_archive CCDC 1590946</td>
+<td align="left">Si1 Sr2</td>
+<td align="left">P n m a</td>
+</tr></tbody>
+</table>
+<p>High-Level Crystal Information</p>
+</div>
+<div class="section level3">
+<h3 id="id_2-unit-cell-metrics">2. Unit Cell Metrics<a class="anchor" aria-label="anchor" href="#id_2-unit-cell-metrics"></a>
+</h3>
+<p>The parameters defining the size and shape of the unit cell are securely parsed along with their experimental uncertainties (if available in the CIF).</p>
+<table style="width:100%;" class="table">
+<colgroup>
+<col width="16%">
+<col width="16%">
+<col width="16%">
+<col width="16%">
+<col width="16%">
+<col width="16%">
+</colgroup>
+<thead><tr class="header">
+<th align="right">_cell_length_a</th>
+<th align="right">_cell_length_b</th>
+<th align="right">_cell_length_c</th>
+<th align="right">_cell_angle_alpha</th>
+<th align="right">_cell_angle_beta</th>
+<th align="right">_cell_angle_gamma</th>
+</tr></thead>
+<tbody><tr class="odd">
+<td align="right">8.11</td>
+<td align="right">5.15</td>
+<td align="right">9.54</td>
+<td align="right">90</td>
+<td align="right">90</td>
+<td align="right">90</td>
+</tr></tbody>
+</table>
+<p>Extracted Unit Cell Parameters (Å and Degrees)</p>
+</div>
+<div class="section level3">
+<h3 id="id_3-detected-bonded-pairs">3. Detected Bonded Pairs<a class="anchor" aria-label="anchor" href="#id_3-detected-bonded-pairs"></a>
+</h3>
+<p><code>crystract</code> identifies bonded pairs using your chosen algorithms. Below is the output from the <strong>Minimum Distance</strong> algorithm. Notice the rigorous propagation of experimental error (<code>DistanceError</code>).</p>
+<table class="table">
+<thead><tr class="header">
+<th align="left">Atom1</th>
+<th align="left">Atom2</th>
+<th align="right">Distance</th>
+<th align="right">DistanceError</th>
+<th align="right">Weight</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td align="left">Si1</td>
+<td align="left">Sr1_1_0_0_0</td>
+<td align="right">3.163544</td>
+<td align="right">0</td>
+<td align="right">1.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">Si1</td>
+<td align="left">Sr1_2_0_0_0</td>
+<td align="right">3.245310</td>
+<td align="right">0</td>
+<td align="right">0.9748050</td>
+</tr>
+<tr class="odd">
+<td align="left">Si1</td>
+<td align="left">Sr1_4_0_-1_-1</td>
+<td align="right">3.184477</td>
+<td align="right">0</td>
+<td align="right">0.9934267</td>
+</tr>
+<tr class="even">
+<td align="left">Si1</td>
+<td align="left">Sr1_4_0_0_-1</td>
+<td align="right">3.184477</td>
+<td align="right">0</td>
+<td align="right">0.9934267</td>
+</tr>
+<tr class="odd">
+<td align="left">Si1</td>
+<td align="left">Sr2_1_0_0_-1</td>
+<td align="right">3.261366</td>
+<td align="right">0</td>
+<td align="right">0.9700058</td>
+</tr>
+<tr class="even">
+<td align="left">Si1</td>
+<td align="left">Sr2_3_-1_-1_0</td>
+<td align="right">3.465249</td>
+<td align="right">0</td>
+<td align="right">0.9129342</td>
+</tr>
+</tbody>
+</table>
+<p>Predicted Bonded Pairs (Minimum Distance Method)</p>
+</div>
+<div class="section level3">
+<h3 id="id_4-calculated-bond-angles">4. Calculated Bond Angles<a class="anchor" aria-label="anchor" href="#id_4-calculated-bond-angles"></a>
+</h3>
+<p>Using the metric tensor, all connected triplets are evaluated to calculate the exact internal bond angles across the repeating periodic boundaries.</p>
+<table class="table">
+<thead><tr class="header">
+<th align="left">CentralAtom</th>
+<th align="left">Neighbor1</th>
+<th align="left">Neighbor2</th>
+<th align="right">Angle</th>
+<th align="right">AngleError</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td align="left">Si1</td>
+<td align="left">Sr1_1_0_0_0</td>
+<td align="left">Sr1_2_0_0_0</td>
+<td align="right">109.37260</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">Si1</td>
+<td align="left">Sr1_1_0_0_0</td>
+<td align="left">Sr1_4_0_-1_-1</td>
+<td align="right">125.55190</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="left">Si1</td>
+<td align="left">Sr1_1_0_0_0</td>
+<td align="left">Sr1_4_0_0_-1</td>
+<td align="right">125.55190</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">Si1</td>
+<td align="left">Sr1_1_0_0_0</td>
+<td align="left">Sr2_1_0_0_-1</td>
+<td align="right">129.28796</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="left">Si1</td>
+<td align="left">Sr1_1_0_0_0</td>
+<td align="left">Sr2_3_-1_-1_0</td>
+<td align="right">69.08689</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">Si1</td>
+<td align="left">Sr1_1_0_0_0</td>
+<td align="left">Sr2_3_-1_0_0</td>
+<td align="right">69.08689</td>
+<td align="right">0</td>
+</tr>
+</tbody>
+</table>
+<p>Calculated Interatomic Angles</p>
 <hr>
 </div>
 <div class="section level3">
-<h3 id="id_1-master-analysis-object">1. Master Analysis Object<a class="anchor" aria-label="anchor" href="#id_1-master-analysis-object"></a>
+<h3 id="data-dictionary">Data Dictionary<a class="anchor" aria-label="anchor" href="#data-dictionary"></a>
 </h3>
-<p><strong>Function Source:</strong> <code><a href="reference/analyze_cif_files.html">analyze_cif_files()</a></code>, <code><a href="reference/analyze_single_cif.html">analyze_single_cif()</a></code> <strong>Description:</strong> A <code>data.table</code> where each row represents a single processed CIF file. Columns 1–6 contain metadata, while the remaining columns are <strong>list-columns</strong> containing nested <code>data.table</code>s with detailed structural data.</p>
+<p>Here is a comprehensive overview of the columns generated in the Master Analysis Object and its nested tables.</p>
+<div class="section level4">
+<h4 id="id_1-master-analysis-object">1. Master Analysis Object<a class="anchor" aria-label="anchor" href="#id_1-master-analysis-object"></a>
+</h4>
 <table class="table">
 <colgroup>
 <col width="33%">
@@ -98,12 +327,12 @@
 <tr class="odd">
 <td align="left"><code>file_name</code></td>
 <td align="left">Character</td>
-<td align="left">The name of the processed CIF file (e.g., “ICSD422.cif”).</td>
+<td align="left">The name of the processed CIF file.</td>
 </tr>
 <tr class="even">
 <td align="left"><code>database_code</code></td>
 <td align="left">Character</td>
-<td align="left">The unique identifier from the source database (e.g., from <code>_database_code_</code>).</td>
+<td align="left">The unique identifier from the source database.</td>
 </tr>
 <tr class="odd">
 <td align="left"><code>chemical_formula</code></td>
@@ -113,12 +342,12 @@
 <tr class="even">
 <td align="left"><code>structure_type</code></td>
 <td align="left">Character</td>
-<td align="left">The name of the structure type (e.g., “Perovskite”).</td>
+<td align="left">The name of the structure type.</td>
 </tr>
 <tr class="odd">
 <td align="left"><code>space_group_name</code></td>
 <td align="left">Character</td>
-<td align="left">Hermann-Mauguin space group symbol (e.g., “P n m a”).</td>
+<td align="left">Hermann-Mauguin space group symbol.</td>
 </tr>
 <tr class="even">
 <td align="left"><code>space_group_number</code></td>
@@ -128,17 +357,17 @@
 <tr class="odd">
 <td align="left"><code>unit_cell_metrics</code></td>
 <td align="left">List (DT)</td>
-<td align="left">Nested table containing lattice parameters (see Section 2.1).</td>
+<td align="left">Nested table containing lattice parameters.</td>
 </tr>
 <tr class="even">
 <td align="left"><code>atomic_coordinates</code></td>
 <td align="left">List (DT)</td>
-<td align="left">Nested table of primary asymmetric atoms (see Section 2.2).</td>
+<td align="left">Nested table of primary asymmetric atoms.</td>
 </tr>
 <tr class="odd">
 <td align="left"><code>symmetry_operations</code></td>
 <td align="left">List (DT)</td>
-<td align="left">Nested table of symmetry operators (see Section 2.3).</td>
+<td align="left">Nested table of symmetry operators.</td>
 </tr>
 <tr class="even">
 <td align="left"><code>transformed_coords</code></td>
@@ -153,98 +382,29 @@
 <tr class="even">
 <td align="left"><code>distances</code></td>
 <td align="left">List (DT)</td>
-<td align="left">Nested table of all calculated interatomic distances (see Section 2.4).</td>
+<td align="left">Nested table of all calculated interatomic distances.</td>
 </tr>
 <tr class="odd">
-<td align="left"><code>bonded_pairs_minimum_distance</code></td>
+<td align="left"><code>bonded_pairs_*</code></td>
 <td align="left">List (DT)</td>
-<td align="left">Nested table of bonds detected via Minimum Distance method (see Section 2.4).</td>
+<td align="left">Nested table of bonds detected via requested methods (e.g. <code>_minimum_distance</code>).</td>
 </tr>
 <tr class="even">
-<td align="left"><code>bonded_pairs_brunner</code></td>
+<td align="left"><code>neighbor_counts_*</code></td>
 <td align="left">List (DT)</td>
-<td align="left">Nested table of bonds detected via Brunner’s method.</td>
+<td align="left">Nested table of coordination numbers for requested methods.</td>
 </tr>
 <tr class="odd">
-<td align="left"><code>bonded_pairs_hoppe</code></td>
+<td align="left"><code>bond_angles_*</code></td>
 <td align="left">List (DT)</td>
-<td align="left">Nested table of bonds detected via Hoppe’s method.</td>
-</tr>
-<tr class="even">
-<td align="left"><code>neighbor_counts</code></td>
-<td align="left">List (DT)</td>
-<td align="left">Nested table of coordination numbers (see Section 2.5).</td>
-</tr>
-<tr class="odd">
-<td align="left"><code>bond_angles</code></td>
-<td align="left">List (DT)</td>
-<td align="left">Nested table of calculated bond angles (see Section 2.6).</td>
-</tr>
-</tbody>
-</table>
-<hr>
-</div>
-<div class="section level3">
-<h3 id="id_2-nested-data-tables">2. Nested Data Tables<a class="anchor" aria-label="anchor" href="#id_2-nested-data-tables"></a>
-</h3>
-<div class="section level4">
-<h4 id="id_21-unit-cell-metrics">2.1. Unit Cell Metrics<a class="anchor" aria-label="anchor" href="#id_21-unit-cell-metrics"></a>
-</h4>
-<p><strong>Column in Master Object:</strong> <code>unit_cell_metrics</code> <strong>Description:</strong> Lattice parameters and their standard uncertainties.</p>
-<table class="table">
-<colgroup>
-<col width="33%">
-<col width="33%">
-<col width="33%">
-</colgroup>
-<thead><tr class="header">
-<th align="left">Column Name</th>
-<th align="left">Data Type</th>
-<th align="left">Description</th>
-</tr></thead>
-<tbody>
-<tr class="odd">
-<td align="left"><code>_cell_length_a</code></td>
-<td align="left">Numeric</td>
-<td align="left">Unit cell length <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>a</mi><annotation encoding="application/x-tex">a</annotation></semantics></math> in Angstroms (Å).</td>
-</tr>
-<tr class="even">
-<td align="left"><code>_cell_length_b</code></td>
-<td align="left">Numeric</td>
-<td align="left">Unit cell length <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>b</mi><annotation encoding="application/x-tex">b</annotation></semantics></math> in Angstroms (Å).</td>
-</tr>
-<tr class="odd">
-<td align="left"><code>_cell_length_c</code></td>
-<td align="left">Numeric</td>
-<td align="left">Unit cell length <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>c</mi><annotation encoding="application/x-tex">c</annotation></semantics></math> in Angstroms (Å).</td>
-</tr>
-<tr class="even">
-<td align="left"><code>_cell_angle_alpha</code></td>
-<td align="left">Numeric</td>
-<td align="left">Unit cell angle <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>α</mi><annotation encoding="application/x-tex">\alpha</annotation></semantics></math> in degrees.</td>
-</tr>
-<tr class="odd">
-<td align="left"><code>_cell_angle_beta</code></td>
-<td align="left">Numeric</td>
-<td align="left">Unit cell angle <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>β</mi><annotation encoding="application/x-tex">\beta</annotation></semantics></math> in degrees.</td>
-</tr>
-<tr class="even">
-<td align="left"><code>_cell_angle_gamma</code></td>
-<td align="left">Numeric</td>
-<td align="left">Unit cell angle <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>γ</mi><annotation encoding="application/x-tex">\gamma</annotation></semantics></math> in degrees.</td>
-</tr>
-<tr class="odd">
-<td align="left"><code>*_error</code></td>
-<td align="left">Numeric</td>
-<td align="left">Standard uncertainty for the corresponding parameter (e.g., <code>_cell_length_a_error</code>).</td>
+<td align="left">Nested table of calculated bond angles for requested methods.</td>
 </tr>
 </tbody>
 </table>
 </div>
 <div class="section level4">
-<h4 id="id_22-atomic-coordinates">2.2. Atomic Coordinates<a class="anchor" aria-label="anchor" href="#id_22-atomic-coordinates"></a>
+<h4 id="id_2-atomic-coordinates-nested">2. Atomic Coordinates (Nested)<a class="anchor" aria-label="anchor" href="#id_2-atomic-coordinates-nested"></a>
 </h4>
-<p><strong>Column in Master Object:</strong> <code>atomic_coordinates</code> <strong>Description:</strong> Properties of the asymmetric unit (primary atoms).</p>
 <table class="table">
 <colgroup>
 <col width="33%">
@@ -260,7 +420,7 @@
 <tr class="odd">
 <td align="left"><code>Label</code></td>
 <td align="left">Character</td>
-<td align="left">Unique atom label (e.g., “Fe1”). Normalized to remove special characters.</td>
+<td align="left">Unique atom label (e.g., “Fe1”).</td>
 </tr>
 <tr class="even">
 <td align="left"><code>WyckoffSymbol</code></td>
@@ -278,73 +438,23 @@
 <td align="left">Site occupancy factor (0.0 to 1.0).</td>
 </tr>
 <tr class="odd">
-<td align="left"><code>OccupancyError</code></td>
-<td align="left">Numeric</td>
-<td align="left">Standard uncertainty of the occupancy.</td>
-</tr>
-<tr class="even">
-<td align="left"><code>x_a</code></td>
-<td align="left">Numeric</td>
-<td align="left">Fractional coordinate <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>x</mi><annotation encoding="application/x-tex">x</annotation></semantics></math> along axis <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>a</mi><annotation encoding="application/x-tex">a</annotation></semantics></math>.</td>
-</tr>
-<tr class="odd">
-<td align="left"><code>y_b</code></td>
-<td align="left">Numeric</td>
-<td align="left">Fractional coordinate <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>y</mi><annotation encoding="application/x-tex">y</annotation></semantics></math> along axis <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>b</mi><annotation encoding="application/x-tex">b</annotation></semantics></math>.</td>
-</tr>
-<tr class="even">
-<td align="left"><code>z_c</code></td>
-<td align="left">Numeric</td>
-<td align="left">Fractional coordinate <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>z</mi><annotation encoding="application/x-tex">z</annotation></semantics></math> along axis <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>c</mi><annotation encoding="application/x-tex">c</annotation></semantics></math>.</td>
-</tr>
-<tr class="odd">
 <td align="left">
-<code>x_error</code>, <code>y_error</code>, <code>z_error</code>
+<code>x_a</code>, <code>y_b</code>, <code>z_c</code>
 </td>
 <td align="left">Numeric</td>
-<td align="left">Standard uncertainties for the coordinates.</td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="section level4">
-<h4 id="id_23-symmetry-operations">2.3. Symmetry Operations<a class="anchor" aria-label="anchor" href="#id_23-symmetry-operations"></a>
-</h4>
-<p><strong>Column in Master Object:</strong> <code>symmetry_operations</code> <strong>Description:</strong> Algebraic strings defining how to generate equivalent positions.</p>
-<table class="table">
-<colgroup>
-<col width="18%">
-<col width="15%">
-<col width="65%">
-</colgroup>
-<thead><tr class="header">
-<th align="left">Column Name</th>
-<th align="left">Data Type</th>
-<th align="left">Description</th>
-</tr></thead>
-<tbody>
-<tr class="odd">
-<td align="left"><code>x</code></td>
-<td align="left">Character</td>
-<td align="left">Operation on x coordinate (e.g., “-x+1/2”).</td>
+<td align="left">Fractional coordinates along axis <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>a</mi><mo>,</mo><mi>b</mi><mo>,</mo><mi>c</mi></mrow><annotation encoding="application/x-tex">a, b, c</annotation></semantics></math>.</td>
 </tr>
 <tr class="even">
-<td align="left"><code>y</code></td>
-<td align="left">Character</td>
-<td align="left">Operation on y coordinate.</td>
-</tr>
-<tr class="odd">
-<td align="left"><code>z</code></td>
-<td align="left">Character</td>
-<td align="left">Operation on z coordinate.</td>
+<td align="left"><code>*_error</code></td>
+<td align="left">Numeric</td>
+<td align="left">Standard uncertainties for coordinates.</td>
 </tr>
 </tbody>
 </table>
 </div>
 <div class="section level4">
-<h4 id="id_24-distances-and-bonded-pairs">2.4. Distances and Bonded Pairs<a class="anchor" aria-label="anchor" href="#id_24-distances-and-bonded-pairs"></a>
+<h4 id="id_3-bonded-pairs-nested">3. Bonded Pairs (Nested)<a class="anchor" aria-label="anchor" href="#id_3-bonded-pairs-nested"></a>
 </h4>
-<p><strong>Columns in Master Object:</strong> <code>distances</code>, <code>bonded_pairs_*</code> <strong>Description:</strong> Pairs of atoms and the scalar distance between them. Bonded pair tables contain the same columns (plus <code>DistanceError</code> if calculated).</p>
 <table class="table">
 <colgroup>
 <col width="33%">
@@ -365,7 +475,7 @@
 <tr class="even">
 <td align="left"><code>Atom2</code></td>
 <td align="left">Character</td>
-<td align="left">Label of the neighbor atom (typically from the expanded supercell).</td>
+<td align="left">Label of the neighbor atom (from the expanded supercell).</td>
 </tr>
 <tr class="odd">
 <td align="left"><code>Distance</code></td>
@@ -375,139 +485,19 @@
 <tr class="even">
 <td align="left"><code>DistanceError</code></td>
 <td align="left">Numeric</td>
-<td align="left">Propagated standard uncertainty of the distance (if error propagation is enabled).</td>
+<td align="left">Propagated standard uncertainty of the distance.</td>
 </tr>
 <tr class="odd">
-<td align="left"><code>DeltaX</code></td>
+<td align="left">
+<code>DeltaX</code>, <code>DeltaY</code>, <code>DeltaZ</code>
+</td>
 <td align="left">Numeric</td>
-<td align="left">Difference in fractional <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>x</mi><annotation encoding="application/x-tex">x</annotation></semantics></math> coordinates (<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>x</mi><mn>1</mn></msub><mo>−</mo><msub><mi>x</mi><mn>2</mn></msub></mrow><annotation encoding="application/x-tex">x_1 - x_2</annotation></semantics></math>).</td>
+<td align="left">Difference in fractional coordinates (<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>x</mi><mn>1</mn></msub><mo>−</mo><msub><mi>x</mi><mn>2</mn></msub></mrow><annotation encoding="application/x-tex">x_1 - x_2</annotation></semantics></math>).</td>
 </tr>
 <tr class="even">
-<td align="left"><code>DeltaY</code></td>
+<td align="left"><code>Weight</code></td>
 <td align="left">Numeric</td>
-<td align="left">Difference in fractional <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>y</mi><annotation encoding="application/x-tex">y</annotation></semantics></math> coordinates (<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>y</mi><mn>1</mn></msub><mo>−</mo><msub><mi>y</mi><mn>2</mn></msub></mrow><annotation encoding="application/x-tex">y_1 - y_2</annotation></semantics></math>).</td>
-</tr>
-<tr class="odd">
-<td align="left"><code>DeltaZ</code></td>
-<td align="left">Numeric</td>
-<td align="left">Difference in fractional <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>z</mi><annotation encoding="application/x-tex">z</annotation></semantics></math> coordinates (<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>z</mi><mn>1</mn></msub><mo>−</mo><msub><mi>z</mi><mn>2</mn></msub></mrow><annotation encoding="application/x-tex">z_1 - z_2</annotation></semantics></math>).</td>
-</tr>
-<tr class="even">
-<td align="left"><code>BondStrength</code></td>
-<td align="left">Numeric</td>
-<td align="left">(Hoppe’s Method Only) Calculated bond weight/strength.</td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="section level4">
-<h4 id="id_25-neighbor-counts">2.5. Neighbor Counts<a class="anchor" aria-label="anchor" href="#id_25-neighbor-counts"></a>
-</h4>
-<p><strong>Column in Master Object:</strong> <code>neighbor_counts</code> <strong>Description:</strong> Coordination number summary.</p>
-<table class="table">
-<colgroup>
-<col width="33%">
-<col width="33%">
-<col width="33%">
-</colgroup>
-<thead><tr class="header">
-<th align="left">Column Name</th>
-<th align="left">Data Type</th>
-<th align="left">Description</th>
-</tr></thead>
-<tbody>
-<tr class="odd">
-<td align="left"><code>Atom</code></td>
-<td align="left">Character</td>
-<td align="left">Label of the central atom.</td>
-</tr>
-<tr class="even">
-<td align="left"><code>NeighborCount</code></td>
-<td align="left">Integer</td>
-<td align="left">The number of bonded neighbors found for this atom.</td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="section level4">
-<h4 id="id_26-bond-angles">2.6. Bond Angles<a class="anchor" aria-label="anchor" href="#id_26-bond-angles"></a>
-</h4>
-<p><strong>Column in Master Object:</strong> <code>bond_angles</code> <strong>Description:</strong> Angles formed by a central atom and two neighbors.</p>
-<table class="table">
-<colgroup>
-<col width="33%">
-<col width="33%">
-<col width="33%">
-</colgroup>
-<thead><tr class="header">
-<th align="left">Column Name</th>
-<th align="left">Data Type</th>
-<th align="left">Description</th>
-</tr></thead>
-<tbody>
-<tr class="odd">
-<td align="left"><code>CentralAtom</code></td>
-<td align="left">Character</td>
-<td align="left">Label of the atom at the vertex of the angle.</td>
-</tr>
-<tr class="even">
-<td align="left"><code>Neighbor1</code></td>
-<td align="left">Character</td>
-<td align="left">Label of the first neighbor atom.</td>
-</tr>
-<tr class="odd">
-<td align="left"><code>Neighbor2</code></td>
-<td align="left">Character</td>
-<td align="left">Label of the second neighbor atom.</td>
-</tr>
-<tr class="even">
-<td align="left"><code>Angle</code></td>
-<td align="left">Numeric</td>
-<td align="left">The bond angle in degrees (<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi></mi><mo>∘</mo></msup><annotation encoding="application/x-tex">^\circ</annotation></semantics></math>).</td>
-</tr>
-<tr class="odd">
-<td align="left"><code>AngleError</code></td>
-<td align="left">Numeric</td>
-<td align="left">Propagated standard uncertainty of the angle (if error propagation is enabled).</td>
-</tr>
-</tbody>
-</table>
-<hr>
-</div>
-</div>
-<div class="section level3">
-<h3 id="id_3-reference-data">3. Reference Data<a class="anchor" aria-label="anchor" href="#id_3-reference-data"></a>
-</h3>
-<div class="section level4">
-<h4 id="id_31-atomic-radii">3.1. Atomic Radii<a class="anchor" aria-label="anchor" href="#id_31-atomic-radii"></a>
-</h4>
-<p><strong>Function Source:</strong> <code>get_radii_data()</code> / <code>covalent_radii</code> <strong>Description:</strong> Used for <code><a href="reference/filter_ghost_distances.html">filter_ghost_distances()</a></code>.</p>
-<table class="table">
-<colgroup>
-<col width="17%">
-<col width="15%">
-<col width="67%">
-</colgroup>
-<thead><tr class="header">
-<th align="left">Column Name</th>
-<th align="left">Data Type</th>
-<th align="left">Description</th>
-</tr></thead>
-<tbody>
-<tr class="odd">
-<td align="left"><code>Symbol</code></td>
-<td align="left">Character</td>
-<td align="left">Chemical element symbol (e.g., “Si”, “Fe”).</td>
-</tr>
-<tr class="even">
-<td align="left"><code>Radius</code></td>
-<td align="left">Numeric</td>
-<td align="left">Atomic radius in Angstroms (Å).</td>
-</tr>
-<tr class="odd">
-<td align="left"><code>Type</code></td>
-<td align="left">Character</td>
-<td align="left">Category of radius (e.g., “covalent”, “ionic”).</td>
+<td align="left">Calculated bond weight/strength depending on the algorithm.</td>
 </tr>
 </tbody>
 </table>
@@ -526,78 +516,34 @@
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
-<p>Installing <code>crystract</code> involves a few steps, as it is currently hosted on GitHub.</p>
+<p>Installing <code>crystract</code> involves a few steps, as it is currently hosted on GitHub. We use the <code>remotes</code> package to facilitate installation directly from the repository.</p>
 <div class="section level3">
-<h3 id="prerequisites-what-you-need-first">Prerequisites: What You Need First<a class="anchor" aria-label="anchor" href="#prerequisites-what-you-need-first"></a>
+<h3 id="prerequisites">Prerequisites<a class="anchor" aria-label="anchor" href="#prerequisites"></a>
 </h3>
-<div class="section level4">
-<h4 id="id_1-r-and-rstudio">1. R and RStudio<a class="anchor" aria-label="anchor" href="#id_1-r-and-rstudio"></a>
-</h4>
 <ul>
 <li>Install the latest version of <strong><a href="https://cran.r-project.org/" class="external-link">R</a></strong>.</li>
 <li>Install the free <strong><a href="https://posit.co/download/rstudio-desktop/" class="external-link">RStudio Desktop IDE</a></strong>.</li>
 </ul>
 </div>
-<div class="section level4">
-<h4 id="id_2-c-compiler">2. C++ Compiler<a class="anchor" aria-label="anchor" href="#id_2-c-compiler"></a>
-</h4>
-<p><code>crystract</code> and its dependencies require a C++ compiler to be installed from source.</p>
-<ul>
-<li>
-<strong>Windows:</strong> Install <strong><a href="https://cran.r-project.org/bin/windows/Rtools/" class="external-link">RTools</a></strong>. <strong>Crucially</strong>, ensure the box for <strong>“Add Rtools to system PATH”</strong> is checked during installation.</li>
-<li>
-<strong>macOS:</strong> Open the Terminal and run <code>xcode-select --install</code>.</li>
-<li>
-<strong>Linux (Debian/Ubuntu):</strong> Open a terminal and run <code>sudo apt-get install r-base-dev</code>.</li>
-</ul>
-</div>
-</div>
 <div class="section level3">
 <h3 id="installation-steps">Installation Steps<a class="anchor" aria-label="anchor" href="#installation-steps"></a>
 </h3>
-<p>Once the prerequisites are met, open R or RStudio and run the following commands.</p>
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># First, ensure you have the devtools package</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"devtools"</span><span class="op">)</span></span>
+<p>Open R or RStudio and run the following commands:</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># First, ensure you have the remotes package</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"remotes"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Install crystract from the  GitHub repository</span></span>
-<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"PrabhuLab/ml-crystals"</span>, subdir <span class="op">=</span> <span class="st">"packages/crystract"</span>, build_vignettes <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<span><span class="co"># Install crystract from the GitHub repository</span></span>
+<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"PrabhuLab/ml-crystals"</span>, subdir <span class="op">=</span> <span class="st">"packages/crystract"</span>, build_vignettes <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="verifying-the-installation">Verifying the Installation<a class="anchor" aria-label="anchor" href="#verifying-the-installation"></a>
 </h3>
 <p>To make sure the package was installed correctly, load it into your R session.</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://prabhulab.github.io/ml-crystals/">crystract</a></span><span class="op">)</span></span></code></pre></div>
 <p>If this command runs without any errors, the installation was successful.</p>
 </div>
-</div>
-<div class="section level2">
-<h2 id="quickstart-a-complete-workflow">Quickstart: A Complete Workflow<a class="anchor" aria-label="anchor" href="#quickstart-a-complete-workflow"></a>
-</h2>
-<p>The <code><a href="reference/analyze_cif_files.html">analyze_cif_files()</a></code> function provides a complete, one-step workflow. It can process hundreds of files, but here we demonstrate it on a single example file included with the package.</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://prabhulab.github.io/ml-crystals/">crystract</a></span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># 1. Define the path to your CIF file</span></span>
-<span><span class="co"># NOTE: The example file ICSD422.cif is not bundled with the package.</span></span>
-<span><span class="co"># Please download it from the ICSD (see required_ICSD_files.csv in the</span></span>
-<span><span class="co"># repository root) and update the path below.</span></span>
-<span><span class="va">cif_path</span> <span class="op">&lt;-</span> <span class="st">"path/to/your/ICSD422.cif"</span></span>
-<span></span>
-<span><span class="co"># 2. Analyze the file(s)</span></span>
-<span><span class="co"># This single function handles all extraction, calculation, and error propagation.</span></span>
-<span><span class="va">analysis_results</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/analyze_cif_files.html">analyze_cif_files</a></span><span class="op">(</span><span class="va">cif_path</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># 3. Explore the high-level results</span></span>
-<span><span class="co"># The output is a data.table with metadata and list-columns for detailed results.</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">analysis_results</span><span class="op">[</span>, <span class="fu">.</span><span class="op">(</span><span class="va">database_code</span>, <span class="va">chemical_formula</span>, <span class="va">space_group_name</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># 4. Access detailed calculated properties</span></span>
-<span><span class="co"># To get the bond angles table, we must extract the first element `[[1]]` </span></span>
-<span><span class="co"># from the list-column, then we can select the first 5 rows `[1:5, ]`.</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"\nFirst 5 calculated bond angles (with propagated errors):\n"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">analysis_results</span><span class="op">$</span><span class="va">bond_angles</span><span class="op">[</span><span class="op">]</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span>, <span class="op">]</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="learning-more">Learning More<a class="anchor" aria-label="anchor" href="#learning-more"></a>

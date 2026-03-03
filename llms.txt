@@ -5,17 +5,17 @@ Information Files (`.cif`), extracting essential data such as chemical
 formulas, unit cell parameters, atomic coordinates, and symmetry
 operations. It also includes tools to calculate interatomic distances,
 identify bonded pairs using various algorithms (Minimum Distance,
-Brunner’s, Hoppe’s), determine nearest neighbor counts, and calculate
-bond angles. All data is extracted into nested data.tables, which can
-then be exported as an R Data Structure (RDS) or folders of .csv files.
-The package is designed to facilitate the preparation of
-crystallographic data for further analysis, including machine learning
-applications in materials science.
+Brunner’s, Hoppe’s, Voronoi, CrystalNN), determine nearest neighbor
+counts, and calculate bond angles. All data is extracted into nested
+`data.table`s, which can then be exported as an R Data Structure (RDS)
+or folders of .csv files. The package is designed to facilitate the
+preparation of crystallographic data for further analysis, including
+machine learning applications in materials science.
 
 > **Note on Repository Structure**
 >
-> The `crystract` package is located within the `crystract/`
-> subdirectory of the `Prabhulab/ml-crystals` GitHub repository. You
+> The `crystract` package is located within the `packages/crystract/`
+> subdirectory of the `PrabhuLab/ml-crystals` GitHub repository. You
 > must use the `subdir` argument during installation, as shown below.
 
 ## Key Features
@@ -23,28 +23,22 @@ applications in materials science.
 - **Efficient CIF Parsing**: Utilizes `data.table` for fast and robust
   extraction of metadata, unit cell parameters, atomic coordinates, and
   symmetry operations.
-
 - **Symmetry and Supercell Generation**: Applies symmetry operations to
   generate a full unit cell from the asymmetric unit and expands
   coordinates into a 3x3x3 supercell for neighbor searching.
-
 - **Geometric Calculations**: Computes interatomic distances using the
   metric tensor (correct for all crystal systems) and calculates bond
   angles.
-
 - **Multiple Bonding Algorithms**: Implements several algorithms to
   identify bonded atoms, including the `minimum_distance` (default),
-  `brunner`, and `hoppe` methods.
-
+  `brunner`, `econ` (Hoppe’s), `voronoi`, and `crystal_nn` methods.
 - **Rigorous Error Propagation**: Calculates and propagates experimental
   uncertainties from the CIF file into the final calculated bond lengths
   and angles.
-
 - **Powerful Post-Processing Tools**: Includes functions to filter
   results by chemical element, Wyckoff site, or to remove non-physical
   “ghost” distances caused by site disorder using a customizable atomic
   radii table.
-
 - **Batch Processing & Export**: The main
   [`analyze_cif_files()`](https://prabhulab.github.io/ml-crystals/reference/analyze_cif_files.md)
   function is designed to process hundreds of files in a single run, and
@@ -52,152 +46,178 @@ applications in materials science.
   with
   [`export_analysis_to_csv()`](https://prabhulab.github.io/ml-crystals/reference/export_analysis_to_csv.md).
 
-### Here is a comprehensive Data Dictionary for the **crystract** package.
+------------------------------------------------------------------------
 
-It is organized into three sections: 1. **Master Analysis Object**: The
-main output structure returned by
-[`analyze_cif_files()`](https://prabhulab.github.io/ml-crystals/reference/analyze_cif_files.md)
-and
-[`analyze_single_cif()`](https://prabhulab.github.io/ml-crystals/reference/analyze_single_cif.md).
-2. **Nested Data Tables**: The specific structure of the sub-tables
-contained within the list-columns of the Master Object. 3. **Reference
-Data**: The structure of auxiliary tables like atomic radii.
+## Workflow Overview
+
+The following diagram illustrates the primary data pipeline in
+`crystract`, from raw CIF input to final CSV export.
+
+![crystract Workflow Diagram](reference/figures/workflow_diagram.png)
 
 ------------------------------------------------------------------------
 
-### 1. Master Analysis Object
+## Best Practices & Decision Logic
 
-**Function Source:**
-[`analyze_cif_files()`](https://prabhulab.github.io/ml-crystals/reference/analyze_cif_files.md),
+To assist researchers in configuring `crystract` for their specific
+datasets, we provide the following decision trees for selecting atomic
+radii and choosing the most appropriate bonding algorithm.
+
+### 1. Choosing a Bonding Algorithm
+
+When invoking `analyze_cif_files(..., bonding_algorithms = c(...))`, we
+recommend choosing your target algorithm based on the chemical makeup of
+your structure and the electronegativity differences ($\Delta EN$) of
+the expected bonds.
+
+![Bonding Algorithm Selection
+Logic](reference/figures/bonding_logic.png)
+
+### 2. Atomic Radii Selection
+
+When utilizing functions like
+[`filter_ghost_distances()`](https://prabhulab.github.io/ml-crystals/reference/filter_ghost_distances.md)
+or algorithms that rely on distance cutoffs, `crystract` employs an
+internal logic to select the most appropriate atomic radius. You can
+also override this by injecting your own custom radii dictionary via
+[`set_radii_data()`](https://prabhulab.github.io/ml-crystals/reference/set_radii_data.md).
+
+![Atomic Radii Selection Logic](reference/figures/radii_logic.png)
+
+------------------------------------------------------------------------
+
+## Quickstart: A Complete Workflow & Real Outputs
+
+The
 [`analyze_single_cif()`](https://prabhulab.github.io/ml-crystals/reference/analyze_single_cif.md)
-**Description:** A `data.table` where each row represents a single
-processed CIF file. Columns 1–6 contain metadata, while the remaining
-columns are **list-columns** containing nested `data.table`s with
-detailed structural data.
+(and its batch counterpart
+[`analyze_cif_files()`](https://prabhulab.github.io/ml-crystals/reference/analyze_cif_files.md))
+provides a complete, one-step workflow. Here we run it on an example
+crystal structure included inside the package itself, demonstrating the
+exact data outputs you can expect.
 
-| Column Name                     | Data Type | Description                                                                    |
-|:--------------------------------|:----------|:-------------------------------------------------------------------------------|
-| `file_name`                     | Character | The name of the processed CIF file (e.g., “ICSD422.cif”).                      |
-| `database_code`                 | Character | The unique identifier from the source database (e.g., from `_database_code_`). |
-| `chemical_formula`              | Character | The chemical sum formula extracted from the CIF.                               |
-| `structure_type`                | Character | The name of the structure type (e.g., “Perovskite”).                           |
-| `space_group_name`              | Character | Hermann-Mauguin space group symbol (e.g., “P n m a”).                          |
-| `space_group_number`            | Character | International Tables space group number.                                       |
-| `unit_cell_metrics`             | List (DT) | Nested table containing lattice parameters (see Section 2.1).                  |
-| `atomic_coordinates`            | List (DT) | Nested table of primary asymmetric atoms (see Section 2.2).                    |
-| `symmetry_operations`           | List (DT) | Nested table of symmetry operators (see Section 2.3).                          |
-| `transformed_coords`            | List (DT) | Nested table of the full unit cell atoms.                                      |
-| `expanded_coords`               | List (DT) | Nested table of the supercell (3x3x3) atoms.                                   |
-| `distances`                     | List (DT) | Nested table of all calculated interatomic distances (see Section 2.4).        |
-| `bonded_pairs_minimum_distance` | List (DT) | Nested table of bonds detected via Minimum Distance method (see Section 2.4).  |
-| `bonded_pairs_brunner`          | List (DT) | Nested table of bonds detected via Brunner’s method.                           |
-| `bonded_pairs_hoppe`            | List (DT) | Nested table of bonds detected via Hoppe’s method.                             |
-| `neighbor_counts`               | List (DT) | Nested table of coordination numbers (see Section 2.5).                        |
-| `bond_angles`                   | List (DT) | Nested table of calculated bond angles (see Section 2.6).                      |
+``` r
+library(crystract)
+library(data.table)
 
-------------------------------------------------------------------------
+# 1. Load the built-in demo CIF file (Strontium Silicide)
+cif_path <- system.file("extdata", "1590946.cif", package = "crystract")
 
-### 2. Nested Data Tables
+# 2. Analyze the file
+# This single function handles parsing, supercell expansion, geometric calculations, 
+# bonding detection, and error propagation.
+analysis_results <- analyze_single_cif(
+  cif_path,
+  bonding_algorithms = c("minimum_distance", "crystal_nn")
+)
+```
 
-#### 2.1. Unit Cell Metrics
+### 1. Extracted Metadata
 
-**Column in Master Object:** `unit_cell_metrics` **Description:**
-Lattice parameters and their standard uncertainties.
+The returned object is a single row `data.table` containing both
+high-level metadata and list-columns storing the detailed extracted
+measurements.
 
-| Column Name         | Data Type | Description                                                                          |
-|:--------------------|:----------|:-------------------------------------------------------------------------------------|
-| `_cell_length_a`    | Numeric   | Unit cell length $a$ in Angstroms (Å).                                               |
-| `_cell_length_b`    | Numeric   | Unit cell length $b$ in Angstroms (Å).                                               |
-| `_cell_length_c`    | Numeric   | Unit cell length $c$ in Angstroms (Å).                                               |
-| `_cell_angle_alpha` | Numeric   | Unit cell angle $\alpha$ in degrees.                                                 |
-| `_cell_angle_beta`  | Numeric   | Unit cell angle $\beta$ in degrees.                                                  |
-| `_cell_angle_gamma` | Numeric   | Unit cell angle $\gamma$ in degrees.                                                 |
-| `*_error`           | Numeric   | Standard uncertainty for the corresponding parameter (e.g., `_cell_length_a_error`). |
+| database_code                    | chemical_formula | space_group_name |
+|:---------------------------------|:-----------------|:-----------------|
+| depnum_ccdc_archive CCDC 1590946 | Si1 Sr2          | P n m a          |
 
-#### 2.2. Atomic Coordinates
+High-Level Crystal Information
 
-**Column in Master Object:** `atomic_coordinates` **Description:**
-Properties of the asymmetric unit (primary atoms).
+### 2. Unit Cell Metrics
 
-| Column Name                     | Data Type | Description                                                               |
-|:--------------------------------|:----------|:--------------------------------------------------------------------------|
-| `Label`                         | Character | Unique atom label (e.g., “Fe1”). Normalized to remove special characters. |
-| `WyckoffSymbol`                 | Character | The Wyckoff letter (e.g., “c”).                                           |
-| `WyckoffMultiplicity`           | Numeric   | The site multiplicity (e.g., 4).                                          |
-| `Occupancy`                     | Numeric   | Site occupancy factor (0.0 to 1.0).                                       |
-| `OccupancyError`                | Numeric   | Standard uncertainty of the occupancy.                                    |
-| `x_a`                           | Numeric   | Fractional coordinate $x$ along axis $a$.                                 |
-| `y_b`                           | Numeric   | Fractional coordinate $y$ along axis $b$.                                 |
-| `z_c`                           | Numeric   | Fractional coordinate $z$ along axis $c$.                                 |
-| `x_error`, `y_error`, `z_error` | Numeric   | Standard uncertainties for the coordinates.                               |
+The parameters defining the size and shape of the unit cell are securely
+parsed along with their experimental uncertainties (if available in the
+CIF).
 
-#### 2.3. Symmetry Operations
+| \_cell_length_a | \_cell_length_b | \_cell_length_c | \_cell_angle_alpha | \_cell_angle_beta | \_cell_angle_gamma |
+|----------------:|----------------:|----------------:|-------------------:|------------------:|-------------------:|
+|            8.11 |            5.15 |            9.54 |                 90 |                90 |                 90 |
 
-**Column in Master Object:** `symmetry_operations` **Description:**
-Algebraic strings defining how to generate equivalent positions.
+Extracted Unit Cell Parameters (Å and Degrees)
 
-| Column Name | Data Type | Description                                 |
-|:------------|:----------|:--------------------------------------------|
-| `x`         | Character | Operation on x coordinate (e.g., “-x+1/2”). |
-| `y`         | Character | Operation on y coordinate.                  |
-| `z`         | Character | Operation on z coordinate.                  |
+### 3. Detected Bonded Pairs
 
-#### 2.4. Distances and Bonded Pairs
+`crystract` identifies bonded pairs using your chosen algorithms. Below
+is the output from the **Minimum Distance** algorithm. Notice the
+rigorous propagation of experimental error (`DistanceError`).
 
-**Columns in Master Object:** `distances`, `bonded_pairs_*`
-**Description:** Pairs of atoms and the scalar distance between them.
-Bonded pair tables contain the same columns (plus `DistanceError` if
-calculated).
+| Atom1 | Atom2           | Distance | DistanceError |    Weight |
+|:------|:----------------|---------:|--------------:|----------:|
+| Si1   | Sr1_1_0_0_0     | 3.163544 |             0 | 1.0000000 |
+| Si1   | Sr1_2_0_0_0     | 3.245310 |             0 | 0.9748050 |
+| Si1   | Sr1_4_0\_-1\_-1 | 3.184477 |             0 | 0.9934267 |
+| Si1   | Sr1_4_0_0\_-1   | 3.184477 |             0 | 0.9934267 |
+| Si1   | Sr2_1_0_0\_-1   | 3.261366 |             0 | 0.9700058 |
+| Si1   | Sr2_3\_-1\_-1_0 | 3.465249 |             0 | 0.9129342 |
 
-| Column Name     | Data Type | Description                                                                        |
-|:----------------|:----------|:-----------------------------------------------------------------------------------|
-| `Atom1`         | Character | Label of the central atom (from the asymmetric unit).                              |
-| `Atom2`         | Character | Label of the neighbor atom (typically from the expanded supercell).                |
-| `Distance`      | Numeric   | Calculated Euclidean distance in Angstroms (Å).                                    |
-| `DistanceError` | Numeric   | Propagated standard uncertainty of the distance (if error propagation is enabled). |
-| `DeltaX`        | Numeric   | Difference in fractional $x$ coordinates ($x_{1} - x_{2}$).                        |
-| `DeltaY`        | Numeric   | Difference in fractional $y$ coordinates ($y_{1} - y_{2}$).                        |
-| `DeltaZ`        | Numeric   | Difference in fractional $z$ coordinates ($z_{1} - z_{2}$).                        |
-| `BondStrength`  | Numeric   | (Hoppe’s Method Only) Calculated bond weight/strength.                             |
+Predicted Bonded Pairs (Minimum Distance Method)
 
-#### 2.5. Neighbor Counts
+### 4. Calculated Bond Angles
 
-**Column in Master Object:** `neighbor_counts` **Description:**
-Coordination number summary.
+Using the metric tensor, all connected triplets are evaluated to
+calculate the exact internal bond angles across the repeating periodic
+boundaries.
 
-| Column Name     | Data Type | Description                                         |
-|:----------------|:----------|:----------------------------------------------------|
-| `Atom`          | Character | Label of the central atom.                          |
-| `NeighborCount` | Integer   | The number of bonded neighbors found for this atom. |
+| CentralAtom | Neighbor1   | Neighbor2       |     Angle | AngleError |
+|:------------|:------------|:----------------|----------:|-----------:|
+| Si1         | Sr1_1_0_0_0 | Sr1_2_0_0_0     | 109.37260 |          0 |
+| Si1         | Sr1_1_0_0_0 | Sr1_4_0\_-1\_-1 | 125.55190 |          0 |
+| Si1         | Sr1_1_0_0_0 | Sr1_4_0_0\_-1   | 125.55190 |          0 |
+| Si1         | Sr1_1_0_0_0 | Sr2_1_0_0\_-1   | 129.28796 |          0 |
+| Si1         | Sr1_1_0_0_0 | Sr2_3\_-1\_-1_0 |  69.08689 |          0 |
+| Si1         | Sr1_1_0_0_0 | Sr2_3\_-1_0_0   |  69.08689 |          0 |
 
-#### 2.6. Bond Angles
-
-**Column in Master Object:** `bond_angles` **Description:** Angles
-formed by a central atom and two neighbors.
-
-| Column Name   | Data Type | Description                                                                     |
-|:--------------|:----------|:--------------------------------------------------------------------------------|
-| `CentralAtom` | Character | Label of the atom at the vertex of the angle.                                   |
-| `Neighbor1`   | Character | Label of the first neighbor atom.                                               |
-| `Neighbor2`   | Character | Label of the second neighbor atom.                                              |
-| `Angle`       | Numeric   | The bond angle in degrees ($^{\circ}$).                                         |
-| `AngleError`  | Numeric   | Propagated standard uncertainty of the angle (if error propagation is enabled). |
+Calculated Interatomic Angles
 
 ------------------------------------------------------------------------
 
-### 3. Reference Data
+### Data Dictionary
 
-#### 3.1. Atomic Radii
+Here is a comprehensive overview of the columns generated in the Master
+Analysis Object and its nested tables.
 
-**Function Source:** `get_radii_data()` / `covalent_radii`
-**Description:** Used for
-[`filter_ghost_distances()`](https://prabhulab.github.io/ml-crystals/reference/filter_ghost_distances.md).
+#### 1. Master Analysis Object
 
-| Column Name | Data Type | Description                                     |
-|:------------|:----------|:------------------------------------------------|
-| `Symbol`    | Character | Chemical element symbol (e.g., “Si”, “Fe”).     |
-| `Radius`    | Numeric   | Atomic radius in Angstroms (Å).                 |
-| `Type`      | Character | Category of radius (e.g., “covalent”, “ionic”). |
+| Column Name           | Data Type | Description                                                                      |
+|:----------------------|:----------|:---------------------------------------------------------------------------------|
+| `file_name`           | Character | The name of the processed CIF file.                                              |
+| `database_code`       | Character | The unique identifier from the source database.                                  |
+| `chemical_formula`    | Character | The chemical sum formula extracted from the CIF.                                 |
+| `structure_type`      | Character | The name of the structure type.                                                  |
+| `space_group_name`    | Character | Hermann-Mauguin space group symbol.                                              |
+| `space_group_number`  | Character | International Tables space group number.                                         |
+| `unit_cell_metrics`   | List (DT) | Nested table containing lattice parameters.                                      |
+| `atomic_coordinates`  | List (DT) | Nested table of primary asymmetric atoms.                                        |
+| `symmetry_operations` | List (DT) | Nested table of symmetry operators.                                              |
+| `transformed_coords`  | List (DT) | Nested table of the full unit cell atoms.                                        |
+| `expanded_coords`     | List (DT) | Nested table of the supercell (3x3x3) atoms.                                     |
+| `distances`           | List (DT) | Nested table of all calculated interatomic distances.                            |
+| `bonded_pairs_*`      | List (DT) | Nested table of bonds detected via requested methods (e.g. `_minimum_distance`). |
+| `neighbor_counts_*`   | List (DT) | Nested table of coordination numbers for requested methods.                      |
+| `bond_angles_*`       | List (DT) | Nested table of calculated bond angles for requested methods.                    |
+
+#### 2. Atomic Coordinates (Nested)
+
+| Column Name           | Data Type | Description                                |
+|:----------------------|:----------|:-------------------------------------------|
+| `Label`               | Character | Unique atom label (e.g., “Fe1”).           |
+| `WyckoffSymbol`       | Character | The Wyckoff letter (e.g., “c”).            |
+| `WyckoffMultiplicity` | Numeric   | The site multiplicity (e.g., 4).           |
+| `Occupancy`           | Numeric   | Site occupancy factor (0.0 to 1.0).        |
+| `x_a`, `y_b`, `z_c`   | Numeric   | Fractional coordinates along axis $a,b,c$. |
+| `*_error`             | Numeric   | Standard uncertainties for coordinates.    |
+
+#### 3. Bonded Pairs (Nested)
+
+| Column Name                  | Data Type | Description                                                 |
+|:-----------------------------|:----------|:------------------------------------------------------------|
+| `Atom1`                      | Character | Label of the central atom (from the asymmetric unit).       |
+| `Atom2`                      | Character | Label of the neighbor atom (from the expanded supercell).   |
+| `Distance`                   | Numeric   | Calculated Euclidean distance in Angstroms (Å).             |
+| `DistanceError`              | Numeric   | Propagated standard uncertainty of the distance.            |
+| `DeltaX`, `DeltaY`, `DeltaZ` | Numeric   | Difference in fractional coordinates ($x_{1} - x_{2}$).     |
+| `Weight`                     | Numeric   | Calculated bond weight/strength depending on the algorithm. |
 
 ## Licensing
 
@@ -217,40 +237,25 @@ variety of use cases:
 ## Installation
 
 Installing `crystract` involves a few steps, as it is currently hosted
-on GitHub.
+on GitHub. We use the `remotes` package to facilitate installation
+directly from the repository.
 
-### Prerequisites: What You Need First
-
-#### 1. R and RStudio
+### Prerequisites
 
 - Install the latest version of **[R](https://cran.r-project.org/)**.
 - Install the free **[RStudio Desktop
   IDE](https://posit.co/download/rstudio-desktop/)**.
 
-#### 2. C++ Compiler
-
-`crystract` and its dependencies require a C++ compiler to be installed
-from source.
-
-- **Windows:** Install
-  **[RTools](https://cran.r-project.org/bin/windows/Rtools/)**.
-  **Crucially**, ensure the box for **“Add Rtools to system PATH”** is
-  checked during installation.
-- **macOS:** Open the Terminal and run `xcode-select --install`.
-- **Linux (Debian/Ubuntu):** Open a terminal and run
-  `sudo apt-get install r-base-dev`.
-
 ### Installation Steps
 
-Once the prerequisites are met, open R or RStudio and run the following
-commands.
+Open R or RStudio and run the following commands:
 
 ``` r
-# First, ensure you have the devtools package
-install.packages("devtools")
+# First, ensure you have the remotes package
+install.packages("remotes")
 
-# Install crystract from the  GitHub repository
-devtools::install_github("PrabhuLab/ml-crystals", subdir = "packages/crystract", build_vignettes = TRUE)
+# Install crystract from the GitHub repository
+remotes::install_github("PrabhuLab/ml-crystals", subdir = "packages/crystract", build_vignettes = TRUE)
 ```
 
 ### Verifying the Installation
@@ -264,38 +269,6 @@ library(crystract)
 
 If this command runs without any errors, the installation was
 successful.
-
-## Quickstart: A Complete Workflow
-
-The
-[`analyze_cif_files()`](https://prabhulab.github.io/ml-crystals/reference/analyze_cif_files.md)
-function provides a complete, one-step workflow. It can process hundreds
-of files, but here we demonstrate it on a single example file included
-with the package.
-
-``` r
-library(crystract)
-
-# 1. Define the path to your CIF file
-# NOTE: The example file ICSD422.cif is not bundled with the package.
-# Please download it from the ICSD (see required_ICSD_files.csv in the
-# repository root) and update the path below.
-cif_path <- "path/to/your/ICSD422.cif"
-
-# 2. Analyze the file(s)
-# This single function handles all extraction, calculation, and error propagation.
-analysis_results <- analyze_cif_files(cif_path)
-
-# 3. Explore the high-level results
-# The output is a data.table with metadata and list-columns for detailed results.
-print(analysis_results[, .(database_code, chemical_formula, space_group_name)])
-
-# 4. Access detailed calculated properties
-# To get the bond angles table, we must extract the first element `[[1]]` 
-# from the list-column, then we can select the first 5 rows `[1:5, ]`.
-cat("\nFirst 5 calculated bond angles (with propagated errors):\n")
-print(analysis_results$bond_angles[][1:5, ])
-```
 
 ## Learning More
 

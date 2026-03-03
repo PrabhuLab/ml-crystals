@@ -58,6 +58,21 @@ crystal_nn(
 
 A `data.table` of bonded pairs.
 
+## References
+
+Shannon, R. D. (1976). "Revised effective ionic radii and systematic
+studies of interatomic distances in halides and chalcogenides." *Acta
+Crystallographica Section A*, 32(5), 751-767.
+
+Pauling, L. (1960). *The Nature of the Chemical Bond and the Structure
+of Molecules and Crystals: An Introduction to Modern Structural
+Chemistry*. Cornell University Press.
+
+Pan, H., Ganose, A. M., Horton, M., et al. (2021). "Benchmarking
+Coordination Number Prediction Algorithms on Inorganic Crystal
+Structures." *Inorganic Chemistry*, 60(3), 1590–1603.
+[doi:10.1021/acs.inorgchem.0c02996](https://doi.org/10.1021/acs.inorgchem.0c02996)
+
 ## See also
 
 Other bonding algorithms:
