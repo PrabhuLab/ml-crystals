@@ -19,3 +19,12 @@ read_cif_files(file_paths)
 ## Value
 
 A list of `data.table` objects.
+
+## Examples
+
+``` r
+cif_path <- system.file("extdata", "1590946.cif", package = "crystract")
+if (file.exists(cif_path)) {
+  cifs <- read_cif_files(cif_path)
+}
+```

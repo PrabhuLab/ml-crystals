@@ -11,7 +11,7 @@ in a specified column (e.g., "CentralAtom").'></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">crystract</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -96,10 +96,7 @@ following the selected symbol are not alphabetical letters.</p>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># This example demonstrates how the function would work.</span></span></span>
-<span class="r-in"><span><span class="co"># In a real session, you would call: filter_atoms_by_symbol(my_data)</span></span></span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># 1. Create a sample data.table of bond angles</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># 1. Create a sample data.table of bond angles</span></span></span>
 <span class="r-in"><span><span class="va">sample_angles</span> <span class="op">&lt;-</span> <span class="fu">data.table</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/data.table/man/data.table.html" class="external-link">data.table</a></span><span class="op">(</span></span></span>
 <span class="r-in"><span>  CentralAtom <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"C1"</span>, <span class="st">"C2"</span>, <span class="st">"Si1"</span>, <span class="st">"Cr1"</span>, <span class="st">"O1"</span>, <span class="st">"O2"</span>, <span class="st">"C"</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>  Neighbor1 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"O1"</span>, <span class="st">"O2"</span>, <span class="st">"O1"</span>, <span class="st">"N1"</span>, <span class="st">"C1"</span>, <span class="st">"C2"</span>, <span class="st">"H1"</span><span class="op">)</span>,</span></span>
@@ -108,10 +105,6 @@ following the selected symbol are not alphabetical letters.</p>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># 2. In an interactive R session, the function would prompt the user.</span></span></span>
-<span class="r-in"><span><span class="co"># For example, if the user sees the available symbols (C, Si, Cr, O) and</span></span></span>
-<span class="r-in"><span><span class="co"># enters "C,Si" at the prompt, the function would return the rows for</span></span></span>
-<span class="r-in"><span><span class="co"># "C1", "C2", "C", and "Si1".</span></span></span>
-<span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/interactive.html" class="external-link">interactive</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span></span>
 <span class="r-in"><span>  <span class="va">filtered_data</span> <span class="op">&lt;-</span> <span class="fu">filter_atoms_by_symbol</span><span class="op">(</span><span class="va">sample_angles</span>, atom_col <span class="op">=</span> <span class="st">"CentralAtom"</span><span class="op">)</span></span></span>
 <span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">filtered_data</span><span class="op">)</span></span></span>

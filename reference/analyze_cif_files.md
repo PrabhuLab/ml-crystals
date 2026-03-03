@@ -40,3 +40,25 @@ analyze_cif_files(
 ## Value
 
 Data.table or output directory path.
+
+## Examples
+
+``` r
+# \donttest{
+cif_path <- system.file("extdata", "1590946.cif", package = "crystract")
+if (file.exists(cif_path)) {
+  out_dir <- file.path(tempdir(), "cif_analysis")
+  res <- analyze_cif_files(cif_path, output_dir = out_dir, workers = 1)
+
+  # Clean up
+  unlink(out_dir, recursive = TRUE)
+}
+#> Starting analysis of 1 files in 1 batches.
+#> 
+#> --- Processing Batch 1 of 1 (Files 1 to 1) ---
+#> Batch 1 complete. Saved 1 results to '/tmp/RtmpmXXsA2/cif_analysis/batch_1.rds'.
+#> ----------------------------------
+#> Analysis Complete!
+#> Batch results have been saved in the '/tmp/RtmpmXXsA2/cif_analysis/' directory.
+# }
+```

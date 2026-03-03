@@ -29,3 +29,14 @@ Other extractors:
 [`extract_structure_type()`](https://prabhulab.github.io/ml-crystals/reference/extract_structure_type.md),
 [`extract_symmetry_operations()`](https://prabhulab.github.io/ml-crystals/reference/extract_symmetry_operations.md),
 [`extract_unit_cell_metrics()`](https://prabhulab.github.io/ml-crystals/reference/extract_unit_cell_metrics.md)
+
+## Examples
+
+``` r
+cif_path <- system.file("extdata", "1590946.cif", package = "crystract")
+if (file.exists(cif_path)) {
+  cif_content <- read_cif_files(cif_path)[[1]]
+  extract_database_code(cif_content)
+}
+#> [1] "depnum_ccdc_archive CCDC 1590946"
+```

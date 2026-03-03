@@ -11,7 +11,7 @@ content."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">crystract</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -74,6 +74,27 @@ error.</p>
 <code><a href="extract_symmetry_operations.html">extract_symmetry_operations()</a></code></p></div>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">cif_path</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"1590946.cif"</span>, package <span class="op">=</span> <span class="st">"crystract"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/files.html" class="external-link">file.exists</a></span><span class="op">(</span><span class="va">cif_path</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span>  <span class="va">cif_content</span> <span class="op">&lt;-</span> <span class="fu"><a href="read_cif_files.html">read_cif_files</a></span><span class="op">(</span><span class="va">cif_path</span><span class="op">)</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span></span></span>
+<span class="r-in"><span>  <span class="fu">extract_unit_cell_metrics</span><span class="op">(</span><span class="va">cif_content</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    _cell_length_a _cell_length_b _cell_length_c _cell_angle_alpha</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>             &lt;num&gt;          &lt;num&gt;          &lt;num&gt;             &lt;num&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1:           8.11           5.15           9.54                90</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    _cell_angle_beta _cell_angle_gamma _cell_length_a_error _cell_length_b_error</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>               &lt;num&gt;             &lt;num&gt;                &lt;num&gt;                &lt;num&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1:               90                90                   NA                   NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    _cell_length_c_error _cell_angle_alpha_error _cell_angle_beta_error</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                   &lt;num&gt;                   &lt;num&gt;                  &lt;num&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1:                   NA                      NA                     NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    _cell_angle_gamma_error</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                      &lt;num&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1:                      NA</span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

@@ -30,3 +30,19 @@ merge_sites_pbc(atomic_coordinates, unit_cell_metrics, tol = 1e-04)
 ## Value
 
 A deduplicated data.table with coordinates averaged.
+
+## Examples
+
+``` r
+ac <- data.table::data.table(Label = c("A", "B"),
+                             x_a = c(0, 0.00001),
+                             y_b = c(0, 0),
+                             z_c = c(0, 0))
+uc <- data.table::data.table(`_cell_length_a` = 10, `_cell_length_b` = 10,
+                             `_cell_length_c` = 10, `_cell_angle_alpha` = 90,
+                             `_cell_angle_beta` = 90, `_cell_angle_gamma` = 90)
+merge_sites_pbc(ac, uc, tol = 1e-4)
+#>     Label   x_a   y_b   z_c
+#>    <char> <num> <num> <num>
+#> 1:      A     0     0     0
+```

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">crystract</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -86,6 +86,34 @@
 <code><a href="minimum_distance.html">minimum_distance()</a></code></p></div>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># \donttest{</span></span></span>
+<span class="r-in"><span><span class="va">cif_path</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"1590946.cif"</span>, package <span class="op">=</span> <span class="st">"crystract"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/files.html" class="external-link">file.exists</a></span><span class="op">(</span><span class="va">cif_path</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span>  <span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="analyze_single_cif.html">analyze_single_cif</a></span><span class="op">(</span><span class="va">cif_path</span>, bonding_algorithms <span class="op">=</span> <span class="st">"voronoi"</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">res</span><span class="op">$</span><span class="va">bonds_voronoi</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Key: &lt;Atom1, Atom2, Distance&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     Atom1         Atom2 Distance  SolidAngle       Area    DeltaX        DeltaY</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;char&gt;        &lt;char&gt;    &lt;num&gt;       &lt;num&gt;      &lt;num&gt;     &lt;num&gt;         &lt;num&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1:  Si1_2  Si1_1_-1_0_0 4.932659 0.004328448 0.02851541 -4.055000  2.220446e-16</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2:  Si1_2   Si1_1_0_0_0 4.932659 0.004328448 0.02851541  4.055000  2.220446e-16</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3:  Si1_2   Sr1_1_0_0_0 3.163544 1.687714706 6.98543858 -0.819110  2.220446e-16</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4:  Si1_2  Sr1_2_-1_0_0 4.880369 0.051103880 0.31256672 -4.874110  0.000000e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5:  Si1_2   Sr1_2_0_0_0 3.245310 1.546340541 6.41452789  3.235890  0.000000e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6:  Si1_2 Sr1_4_0_-1_-1 3.184477 1.609248649 6.54596788  0.755852 -2.575000e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       DeltaZ    MaxSA     Weight DistanceError</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        &lt;num&gt;    &lt;num&gt;      &lt;num&gt;         &lt;num&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1:  2.808576 1.687715 0.00256468             0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2:  2.808576 1.687715 0.00256468             0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3:  3.055662 1.687715 1.00000000             0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4: -0.247086 1.687715 0.03027993             0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5: -0.247086 1.687715 0.91623337             0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6: -1.714338 1.687715 0.95350751             0</span>
+<span class="r-in"><span><span class="co"># }</span></span></span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

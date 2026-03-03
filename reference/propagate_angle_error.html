@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">crystract</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -78,6 +78,46 @@
 <code><a href="propagate_distance_error.html">propagate_distance_error()</a></code></p></div>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># 1. Create dummy bond angles</span></span></span>
+<span class="r-in"><span><span class="va">ba</span> <span class="op">&lt;-</span> <span class="fu">data.table</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/data.table/man/data.table.html" class="external-link">data.table</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  CentralAtom <span class="op">=</span> <span class="st">"Si1"</span>, Neighbor1 <span class="op">=</span> <span class="st">"O1"</span>, Neighbor2 <span class="op">=</span> <span class="st">"O2"</span>, Angle <span class="op">=</span> <span class="fl">109.5</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># 2. Create dummy atomic coordinates with errors</span></span></span>
+<span class="r-in"><span><span class="va">ac</span> <span class="op">&lt;-</span> <span class="fu">data.table</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/data.table/man/data.table.html" class="external-link">data.table</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  Label <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Si1"</span>, <span class="st">"O1"</span>, <span class="st">"O2"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  x_a <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0.1</span>, <span class="fl">0</span><span class="op">)</span>, y_b <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0</span>, <span class="fl">0.1</span><span class="op">)</span>, z_c <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0</span>, <span class="fl">0</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  x_error <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.01</span>, <span class="fl">0.01</span>, <span class="fl">0.01</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  y_error <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.01</span>, <span class="fl">0.01</span>, <span class="fl">0.01</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  z_error <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.01</span>, <span class="fl">0.01</span>, <span class="fl">0.01</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># 3. Create dummy expanded coordinates</span></span></span>
+<span class="r-in"><span><span class="va">ec</span> <span class="op">&lt;-</span> <span class="fu">data.table</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/data.table/man/data.table.html" class="external-link">data.table</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  Label <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"O1"</span>, <span class="st">"O2"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  x_a <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.1</span>, <span class="fl">0</span><span class="op">)</span>, y_b <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0.1</span><span class="op">)</span>, z_c <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># 4. Create dummy unit cell metrics</span></span></span>
+<span class="r-in"><span><span class="va">uc</span> <span class="op">&lt;-</span> <span class="fu">data.table</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/data.table/man/data.table.html" class="external-link">data.table</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  `_cell_length_a` <span class="op">=</span> <span class="fl">10</span>, `_cell_length_a_error` <span class="op">=</span> <span class="fl">0.1</span>,</span></span>
+<span class="r-in"><span>  `_cell_length_b` <span class="op">=</span> <span class="fl">10</span>, `_cell_length_b_error` <span class="op">=</span> <span class="fl">0.1</span>,</span></span>
+<span class="r-in"><span>  `_cell_length_c` <span class="op">=</span> <span class="fl">10</span>, `_cell_length_c_error` <span class="op">=</span> <span class="fl">0.1</span>,</span></span>
+<span class="r-in"><span>  `_cell_angle_alpha` <span class="op">=</span> <span class="fl">90</span>, `_cell_angle_alpha_error` <span class="op">=</span> <span class="fl">0</span>,</span></span>
+<span class="r-in"><span>  `_cell_angle_beta` <span class="op">=</span> <span class="fl">90</span>, `_cell_angle_beta_error` <span class="op">=</span> <span class="fl">0</span>,</span></span>
+<span class="r-in"><span>  `_cell_angle_gamma` <span class="op">=</span> <span class="fl">90</span>, `_cell_angle_gamma_error` <span class="op">=</span> <span class="fl">0</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># 5. Run the error propagation</span></span></span>
+<span class="r-in"><span><span class="fu">propagate_angle_error</span><span class="op">(</span><span class="va">ba</span>, <span class="va">ac</span>, <span class="va">ec</span>, <span class="va">uc</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Key: &lt;CentralAtom, Neighbor1, Neighbor2&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    CentralAtom Neighbor1 Neighbor2 Angle AngleError</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         &lt;char&gt;    &lt;char&gt;    &lt;char&gt; &lt;num&gt;      &lt;num&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1:         Si1        O1        O2 109.5   11.45916</span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

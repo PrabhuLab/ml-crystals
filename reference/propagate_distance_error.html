@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">crystract</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -69,6 +69,27 @@
 <code><a href="propagate_angle_error.html">propagate_angle_error()</a></code></p></div>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">bp</span> <span class="op">&lt;-</span> <span class="fu">data.table</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/data.table/man/data.table.html" class="external-link">data.table</a></span><span class="op">(</span>Atom1 <span class="op">=</span> <span class="st">"Si1"</span>, Atom2 <span class="op">=</span> <span class="st">"O1_1"</span>, Distance <span class="op">=</span> <span class="fl">1.6</span>,</span></span>
+<span class="r-in"><span>                             DeltaX <span class="op">=</span> <span class="fl">0.1</span>, DeltaY <span class="op">=</span> <span class="fl">0.1</span>, DeltaZ <span class="op">=</span> <span class="fl">0</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">ac</span> <span class="op">&lt;-</span> <span class="fu">data.table</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/data.table/man/data.table.html" class="external-link">data.table</a></span><span class="op">(</span>Label <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Si1"</span>, <span class="st">"O1"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>                             x_error <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.01</span>, <span class="fl">0.01</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>                             y_error <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.01</span>, <span class="fl">0.01</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>                             z_error <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.01</span>, <span class="fl">0.01</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">uc</span> <span class="op">&lt;-</span> <span class="fu">data.table</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/data.table/man/data.table.html" class="external-link">data.table</a></span><span class="op">(</span>`_cell_length_a` <span class="op">=</span> <span class="fl">10</span>, `_cell_length_a_error` <span class="op">=</span> <span class="fl">0.1</span>,</span></span>
+<span class="r-in"><span>                             `_cell_length_b` <span class="op">=</span> <span class="fl">10</span>, `_cell_length_b_error` <span class="op">=</span> <span class="fl">0.1</span>,</span></span>
+<span class="r-in"><span>                             `_cell_length_c` <span class="op">=</span> <span class="fl">10</span>, `_cell_length_c_error` <span class="op">=</span> <span class="fl">0.1</span>,</span></span>
+<span class="r-in"><span>                             `_cell_angle_alpha` <span class="op">=</span> <span class="fl">90</span>, `_cell_angle_alpha_error` <span class="op">=</span> <span class="fl">0</span>,</span></span>
+<span class="r-in"><span>                             `_cell_angle_beta` <span class="op">=</span> <span class="fl">90</span>, `_cell_angle_beta_error` <span class="op">=</span> <span class="fl">0</span>,</span></span>
+<span class="r-in"><span>                             `_cell_angle_gamma` <span class="op">=</span> <span class="fl">90</span>, `_cell_angle_gamma_error` <span class="op">=</span> <span class="fl">0</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">propagate_distance_error</span><span class="op">(</span><span class="va">bp</span>, <span class="va">ac</span>, <span class="va">uc</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Key: &lt;Atom1, Atom2, Distance&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     Atom1  Atom2 Distance DeltaX DeltaY DeltaZ DistanceError</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;char&gt; &lt;char&gt;    &lt;num&gt;  &lt;num&gt;  &lt;num&gt;  &lt;num&gt;         &lt;num&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1:    Si1   O1_1      1.6    0.1    0.1      0     0.1253121</span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

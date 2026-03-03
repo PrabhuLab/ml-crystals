@@ -66,3 +66,12 @@ analyze_single_cif(
 ## Value
 
 A one-row `data.table` with results.
+
+## Examples
+
+``` r
+cif_path <- system.file("extdata", "1590946.cif", package = "crystract")
+if (file.exists(cif_path)) {
+  res <- analyze_single_cif(cif_path, perform_error_propagation = FALSE)
+}
+```

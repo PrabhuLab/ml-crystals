@@ -9,7 +9,7 @@ direction (a, b, c) to encompass a sphere of a given radius."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">crystract</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -69,6 +69,16 @@ direction (a, b, c) to encompass a sphere of a given radius.</p>
 <code><a href="expand_transformed_coords.html">expand_transformed_coords()</a></code></p></div>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">uc</span> <span class="op">&lt;-</span> <span class="fu">data.table</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/data.table/man/data.table.html" class="external-link">data.table</a></span><span class="op">(</span>`_cell_length_a` <span class="op">=</span> <span class="fl">10</span>, `_cell_length_b` <span class="op">=</span> <span class="fl">10</span>,</span></span>
+<span class="r-in"><span>                             `_cell_length_c` <span class="op">=</span> <span class="fl">10</span>, `_cell_angle_alpha` <span class="op">=</span> <span class="fl">90</span>,</span></span>
+<span class="r-in"><span>                             `_cell_angle_beta` <span class="op">=</span> <span class="fl">90</span>, `_cell_angle_gamma` <span class="op">=</span> <span class="fl">90</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">calculate_expansion_factors</span><span class="op">(</span><span class="va">uc</span>, radius <span class="op">=</span> <span class="fl">13.0</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> a b c </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2 2 2 </span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

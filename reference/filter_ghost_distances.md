@@ -67,6 +67,29 @@ Other post-processing:
 ## Examples
 
 ``` r
-# This example assumes you have `distances` and `atomic_coordinates` tables.
-# See the vignette for a full workflow.
+# Create minimal dummy data for demonstration
+distances <- data.table::data.table(
+  Atom1 = c("Si1_1_0_0", "O1_1_0_0"),
+  Atom2 = c("O1_1_0_0", "Si1_1_0_0"),
+  Distance = c(1.6, 0.5) # 0.5 is implausibly short
+)
+
+atomic_coords <- data.table::data.table(
+  Label = c("Si1", "O1")
+)
+
+# Run the filter
+result <- filter_ghost_distances(distances, atomic_coords, margin = 0.1)
+
+print(result$kept)
+#> Empty data.table (0 rows and 3 cols): Atom1,Atom2,Distance
+print(result$removed)
+#>        Atom1     Atom2 Distance expected_dist lower_bound upper_bound
+#>       <char>    <char>    <num>         <num>       <num>       <num>
+#> 1: Si1_1_0_0  O1_1_0_0      1.6          1.83       1.647       2.013
+#> 2:  O1_1_0_0 Si1_1_0_0      0.5          1.83       1.647       2.013
+#>                   Reason
+#>                   <char>
+#> 1: Distance is TOO SHORT
+#> 2: Distance is TOO SHORT
 ```

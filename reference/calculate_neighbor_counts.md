@@ -28,3 +28,15 @@ Other property calculators:
 [`filter_atoms_by_symbol()`](https://prabhulab.github.io/ml-crystals/reference/filter_atoms_by_symbol.md),
 [`filter_by_elements()`](https://prabhulab.github.io/ml-crystals/reference/filter_by_elements.md),
 [`filter_by_wyckoff_symbol()`](https://prabhulab.github.io/ml-crystals/reference/filter_by_wyckoff_symbol.md)
+
+## Examples
+
+``` r
+bp <- data.table::data.table(Atom1 = c("Si1", "Si1", "O1"),
+                             Atom2 = c("O1", "O2", "Si1"))
+calculate_neighbor_counts(bp)
+#>      Atom CoordinationNumber
+#>    <char>              <int>
+#> 1:    Si1                  2
+#> 2:     O1                  1
+```

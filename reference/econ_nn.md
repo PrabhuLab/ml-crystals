@@ -38,3 +38,17 @@ Other bonding algorithms:
 [`crystal_nn()`](https://prabhulab.github.io/ml-crystals/reference/crystal_nn.md),
 [`minimum_distance()`](https://prabhulab.github.io/ml-crystals/reference/minimum_distance.md),
 [`voronoi_nn()`](https://prabhulab.github.io/ml-crystals/reference/voronoi_nn.md)
+
+## Examples
+
+``` r
+dists <- data.table::data.table(Atom1 = c("Si1", "Si1"), Atom2 = c("O1", "O2"),
+                                Distance = c(1.6, 2.0),
+                                DeltaX = c(1, 0), DeltaY = c(0, 1), DeltaZ = c(0, 0))
+ac <- data.table::data.table(Label = c("Si1", "O1", "O2"),
+                             OxidationState = c(4, -2, -2))
+econ_nn(dists, ac)
+#>     Atom1  Atom2 Distance DeltaX DeltaY DeltaZ   Weight
+#>    <char> <char>    <num>  <num>  <num>  <num>    <num>
+#> 1:    Si1     O1      1.6      1      0      0 1.110372
+```

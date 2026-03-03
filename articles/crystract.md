@@ -72,8 +72,8 @@ str(analysis_results, max.level = 2)
 #>  $ database_code          : chr "depnum_ccdc_archive CCDC 1590946"
 #>  $ chemical_formula       : chr "Si1 Sr2"
 #>  $ structure_type         : logi NA
-#>  $ space_group_name       : logi NA
-#>  $ space_group_number     : logi NA
+#>  $ space_group_name       : chr "P n m a"
+#>  $ space_group_number     : chr "62"
 #>  $ unit_cell_metrics      :List of 1
 #>   ..$ :Classes 'data.table' and 'data.frame':    1 obs. of  12 variables:
 #>   .. ..- attr(*, ".internal.selfref")=<externalptr> 
@@ -224,7 +224,7 @@ cat("Database Code:", database_code, "\n")
 cat("Chemical Formula:", chemical_formula, "\n")
 #> Chemical Formula: Si1 Sr2
 cat("Space Group:", space_group_name, "(No.", space_group_number, ")\n")
-#> Space Group: NA (No. NA )
+#> Space Group: P n m a (No. 62 )
 ```
 
 Next,

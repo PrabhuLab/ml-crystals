@@ -32,3 +32,17 @@ A data table with three columns:
 
 J. Emsley. The Elements. Third edition 1998, Oxford University Press. As
 provided by Julia-Maria Huebner.
+
+## Examples
+
+``` r
+head(covalent_radii)
+#>    Symbol Radius     Type
+#>    <char>  <num>   <char>
+#> 1:      H   0.30 covalent
+#> 2:     Li   1.23 covalent
+#> 3:     Be   0.89 covalent
+#> 4:      B   0.88 covalent
+#> 5:      C   0.77 covalent
+#> 6:          0.67 covalent
+```

@@ -60,9 +60,6 @@ my_radii <- data.table::data.table(
 set_radii_data(my_radii)
 #> Custom radii table has been set for the current R session.
 
-# Now, any subsequent calls to filter_ghost_distances() will use this table.
-# You could, for example, filter based on ionic radii by setting radii_type = "ionic".
-
 # 3. Reset to the package's default covalent radii table
 set_radii_data(NULL)
 #> Session radii data reset to package default.
