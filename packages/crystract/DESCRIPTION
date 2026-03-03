@@ -39,4 +39,4 @@ Suggests:
 VignetteBuilder: knitr
 Config/testthat/edition: 3
 LazyData: true
-URL: https://prabhulab.github.io/ml-crystals/
+URL: https://prabhulab.github.io/ml-crystals/packages/crystract
