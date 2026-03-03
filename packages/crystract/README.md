@@ -254,40 +254,25 @@ variety of use cases:
 ## Installation
 
 Installing `crystract` involves a few steps, as it is currently hosted
-on GitHub.
+on GitHub. We use the `remotes` package to facilitate installation
+directly from the repository.
 
-### Prerequisites: What You Need First
-
-#### 1. R and RStudio
+### Prerequisites
 
 - Install the latest version of **[R](https://cran.r-project.org/)**.
 - Install the free **[RStudio Desktop
   IDE](https://posit.co/download/rstudio-desktop/)**.
 
-#### 2. C++ Compiler
-
-`crystract` and its dependencies require a C++ compiler to be installed
-from source.
-
-- **Windows:** Install
-  **[RTools](https://cran.r-project.org/bin/windows/Rtools/)**.
-  **Crucially**, ensure the box for **“Add Rtools to system PATH”** is
-  checked during installation.
-- **macOS:** Open the Terminal and run `xcode-select --install`.
-- **Linux (Debian/Ubuntu):** Open a terminal and run
-  `sudo apt-get install r-base-dev`.
-
 ### Installation Steps
 
-Once the prerequisites are met, open R or RStudio and run the following
-commands.
+Open R or RStudio and run the following commands:
 
 ``` r
-# First, ensure you have the devtools package
-install.packages("devtools")
+# First, ensure you have the remotes package
+install.packages("remotes")
 
 # Install crystract from the GitHub repository
-devtools::install_github("PrabhuLab/ml-crystals", subdir = "packages/crystract", build_vignettes = TRUE)
+remotes::install_github("PrabhuLab/ml-crystals", subdir = "packages/crystract", build_vignettes = TRUE)
 ```
 
 ### Verifying the Installation
