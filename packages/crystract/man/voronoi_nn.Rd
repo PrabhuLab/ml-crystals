@@ -40,7 +40,7 @@ if (file.exists(cif_path)) {
 }
 \references{
 O'Keeffe, M. (1979). "A Proposed Rigorous Definition of Coordination Number."
-\emph{Acta Crystallographica Section A}, 35(5), 772–775. \doi{10.1107/S0567739479001711}
+\emph{Acta Crystallographica Section A}, 35(5), 772–775. \doi{10.1107/S0567739479001765}
 
 Aurenhammer, F., Klein, R., & Lee, D.-T. (2013). \emph{Voronoi Diagrams and
 Delaunay Triangulations}. World Scientific Publishing Company.

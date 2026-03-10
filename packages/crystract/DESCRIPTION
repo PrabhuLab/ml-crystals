@@ -2,20 +2,32 @@ Package: crystract
 Type: Package
 Title: Crystallographic Information File (CIF) Data Processing Tools
 Version: 1.0.0
-Authors@R: person(given = "Don", 
+Authors@R: c(person(given = "Don", 
                   family = "Ngo", 
                   email = "dngo@carnegiescience.edu", 
-                  role = c("aut", "cre"))
+                  role = c("aut", "cre"),
+                  comment = c(ORCID = "0009-0001-2779-2146")),
+           person(given = "Anirudh", 
+                  family = "Prabhu", 
+                  email = "aprabhu@carnegiescience.edu", 
+                  role = c("aut"),
+                  comment = c(ORCID = "0000-0002-9921-6084")),
+           person(given = "Julia-Maria", 
+                  family = "Hubner", 
+                  email = "julia-maria.huebner@tu-dresden.de",
+                  role = c("aut"),
+                  comment = c(ORCID = "0000-0003-2048-6629"))
+                  )
 Maintainer: Don Ngo <dngo@carnegiescience.edu>
 Description: Provides a suite of functions to parse Crystallographic Information
     Files (.cif), extracting essential data such as chemical formulas, unit cell
     parameters, atomic coordinates, and symmetry operations. It also includes
     tools to calculate interatomic distances, identify bonded pairs using various
-    algorithms (Minimum Distance, Brunner's, Hoppe's), determine nearest
+    algorithms (minimum_distance, brunner_nn_reciprocal, econ_nn, crystal_nn), determine nearest
     neighbor counts, and calculate bond angles. The package is designed to
     facilitate the preparation of crystallographic data for further analysis,
     including machine learning applications in materials science.
-License: GPL (>= 3) + file LICENSE
+License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
@@ -39,4 +51,4 @@ Suggests:
 VignetteBuilder: knitr
 Config/testthat/edition: 3
 LazyData: true
-URL: https://prabhulab.github.io/ml-crystals/packages/crystract
+URL: https://prabhulab.github.io/ml-crystals/

@@ -32,7 +32,13 @@ Useful links:
 
 }
 \author{
-\strong{Maintainer}: Don Ngo \email{dngo@carnegiescience.edu}
+\strong{Maintainer}: Don Ngo \email{dngo@carnegiescience.edu} (\href{https://orcid.org/0009-0001-2779-2146}{ORCID})
+
+Authors:
+\itemize{
+  \item Anirudh Prabhu \email{aprabhu@carnegiescience.edu} (\href{https://orcid.org/0000-0002-9921-6084}{ORCID})
+  \item Julia-Maria Hubner \email{julia-maria.huebner@tu-dresden.de} (\href{https://orcid.org/0000-0003-2048-6629}{ORCID})
+}
 
 }
 \keyword{internal}
