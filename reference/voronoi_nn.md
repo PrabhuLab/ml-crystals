@@ -44,7 +44,7 @@ A `data.table` of bonded pairs.
 
 O'Keeffe, M. (1979). "A Proposed Rigorous Definition of Coordination
 Number." *Acta Crystallographica Section A*, 35(5), 772–775.
-[doi:10.1107/S0567739479001711](https://doi.org/10.1107/S0567739479001711)
+[doi:10.1107/S0567739479001765](https://doi.org/10.1107/S0567739479001765)
 
 Aurenhammer, F., Klein, R., & Lee, D.-T. (2013). *Voronoi Diagrams and
 Delaunay Triangulations*. World Scientific Publishing Company.

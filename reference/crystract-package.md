@@ -29,3 +29,12 @@ Useful links:
 ## Author
 
 **Maintainer**: Don Ngo <dngo@carnegiescience.edu>
+([ORCID](https://orcid.org/0009-0001-2779-2146))
+
+Authors:
+
+- Anirudh Prabhu <aprabhu@carnegiescience.edu>
+  ([ORCID](https://orcid.org/0000-0002-9921-6084))
+
+- Julia-Maria Hubner <julia-maria.huebner@tu-dresden.de>
+  ([ORCID](https://orcid.org/0000-0003-2048-6629))
