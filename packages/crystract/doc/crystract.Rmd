@@ -5,8 +5,6 @@ date: "`r Sys.Date()`"
 output:
   rmarkdown::html_vignette:
     toc: true
-  pdf_document:
-    toc: true
 vignette: >
   %\VignetteIndexEntry{Using the crystract Package for Crystallographic Analysis}
   %\VignetteEncoding{UTF-8}
@@ -18,8 +16,8 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
-options(width = 75)
-options(datatable.print.width = 80)
+# Save current options and apply new ones for the vignette rendering
+old_options <- options(width = 75, datatable.print.width = 80)
 ```
 
 ## Introduction
@@ -567,3 +565,8 @@ This vignette has demonstrated the core workflow of the `crystract` package, fro
 Furthermore, with a powerful suite of post-processing tools such as `filter_atoms_by_symbol`, `filter_by_wyckoff_symbol`, `filter_ghost_distances`, `calculate_weighted_average_network_distance`, and user-defined radii tables, you can easily refine, clean, analyze, and share the generated datasets to focus on the specific chemical or crystallographic features of interest.
 
 The goal of `crystract` is to provide a robust and accessible platform for crystallographic data mining in R.
+
+```{r, include = FALSE}
+# Restore original options as required by CRAN
+options(old_options)
+```

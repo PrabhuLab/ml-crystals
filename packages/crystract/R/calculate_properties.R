@@ -758,13 +758,10 @@ filter_atoms_by_symbol <- function(data_table, atom_col = "CentralAtom") {
   }
 
   # Interactively prompt the user for their choice of atoms
-  cat("Available base atom symbols found:",
-      paste(base_symbols, collapse = ", "),
-      "\n")
-  cat(
-    "Please enter the chemical symbols you want to filter for, separated by commas (e.g., C,Si,O):\n"
-  )
-  user_input <- readline()
+  message("Available base atom symbols found: ",
+          paste(base_symbols, collapse = ", "))
+
+  user_input <- readline(prompt = "Please enter the chemical symbols you want to filter for, separated by commas (e.g., C,Si,O):\n")
 
   # Process the user's input string
   symbols_to_keep <- trimws(strsplit(user_input, ",")[[1]])

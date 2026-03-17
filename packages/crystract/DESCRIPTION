@@ -27,6 +27,13 @@ Description: Provides a suite of functions to parse Crystallographic Information
     neighbor counts, and calculate bond angles. The package is designed to
     facilitate the preparation of crystallographic data for further analysis,
     including machine learning applications in materials science.
+    Methods are described in:
+    Brunner (1977) <doi:10.1107/S0567739477000461>;
+    Hoppe (1979) <doi:10.1524/zkri.1979.150.14.23>;
+    O'Keeffe (1979) <doi:10.1107/S0567739479001765>;
+    Shannon (1976) <doi:10.1107/S0567739476001551>;
+    Pan et al. (2021) <doi:10.1021/acs.inorgchem.0c02996>;
+    Pauling (1960, ISBN:978-0801403330).
 License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)

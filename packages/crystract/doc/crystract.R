@@ -3,8 +3,8 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
-options(width = 75)
-options(datatable.print.width = 80)
+# Save current options and apply new ones for the vignette rendering
+old_options <- options(width = 75, datatable.print.width = 80)
 
 ## ----setup, message=FALSE, warning=FALSE---------------------------------
 library(crystract)
@@ -301,4 +301,8 @@ cat("Weighted average network bond distance for the '4c' sites:", weighted_avg_b
 # }
 # 
 # cat("\nAll operations finished successfully! Files are in:", output_dir, "\n")
+
+## ----include = FALSE----------------------------------------------------------
+# Restore original options as required by CRAN
+options(old_options)
 
