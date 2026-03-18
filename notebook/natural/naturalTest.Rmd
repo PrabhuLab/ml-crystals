@@ -21,11 +21,13 @@ knitr::opts_chunk$set(echo = TRUE, message = TRUE, warning = FALSE)
 
 ## 1. Introduction
 
-This workflow performs a targeted analysis of Sulfides, Selenides, and Tellurides. It utilizes the Minimum Distance bonding algorithm within the parallelized extraction pipeline and includes diagnostic steps for high Coordination Numbers (CN > 12) and Weighted Coordination Numbers.
+This workflow performs a targeted, large-scale crystallographic analysis of Sulfides, Selenides, and Tellurides. By utilizing the Minimum Distance bonding algorithm within the highly parallelized `crystract` extraction pipeline, we calculate fundamental geometric metrics such as bond distances, bond angles, and coordination numbers (CN) across thousands of parsed `.cif` files.
 
-**Note:** All plots in this report are interactive. You can hover to see details, zoom in/out, and click legend items to filter data.
+Furthermore, this notebook introduces critical diagnostic steps to evaluate high-coordination environments (Geometric CN > 12) and to compute **Weighted Coordination Numbers**. Weighted CN provides a more accurate representation of the local chemical environment by taking into account crystallographic site occupancies and resolving partial occupancies inherent to structural disorder.
 
 ## 2. Setup: Libraries and Reference Data
+
+We begin by loading the necessary data manipulation, crystallography, and parallel processing packages. A robust periodic table reference (`ptable`) is established to ensure all visualizations can accurately sort elements by their atomic number (Z) rather than alphabetically, exposing true periodic trends.
 
 ```{r load-libraries, message=FALSE, warning=FALSE}
 # Data Manipulation
@@ -48,6 +50,7 @@ library(viridis)
 library(gridExtra)
 library(DT)      # For interactive tables
 library(plotly)  # For interactive plots
+library(scales)  # For plot scales and breaks
 
 # --- Initialize Time Tracking ---
 timing_log <- data.frame(
@@ -81,12 +84,11 @@ ptable <- data.table(
 
 ## 3. Data Discovery and Chemistry Filtering
 
-Filter criteria: **(Contains S OR Se OR Te) AND (Does NOT contain O)**.
+To analyze Chalcogenides strictly, our filtering logic is: **(Contains S OR Se OR Te) AND (Does NOT contain O)**. Excluding oxygen prevents the inclusion of sulfates, selenites, and tellurates, isolating the data strictly to sulfides, selenides, and tellurides.
 
 ```{r filter-by-chemistry}
 # --- Configuration ---
-# UPDATE THIS PATH to your local CIF directory
-cif_directory <- "/Users/carnegieuser/Documents/amcsd" 
+cif_directory <- "/Users/carnegieuser/Downloads/cif" 
 
 step_start <- Sys.time()
 
@@ -132,7 +134,7 @@ cat(sprintf("Filtering complete. Kept: %d files.\n", length(target_files)))
 
 ## 4. Parallel Analysis (Optimized)
 
-We now run `crystract` with `bonding_algorithms = "minimum_distance"` and `calculate_bond_angles = TRUE` using a customized robust worker function.
+We run the `crystract` feature extraction using the `minimum_distance` bonding algorithm. This chunk expands the unit cell into a 3x3x3 supercell to ensure edge-atoms are correctly bonded to their periodic neighbors. A ghost filtering mechanism is also applied to handle duplicate distance measurements often created by crystallographic disorder.
 
 ```{r run-analysis}
 # --- Define Custom Radii Table ---
@@ -191,7 +193,7 @@ process_structure_robust <- function(file_path) {
     dists <- calculate_distances(atoms, expanded, metrics, tolerance = 1e-4)
     if (nrow(dists) == 0) return(NULL) 
     
-    # --- 4. Attempt Ghost Filtering with Fallback ---
+    # --- 4. Attempt Ghost Filtering ---
     filter_status <- "applied"
     
     ghost_res <- tryCatch({
@@ -262,6 +264,8 @@ if (length(target_files) > 0) {
 ```
 
 ## 5. Data Processing: Aggregation & Diagnosis
+
+In this aggregation step, we calculate the **Weighted Coordination Number**. A standard geometric calculation might count 6 distinct surrounding neighbor sites, yielding a geometric CN of 6. However, if those neighbor sites are highly disordered and each only has an occupancy of 0.5, the central atom effectively only "feels" 3 neighbors in the time-average bulk crystal. The Weighted CN multiplies geometric site counts by site occupancy to reveal the true environmental coordination.
 
 ```{r process-and-diagnose}
 step_start <- Sys.time()
@@ -355,6 +359,8 @@ if (dir.exists(analysis_output_dir)) {
 
 ### 5.1 Diagnostics
 
+This table allows us to peek into files where elements exhibited mathematically massive coordination numbers. Extremely high Geometric CNs (> 12) usually indicate deeply disordered structures, overlapping atomic positions, or parsing errors.
+
 ```{r show-diagnosis}
 if (exists("high_cn_diagnosis") && nrow(high_cn_diagnosis) > 0) {
   datatable(head(high_cn_diagnosis[order(-Total_CN)], 500), 
@@ -403,9 +409,20 @@ if (exists("final_bonds_data") && nrow(final_bonds_data) > 0) {
 }
 ```
 
-## 7. Global Visualization (Interactive)
+---
+
+**A Note on the Visualizations:**
+Because interactive web-based plotting engines (like `plotly`) frequently suppress or hide size mapping legends, a dual-output strategy is implemented below for all bubble plots. 
+1. **Static Export Image:** The first output is a standard `ggplot2` image. It correctly renders both the color scale and the bubble size scale, making it the perfect target to save or export for reports.
+2. **Interactive Analysis Tool:** The second output is an interactive `plotly` frame. While the size legend might be hidden, this plot enables you to hover over specific bubbles to query their exact underlying metrics (count, distance, etc.) and zoom into dense regions.
+
+## 7. Global Visualization
 
 ### 7.1 Pairwise Bond Lengths
+
+This plot correlates the central atom against all possible neighbor atoms found across the database. 
+* **Bubble Color:** Indicates the mean bond length (Å) for that element pairing.
+* **Bubble Size:** Indicates the total number of distinct observations for that pairing.
 
 ```{r viz-pairwise-length, fig.width=10, fig.height=10}
 pair_len_agg <- final_bonds_data[, .(MeanLength = mean(Distance), Count = .N), 
@@ -419,12 +436,16 @@ p71 <- ggplot(pair_len_agg, aes(x = Element2, y = Element1,
                                              "<br>Avg Dist:", round(MeanLength, 3), "Å",
                                              "<br>Count:", Count))) +
   geom_point(aes(size = Count, color = MeanLength)) +
-  scale_color_viridis(option = "magma", direction = -1, name = "Length (Å)") +
-  scale_size_continuous(range = c(2, 9), name = "Count") +
-  labs(title = "Pairwise Bond Lengths (All Elements)", x = "Neighbor", y = "Central") +
+  scale_color_viridis_c(option = "magma", direction = -1, name = "Length (Å)") +
+  scale_size_continuous(range = c(2, 9), breaks = scales::breaks_pretty(n = 5), name = "Count (Observations)") +
+  labs(title = "Pairwise Bond Lengths (All Elements)", x = "Neighbor Element", y = "Central Element") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 
+# 1. Static output for export (Preserves legend)
+print(p71)
+
+# 2. Interactive output for exploration
 ggplotly(p71, tooltip = "text")
 ```
 
@@ -454,12 +475,16 @@ if (exists("all_angles_data") && nrow(all_angles_data) > 0) {
                                                "<br>Avg Angle:", round(MeanAngle, 1), "°",
                                                "<br>Count:", Count))) +
     geom_point(aes(size = Count, color = MeanAngle)) +
-    scale_color_viridis(option = "magma", name = "Angle (°)") +
-    scale_size_continuous(range = c(2, 9), name = "Count") +
-    labs(title = "Pairwise Bond Angles", x = "Neighbor", y = "Central") +
+    scale_color_viridis_c(option = "magma", name = "Angle (°)") +
+    scale_size_continuous(range = c(2, 9), breaks = scales::breaks_pretty(n = 5), name = "Count (Observations)") +
+    labs(title = "Pairwise Bond Angles", x = "Neighbor Element", y = "Central Element") +
     theme_minimal() +
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 
+  # 1. Static output for export (Preserves legend)
+  print(p72)
+
+  # 2. Interactive output for exploration
   ggplotly(p72, tooltip = "text")
 } else {
   cat("No bond angle data available.\n")
@@ -468,7 +493,9 @@ if (exists("all_angles_data") && nrow(all_angles_data) > 0) {
 
 ## 8. Coordination Number Analysis
 
-### 8.1 Regular CN
+### 8.1 Regular Geometric CN
+
+Geometric CN counts exactly how many points exist within the bonding distance sphere, without considering partial occupancies.
 
 ```{r viz-regular-cn, fig.width=10, fig.height=10}
 reg_cn_agg <- final_bonds_data[, .(MeanLength = mean(Distance), Count = .N), 
@@ -481,15 +508,21 @@ p81 <- ggplot(reg_cn_agg, aes(x = factor(CoordinationNumber), y = Element1,
                                            "<br>Avg Dist:", round(MeanLength, 3), "Å",
                                            "<br>Count:", Count))) +
   geom_point(aes(size = Count, color = MeanLength)) +
-  scale_color_viridis(option = "magma", direction = -1, name = "Length") +
-  scale_size_continuous(range = c(2, 8)) +
-  labs(title = "Bond Length vs Regular CN", x = "CN", y = "Element") +
+  scale_color_viridis_c(option = "magma", direction = -1, name = "Mean Length (Å)") +
+  scale_size_continuous(range = c(2, 8), breaks = scales::breaks_pretty(n = 5), name = "Count (Observations)") +
+  labs(title = "Bond Length vs Regular Geometric CN", x = "Geometric CN", y = "Central Element") +
   theme_minimal()
 
+# 1. Static
+print(p81)
+
+# 2. Interactive
 ggplotly(p81, tooltip = "text")
 ```
 
 ### 8.2 Weighted CN
+
+This view re-analyzes the data by adjusting for crystallographic site occupancies. High Geometric CN environments often condense down into standard values (e.g., highly disordered CN=24 environments condense to Weighted CN=6).
 
 ```{r viz-weighted-cn-z, fig.width=10, fig.height=10}
 wcn_agg <- final_bonds_data[, .(MeanLength = mean(Distance), Count = .N), 
@@ -502,15 +535,21 @@ p82 <- ggplot(wcn_agg, aes(x = factor(RoundedWeightedCN), y = Element1,
                                         "<br>Avg Dist:", round(MeanLength, 3), "Å",
                                         "<br>Count:", Count))) +
   geom_point(aes(size = Count, color = MeanLength)) +
-  scale_color_viridis(option = "magma", direction = -1, name = "Length") +
-  scale_size_continuous(range = c(2, 8)) +
-  labs(title = "Bond Length vs Weighted CN", x = "Weighted CN", y = "Element") +
+  scale_color_viridis_c(option = "magma", direction = -1, name = "Mean Length (Å)") +
+  scale_size_continuous(range = c(2, 8), breaks = scales::breaks_pretty(n = 5), name = "Count (Observations)") +
+  labs(title = "Bond Length vs Weighted CN", x = "Weighted CN", y = "Central Element") +
   theme_minimal()
 
+# 1. Static
+print(p82)
+
+# 2. Interactive
 ggplotly(p82, tooltip = "text")
 ```
 
-### 8.3 Weighted CN (Sorted by Bond Length)
+### 8.3 Weighted CN (Sorted by Global Bond Length)
+
+Re-ordering the Y-axis by the overall median bond length of the element helps rapidly identify which elements form the smallest/tightest coordination environments versus large, highly coordinated cation sites.
 
 ```{r viz-weighted-cn-len, fig.width=10, fig.height=10}
 wcn_agg_len <- copy(wcn_agg)
@@ -522,24 +561,28 @@ p83 <- ggplot(wcn_agg_len, aes(x = factor(RoundedWeightedCN), y = Element1,
                                text = paste("Element:", Element1, "<br>W-CN:", RoundedWeightedCN,
                                             "<br>Avg Dist:", round(MeanLength, 3), "Å"))) +
   geom_point(aes(size = Count, color = MeanLength)) +
-  scale_color_viridis(option = "magma", direction = -1, name = "Length") +
-  scale_size_continuous(range = c(2, 10)) +
-  labs(title = "Length vs W-CN (Sorted by Length)", x = "Weighted CN", y = "Element") +
+  scale_color_viridis_c(option = "magma", direction = -1, name = "Mean Length (Å)") +
+  scale_size_continuous(range = c(2, 10), breaks = scales::breaks_pretty(n = 5), name = "Count (Observations)") +
+  labs(title = "Length vs W-CN (Elements Sorted by Avg Global Length)", x = "Weighted CN", y = "Central Element") +
   theme_minimal()
 
+# 1. Static
+print(p83)
+
+# 2. Interactive
 ggplotly(p83, tooltip = "text")
 ```
 
 ## 9. Chalcogen-Specific Analysis
+
+Filtering the entire dataset to place the Chalcogens (Sulfur, Selenium, Tellurium) strictly at the center of the geometric queries.
 
 ```{r chalcogen-setup}
 targets <- c("S", "Se", "Te")
 df_center_chalc <- final_bonds_data[Element1 %in% targets]
 ```
 
-### 9.1 S, Se, Te: Bond Lengths (Interactive Bubble)
-
-**Size:** Number of Observations. **Color:** Mean Distance.
+### 9.1 S, Se, Te: Bond Lengths
 
 ```{r chalc-center-len, fig.width=15, fig.height=5}
 agg_center <- df_center_chalc[, .(MeanDist = mean(Distance), N=.N), by=.(Element1, Z1, Element2, Z2)]
@@ -552,28 +595,30 @@ p91 <- ggplot(agg_center, aes(x = Element2, y = Element1,
                                            "<br>Dist:", round(MeanDist, 3), "Å",
                                            "<br>Obs:", N))) +
   geom_point(aes(size = N, color = MeanDist)) +
-  scale_color_viridis(option = "magma", direction = -1, name = "Dist (Å)") +
-  scale_size_continuous(range = c(3, 10), name = "Count") +
-  labs(title = "Bond Lengths: S, Se, Te Centers", x = "Neighbor", y = "Central") +
+  scale_color_viridis_c(option = "magma", direction = -1, name = "Dist (Å)") +
+  scale_size_continuous(range = c(3, 10), breaks = scales::breaks_pretty(n = 5), name = "Count (Observations)") +
+  labs(title = "Bond Lengths: S, Se, Te Centers", x = "Neighbor Element", y = "Central Chalcogen") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 
+# 1. Static
+print(p91)
+
+# 2. Interactive
 ggplotly(p91, tooltip = "text")
 
-# Heatmap
+# 3. Heatmap
 ggplot(agg_center, aes(x = Element2, y = Element1, fill = MeanDist)) +
   geom_tile(color = "white") +
-  scale_fill_viridis(option = "magma", direction = -1, name = "Dist (Å)") +
-  labs(title = "Bond Lengths: S, Se, Te Centers", 
+  scale_fill_viridis_c(option = "magma", direction = -1, name = "Dist (Å)") +
+  labs(title = "Bond Lengths: S, Se, Te Centers (Heatmap)", 
        subtitle = "Sorted by Atomic Number",
        x = "Neighbor Element", y = "Central Chalcogen") +
   theme_minimal() +
   coord_fixed()
 ```
 
-### 9.2 S, Se, Te: Regular CN
-
-**Size:** Number of Observations. **Color:** Mean Geometric CN.
+### 9.2 S, Se, Te: Regular Geometric CN
 
 ```{r chalc-center-cn, fig.width=15, fig.height=5}
 agg_center_cn <- df_center_chalc[, .(MeanCN = mean(CoordinationNumber), N=.N), 
@@ -587,19 +632,23 @@ p92 <- ggplot(agg_center_cn, aes(x = Element2, y = Element1,
                                               "<br>Avg CN:", round(MeanCN, 1),
                                               "<br>Obs:", N))) +
   geom_point(aes(size = N, color = MeanCN)) +
-  scale_color_viridis(option = "magma", direction = -1, name = "Avg CN") +
-  scale_size_continuous(range = c(3, 10), name = "Count") +
-  labs(title = "Regular CN: S, Se, Te Centers", x = "Neighbor", y = "Central") +
+  scale_color_viridis_c(option = "magma", direction = -1, name = "Avg Geo CN") +
+  scale_size_continuous(range = c(3, 10), breaks = scales::breaks_pretty(n = 5), name = "Count (Observations)") +
+  labs(title = "Regular Geometric CN: S, Se, Te Centers", x = "Neighbor Element", y = "Central Chalcogen") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 
+# 1. Static
+print(p92)
+
+# 2. Interactive
 ggplotly(p92, tooltip = "text")
 
-# Heatmap
+# 3. Heatmap
 ggplot(agg_center_cn, aes(x = Element2, y = Element1, fill = MeanCN)) +
   geom_tile(color = "white") +
-  scale_fill_viridis(option = "magma", direction = -1, name = "Avg CN") +
-  labs(title = "Regular Coordination Number: S, Se, Te Centers", 
+  scale_fill_viridis_c(option = "magma", direction = -1, name = "Avg Geo CN") +
+  labs(title = "Regular Geometric Coordination Number: S, Se, Te Centers", 
        subtitle = "Sorted by Atomic Number",
        x = "Neighbor Element", y = "Central Chalcogen") +
   theme_minimal() +
@@ -608,8 +657,9 @@ ggplot(agg_center_cn, aes(x = Element2, y = Element1, fill = MeanCN)) +
 
 ### 9.3 S, Se, Te: Weighted CN (Special Aggregation)
 
-**Size:** Average Total CN (Environment size).  
-**Color:** Average Specific Weighted CN (Contribution of Neighbor).
+In this visualization, we map **Specific WCN** (the fraction of the coordination environment contributed strictly by the specific element pairing) and **Total WCN** (the complete size of the environment).
+* **Color:** The average specific element-element Weighted CN.
+* **Size:** The average Total Weighted CN for the site.
 
 ```{r chalc-center-wcn, fig.width=15, fig.height=5}
 # 1. Calculate Total Weighted CN per Central Atom
@@ -634,15 +684,19 @@ p93 <- ggplot(agg_wcn_complex, aes(x = Element2, y = Element1,
                                                 "<br>Total Env CN (Size):", round(Avg_Total_WCN, 2),
                                                 "<br>Obs:", N))) +
   geom_point(aes(size = Avg_Total_WCN, color = Avg_Specific_WCN)) +
-  scale_color_viridis(option = "magma", direction = -1, name = "Specific WCN") +
-  scale_size_continuous(range = c(2, 9), name = "Total WCN") +
-  labs(title = "Weighted CN Analysis", x = "Neighbor", y = "Central") +
+  scale_color_viridis_c(option = "magma", direction = -1, name = "Specific WCN") +
+  scale_size_continuous(range = c(2, 9), breaks = scales::breaks_pretty(n = 5), name = "Total WCN Env Size") +
+  labs(title = "Weighted CN Analysis: Specific vs Total Environment Size", x = "Neighbor Element", y = "Central Chalcogen") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 
+# 1. Static
+print(p93)
+
+# 2. Interactive
 ggplotly(p93, tooltip = "text")
 
-# Aggregate Mean Weighted Coordination Number
+# 3. Aggregate Heatmap
 agg_center_wcn <- df_center_chalc[, .(MeanWCN = mean(CN_Weighted), N=.N), 
                                   by=.(Element1, Z1, Element2, Z2)]
 agg_center_wcn <- agg_center_wcn[N >= 3]
@@ -653,7 +707,7 @@ agg_center_wcn[, Element2 := fct_reorder(Element2, Z2)]
 
 ggplot(agg_center_wcn, aes(x = Element2, y = Element1, fill = MeanWCN)) +
   geom_tile(color = "white") +
-  scale_fill_viridis(option = "magma", direction = -1, name = "W-CN") +
+  scale_fill_viridis_c(option = "magma", direction = -1, name = "Mean W-CN") +
   labs(title = "Weighted Coordination Number: S, Se, Te Centers", 
        subtitle = "Sorted by Atomic Number (Disorder Corrected)",
        x = "Neighbor Element", y = "Central Chalcogen") +
@@ -692,38 +746,47 @@ ggplot(violin_data, aes(x = reorder(Element1, Distance), y = Distance)) +
 
 ## 11. Advanced: Length vs Angle (Grouped by Neighbor Family)
 
-Faceted by S, Se, Te. Neighbors colored by Periodic Group (Expanded).
+Faceted by S, Se, Te. Neighbors are colored by **standard IUPAC periodic table groups** (Alkali metals, Reactive nonmetals, Lanthanides, etc.), while explicitly preserving the requested split between **Early TMs** and **Late TMs**.
 
 ```{r viz-advanced-scatter, fig.width=12, fig.height=6, warning=FALSE, message=FALSE}
-# --- 1. Expanded Group Metadata with Split Transition Metals ---
+# --- 1. Expanded Group Metadata ---
 extended_groups <- data.table(
   Symbol = c(
-    # Alkali / Alkaline (Groups 1-2)
-    "Li","Na","K","Rb","Cs","Fr","Be","Mg","Ca","Sr","Ba","Ra",
-    
-    # Early Transition Metals (Groups 3-6) - Sc, Ti, V, Cr columns
-    "Sc","Y","La","Ti","Zr","Hf","V","Nb","Ta","Cr","Mo","W",
-    
-    # Late Transition Metals (Groups 7-10) - Mn, Fe, Co, Ni columns
-    "Mn","Tc","Re","Fe","Ru","Os","Co","Rh","Ir","Ni","Pd","Pt",
-    
-    # Coinage & Zinc Groups (Groups 11-12) - Cu, Zn columns
-    "Cu","Ag","Au","Zn","Cd","Hg",
-    
-    # Groups 13-17
-    "B","Al","Ga","In","Tl","C","Si","Ge","Sn","Pb","N","P","As",
-    "Sb","Bi","O","S","Se","Te","Po","F","Cl","Br","I"
+    # Alkali metals
+    "Li", "Na", "K", "Rb", "Cs", "Fr",
+    # Alkaline earth metals
+    "Be", "Mg", "Ca", "Sr", "Ba", "Ra",
+    # Early TMs
+    "Sc", "Y", "Ti", "Zr", "Hf", "V", "Nb", "Ta", "Cr", "Mo", "W",
+    # Late TMs
+    "Mn", "Tc", "Re", "Fe", "Ru", "Os", "Co", "Rh", "Ir", "Ni", "Pd", "Pt", "Cu", "Ag", "Au", "Zn", "Cd", "Hg",
+    # Post-transition metals
+    "Al", "Ga", "In", "Tl", "Sn", "Pb", "Bi", "Po",
+    # Metalloids
+    "B", "Si", "Ge", "As", "Sb", "Te", "At",
+    # Reactive nonmetals
+    "H", "C", "N", "P", "O", "S", "Se", "F", "Cl", "Br", "I",
+    # Noble gases
+    "He", "Ne", "Ar", "Kr", "Xe", "Rn",
+    # Lanthanides
+    "La", "Ce", "Pr", "Nd", "Pm", "Sm", "Eu", "Gd", "Tb", "Dy", "Ho", "Er", "Tm", "Yb", "Lu",
+    # Actinides
+    "Ac", "Th", "Pa", "U", "Np", "Pu", "Am", "Cm", "Bk", "Cf", "Es", "Fm", "Md", "No", "Lr",
+    # Unknown properties
+    "Rf", "Db", "Sg", "Bh", "Hs", "Mt", "Ds", "Rg", "Cn", "Nh", "Fl", "Mc", "Lv", "Ts", "Og"
   ),
   GroupLabel = c(
-    rep("Alkali/Alkaline (Gr 1-2)", 12),
-    rep("Early TMs (Gr 3-6)", 12),
-    rep("Late TMs (Gr 7-10)", 12),
-    rep("Coinage/Zinc (Gr 11-12)", 6),
-    rep("Group 13", 5),
-    rep("Group 14", 5),
-    rep("Group 15", 5),
-    rep("Group 16", 5),
-    rep("Group 17", 4)
+    rep("Alkali metals", 6),
+    rep("Alkaline earth metals", 6),
+    rep("Early TMs", 11),
+    rep("Late TMs", 18),
+    rep("Post-transition metals", 8),
+    rep("Metalloids", 7),
+    rep("Reactive nonmetals", 11),
+    rep("Noble gases", 6),
+    rep("Lanthanides", 15),
+    rep("Actinides", 15),
+    rep("Unknown properties", 15)
   )
 )
 
@@ -737,7 +800,7 @@ if (exists("all_angles_data") && nrow(all_angles_data) > 0) {
   df_angles_sub[, CenterSym := str_extract(CentralAtom, "^[A-Za-z]+")]
   df_angles_sub[, NeighborSym := str_extract(Neighbor1, "^[A-Za-z]+")]
   
-  # Strict filter to keep only S, Se, Te (removes false positives like Sc, Sn)
+  # Strict filter to keep only S, Se, Te
   df_angles_sub <- df_angles_sub[CenterSym %in% target_centers]
   
   # B. Prepare Bonds for Distance merging
@@ -761,7 +824,7 @@ if (exists("all_angles_data") && nrow(all_angles_data) > 0) {
     all.x = TRUE
   )
   
-  # Remove NAs (elements not in our group list, e.g., Lanthanides if not mapped)
+  # Remove NAs (elements not in our group list)
   plot_data <- plot_data[!is.na(GroupLabel)]
   
   # E. Sort Central Atom for Plotting Order
@@ -790,8 +853,12 @@ if (exists("all_angles_data") && nrow(all_angles_data) > 0) {
     theme(legend.position = "bottom") +
     guides(color = guide_legend(override.aes = list(alpha = 1, size = 3)))
   
-  # Use toWebGL for performance with many points
-  toWebGL(ggplotly(p11, tooltip = "text"))
+  # 1. Static
+  print(p11)
+
+  # 2. Interactive (toWebGL helps performance with 10k+ points)
+  toWebGL(ggplotly(p11, tooltip = "text")) %>%
+    layout(legend = list(orientation = "h", x = 0, y = -0.2))
   
 } else {
   cat("No angle data available to plot.\n")
