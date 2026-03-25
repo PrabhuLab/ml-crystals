@@ -38,10 +38,10 @@ if (file.exists(cif_path)) {
 #> Starting analysis of 1 files in 1 batches.
 #> 
 #> --- Processing Batch 1 of 1 (Files 1 to 1) ---
-#> Batch 1 complete. Saved 1 results to '/tmp/RtmpYktJzZ/cif_batches/batch_1.rds'.
+#> Batch 1 complete. Saved 1 results to '/tmp/RtmpwjGTzC/cif_batches/batch_1.rds'.
 #> ----------------------------------
 #> Analysis Complete!
-#> Batch results have been saved in the '/tmp/RtmpYktJzZ/cif_batches/' directory.
+#> Batch results have been saved in the '/tmp/RtmpwjGTzC/cif_batches/' directory.
 #> Found 1 batch files to aggregate.
 #> Aggregation complete. Total rows: 1.
 # }
