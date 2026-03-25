@@ -1127,36 +1127,51 @@ commercial license. Please contact the package maintainer to arrange the
 terms.</p></li>
 </ul>
 <h2 id="installation">Installation</h2>
-<p>Installing <code>crystract</code> involves a few steps, as it is
-currently hosted on GitHub. We use the <code>remotes</code> package to
-facilitate installation directly from the repository.</p>
+<p>You can install <code>crystract</code> either from <strong>CRAN
+(recommended for most users)</strong> or directly from <strong>GitHub
+(for the latest development version)</strong>.</p>
 <h3 id="prerequisites">Prerequisites</h3>
 <ul>
-<li>Install the latest version of <strong><a href="https://cran.r-project.org/">R</a></strong>.</li>
-<li>Install the free <strong><a href="https://posit.co/download/rstudio-desktop/">RStudio Desktop
-IDE</a></strong>.</li>
+<li>Install the latest version of <strong>R</strong> from CRAN</li>
+<li>(Optional but recommended) Install <strong>RStudio Desktop
+IDE</strong></li>
 </ul>
-<h3 id="installation-steps">Installation Steps</h3>
-<p>Open R or RStudio and run the following commands:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="co"># First, ensure you have the remotes package</span></span>
-<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">&quot;remotes&quot;</span>)</span>
-<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a></span>
-<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="co"># Install crystract from the GitHub repository</span></span>
-<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>remotes<span class="sc">::</span><span class="fu">install_github</span>(<span class="st">&quot;PrabhuLab/ml-crystals&quot;</span>, <span class="at">subdir =</span> <span class="st">&quot;packages/crystract&quot;</span>, <span class="at">build_vignettes =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
+<h3 id="option-1-install-from-cran-stable-version">Option 1: Install
+from CRAN (Stable Version)</h3>
+<p>If <code>crystract</code> is available on CRAN, this is the simplest
+and most stable method:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">&quot;crystract&quot;</span>)</span></code></pre></div>
+<h3 id="option-2-install-from-github-latest-development-version">Option
+2: Install from GitHub (Latest Development Version)</h3>
+<p>To get the most recent updates and features:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="co"># Install remotes if not already installed</span></span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">&quot;remotes&quot;</span>)</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="co"># Install crystract from GitHub</span></span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>remotes<span class="sc">::</span><span class="fu">install_github</span>(</span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>  <span class="st">&quot;PrabhuLab/ml-crystals&quot;</span>,</span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>  <span class="at">subdir =</span> <span class="st">&quot;packages/crystract&quot;</span>,</span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>  <span class="at">build_vignettes =</span> <span class="cn">TRUE</span></span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>)</span></code></pre></div>
 <h3 id="verifying-the-installation">Verifying the Installation</h3>
-<p>To make sure the package was installed correctly, load it into your R
-session.</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">library</span>(crystract)</span></code></pre></div>
-<p>If this command runs without any errors, the installation was
-successful.</p>
+<p>After installation, load the package:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">library</span>(crystract)</span></code></pre></div>
+<p>If no errors appear, the installation was successful.</p>
+<h3 id="notes">Notes</h3>
+<ul>
+<li>Use the <strong>CRAN version</strong> for stability and
+reproducibility.</li>
+<li>Use the <strong>GitHub version</strong> if you need the latest
+features or bug fixes that haven’t been released yet.</li>
+</ul>
 <h2 id="learning-more">Learning More</h2>
 <p>For a detailed, step-by-step guide explaining each function, the
 crystallographic principles, and the formulas used for calculations,
 please see the package vignette.</p>
 <p>You can access it with the following command after you have
 successfully installed the package:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="co"># This command opens the detailed package guide</span></span>
-<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="fu">vignette</span>(<span class="st">&quot;crystract&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="co"># This command opens the detailed package guide</span></span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="fu">vignette</span>(<span class="st">&quot;crystract&quot;</span>)</span></code></pre></div>
 <h2 id="community-guidelines">Community Guidelines</h2>
 <p>We welcome and appreciate all forms of community engagement. To
 ensure a smooth and productive collaboration, we have established
