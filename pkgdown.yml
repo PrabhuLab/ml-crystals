@@ -3,7 +3,7 @@ pkgdown: 2.2.0
 pkgdown_sha: ~
 articles:
   crystract: crystract.html
-last_built: 2026-03-25T17:44Z
+last_built: 2026-03-25T19:19Z
 urls:
   reference: https://prabhulab.github.io/ml-crystals/reference
   article: https://prabhulab.github.io/ml-crystals/articles

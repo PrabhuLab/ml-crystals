@@ -236,39 +236,55 @@ variety of use cases:
 
 ## Installation
 
-Installing `crystract` involves a few steps, as it is currently hosted
-on GitHub. We use the `remotes` package to facilitate installation
-directly from the repository.
+You can install `crystract` either from **CRAN (recommended for most
+users)** or directly from **GitHub (for the latest development
+version)**.
 
 ### Prerequisites
 
-- Install the latest version of **[R](https://cran.r-project.org/)**.
-- Install the free **[RStudio Desktop
-  IDE](https://posit.co/download/rstudio-desktop/)**.
+- Install the latest version of **R** from CRAN
+- (Optional but recommended) Install **RStudio Desktop IDE**
 
-### Installation Steps
+### Option 1: Install from CRAN (Stable Version)
 
-Open R or RStudio and run the following commands:
+If `crystract` is available on CRAN, this is the simplest and most
+stable method:
 
 ``` r
-# First, ensure you have the remotes package
+install.packages("crystract")
+```
+
+### Option 2: Install from GitHub (Latest Development Version)
+
+To get the most recent updates and features:
+
+``` r
+# Install remotes if not already installed
 install.packages("remotes")
 
-# Install crystract from the GitHub repository
-remotes::install_github("PrabhuLab/ml-crystals", subdir = "packages/crystract", build_vignettes = TRUE)
+# Install crystract from GitHub
+remotes::install_github(
+  "PrabhuLab/ml-crystals",
+  subdir = "packages/crystract",
+  build_vignettes = TRUE
+)
 ```
 
 ### Verifying the Installation
 
-To make sure the package was installed correctly, load it into your R
-session.
+After installation, load the package:
 
 ``` r
 library(crystract)
 ```
 
-If this command runs without any errors, the installation was
-successful.
+If no errors appear, the installation was successful.
+
+### Notes
+
+- Use the **CRAN version** for stability and reproducibility.
+- Use the **GitHub version** if you need the latest features or bug
+  fixes that haven’t been released yet.
 
 ## Learning More
 
