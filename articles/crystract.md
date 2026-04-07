@@ -652,18 +652,18 @@ print(atomic_coordinates[, .(Label, WyckoffSymbol, WyckoffMultiplicity)])
 #> 2:    Ge1             d                   4
 cat("\n")
 
-# 2. Filter bonds where the central atom is on the "4a" Wyckoff site.
-bonds_from_4a_site <- filter_by_wyckoff_symbol(
+# 2. Filter bonds where the central atom is on the "4d" Wyckoff site.
+bonds_from_4d_site <- filter_by_wyckoff_symbol(
   data_table = bonded_pairs_with_error,
   atomic_coordinates = atomic_coordinates,
   atom_col = "Atom1",
-  wyckoff_symbols = "4a"  # Note: change to "a" if your package only expects the letter
+  wyckoff_symbols = "4d"
 )
 
 print(paste("Number of rows in original bond table:", nrow(bonded_pairs_with_error)))
 #> [1] "Number of rows in original bond table: 9"
-print(paste("Number of rows after filtering for site '4a':", nrow(bonds_from_4a_site)))
-#> [1] "Number of rows after filtering for site '4a': 0"
+print(paste("Number of rows after filtering for site '4d':", nrow(bonds_from_4d_site)))
+#> [1] "Number of rows after filtering for site '4d': 9"
 ```
 
 ### 2.3 Filtering Ghost Distances Using Atomic Radii
@@ -817,8 +817,8 @@ skewing the result.
 # created in section 1.2.6.
 
 # Then, define the Wyckoff sites belonging to the network. 
-# For Okruginite, the framework atoms are on the "4a" sites.
-network_wyckoff_sites <- "4d" # Note: change to "a" if your package only expects the letter
+# For this file, the framework atoms are on the "4d" sites.
+network_wyckoff_sites <- "4d"
 
 # Apply the function to the table of identified bonds.
 weighted_avg_bond_dist <- calculate_weighted_average_network_distance(
@@ -827,8 +827,8 @@ weighted_avg_bond_dist <- calculate_weighted_average_network_distance(
     wyckoff_symbols = network_wyckoff_sites
 )
 
-cat("Weighted average network bond distance for the '4a' sites:", weighted_avg_bond_dist, "Å\n")
-#> Weighted average network bond distance for the '4a' sites: 2.939673 Å
+cat("Weighted average network bond distance for the '4d' sites:", weighted_avg_bond_dist, "Å\n")
+#> Weighted average network bond distance for the '4d' sites: 2.939673 Å
 ```
 
 ## 3. End-to-End Example: High-Throughput Batch Processing & CSV Extraction

@@ -758,18 +758,18 @@ purpose.</p>
 <span><span class="co">#&gt; 2:    Ge1             d                   4</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"\n"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># 2. Filter bonds where the central atom is on the "4a" Wyckoff site.</span></span>
-<span><span class="va">bonds_from_4a_site</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/filter_by_wyckoff_symbol.html">filter_by_wyckoff_symbol</a></span><span class="op">(</span></span>
+<span><span class="co"># 2. Filter bonds where the central atom is on the "4d" Wyckoff site.</span></span>
+<span><span class="va">bonds_from_4d_site</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/filter_by_wyckoff_symbol.html">filter_by_wyckoff_symbol</a></span><span class="op">(</span></span>
 <span>  data_table <span class="op">=</span> <span class="va">bonded_pairs_with_error</span>,</span>
 <span>  atomic_coordinates <span class="op">=</span> <span class="va">atomic_coordinates</span>,</span>
 <span>  atom_col <span class="op">=</span> <span class="st">"Atom1"</span>,</span>
-<span>  wyckoff_symbols <span class="op">=</span> <span class="st">"4a"</span>  <span class="co"># Note: change to "a" if your package only expects the letter</span></span>
+<span>  wyckoff_symbols <span class="op">=</span> <span class="st">"4d"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"Number of rows in original bond table:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">bonded_pairs_with_error</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "Number of rows in original bond table: 9"</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"Number of rows after filtering for site '4a':"</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">bonds_from_4a_site</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "Number of rows after filtering for site '4a': 0"</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"Number of rows after filtering for site '4d':"</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">bonds_from_4d_site</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] "Number of rows after filtering for site '4d': 9"</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="filtering-ghost-distances-using-atomic-radii">2.3 Filtering Ghost Distances Using Atomic Radii<a class="anchor" aria-label="anchor" href="#filtering-ghost-distances-using-atomic-radii"></a>
@@ -922,8 +922,8 @@ artifacts from skewing the result.</p>
 <span><span class="co"># created in section 1.2.6.</span></span>
 <span></span>
 <span><span class="co"># Then, define the Wyckoff sites belonging to the network. </span></span>
-<span><span class="co"># For Okruginite, the framework atoms are on the "4a" sites.</span></span>
-<span><span class="va">network_wyckoff_sites</span> <span class="op">&lt;-</span> <span class="st">"4d"</span> <span class="co"># Note: change to "a" if your package only expects the letter</span></span>
+<span><span class="co"># For this file, the framework atoms are on the "4d" sites.</span></span>
+<span><span class="va">network_wyckoff_sites</span> <span class="op">&lt;-</span> <span class="st">"4d"</span></span>
 <span></span>
 <span><span class="co"># Apply the function to the table of identified bonds.</span></span>
 <span><span class="va">weighted_avg_bond_dist</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calculate_weighted_average_network_distance.html">calculate_weighted_average_network_distance</a></span><span class="op">(</span></span>
@@ -932,8 +932,8 @@ artifacts from skewing the result.</p>
 <span>    wyckoff_symbols <span class="op">=</span> <span class="va">network_wyckoff_sites</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Weighted average network bond distance for the '4a' sites:"</span>, <span class="va">weighted_avg_bond_dist</span>, <span class="st">"Å\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Weighted average network bond distance for the '4a' sites: 2.939673 Å</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Weighted average network bond distance for the '4d' sites:"</span>, <span class="va">weighted_avg_bond_dist</span>, <span class="st">"Å\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Weighted average network bond distance for the '4d' sites: 2.939673 Å</span></span></code></pre></div>
 </div>
 </div>
 </div>
