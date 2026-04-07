@@ -298,7 +298,7 @@ Now we use the asymmetric atoms and symmetry operations to
 computationally build the full crystal structure. This is a two-step
 process.
 
-**Formula Context: Symmetry Operations**
+**Formula: Symmetry Operations**
 
 A symmetry operation is an affine transformation that maps an initial
 fractional coordinate $(x,y,z)$ to a new coordinate
@@ -329,7 +329,7 @@ complete set of atoms within the primary unit cell. Note that it
 requires the unit cell metrics to resolve distance tolerances across
 boundaries.
 
-**Formula Context: Supercell Expansion**
+**Formula: Supercell Expansion**
 
 To find all nearest neighbors of an atom, we must also consider atoms in
 adjacent unit cells. The `expand_transformed_coords` function generates
@@ -372,7 +372,7 @@ print(head(expanded_coords))
 
 #### 1.2.5 Calculating Interatomic Distances
 
-**Formula Context: Interatomic Distance in a Triclinic System**
+**Formula: Interatomic Distance in a Triclinic System**
 
 Because unit cell axes are not always orthogonal, the simple Pythagorean
 theorem is insufficient. The distance $d$ between two atoms at
@@ -408,7 +408,7 @@ print(head(distances[order(Distance)]))
 
 #### 1.2.6 Identifying Bonds and Neighbors
 
-**Formula Context: Bonding and Coordination Number**
+**Formula: Bonding and Coordination Number**
 
 Identifying which atoms are “bonded” is key to determining the
 **coordination number (CN)**. `crystract` implements several robust,
@@ -469,7 +469,7 @@ print(neighbor_counts)
 
 #### 1.2.7 Calculating Bond Angles
 
-**Formula Context: Bond Angle Calculation**
+**Formula: Bond Angle Calculation**
 
 To calculate a bond angle A-B-C (with B at the vertex), the fractional
 coordinates must first be converted to an orthogonal Cartesian system.
@@ -529,7 +529,31 @@ the estimated standard deviations of the unit cell parameters and
 fractional atomic coordinates) from cell parameters and atomic
 coordinates to the calculated distances and angles.
 
-**Formula Context: Error Propagation**
+Errors in .cif files can be found in the respective tables for unit cell
+parameters and atomic coordinates in parenthesis following the
+positional values. Below, the errors for the atomic coordinates of the
+test file are shown:
+
+``` md
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_adp_type
+_atom_site_U_iso_or_equiv
+_atom_site_site_symmetry_multiplicity
+_atom_site_occupancy
+_atom_site_calc_flag
+_atom_site_refinement_flags
+_atom_site_disorder_assembly
+_atom_site_disorder_group
+Yb1 Yb 0.17675(19) 0.25 0.6121(2) Uani 0.0215(4) 4 1 d . . .
+Ge1 Ge 0.0355(4) 0.25 0.1268(5) Uani 0.0238(10) 4 1 d . . .
+```
+
+**Formula: Error Propagation**
 
 The uncertainty, $\sigma_{f}$, in a calculated value $f$ that depends on
 several uncorrelated variables $p_{i}$ (each with uncertainty
@@ -758,7 +782,7 @@ atomic network (defined by a set of Wyckoff sites).
 This calculation should always be performed on a table of identified
 **bonds** to ensure the result is physically meaningful.
 
-#### Formula Context: Weighted Average Network Distance
+#### Formula: Weighted Average Network Distance
 
 To obtain a single, representative bond length for an atomic network,
 the function calculates a true weighted average over all individual

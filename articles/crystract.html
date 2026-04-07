@@ -374,7 +374,7 @@ operations</strong> to this unique set.</p>
 <p>Now we use the asymmetric atoms and symmetry operations to
 computationally build the full crystal structure. This is a two-step
 process.</p>
-<p><strong>Formula Context: Symmetry Operations</strong></p>
+<p><strong>Formula: Symmetry Operations</strong></p>
 <p>A symmetry operation is an affine transformation that maps an initial
 fractional coordinate
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">(</mo><mi>x</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>z</mi><mo stretchy="true" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(x, y, z)</annotation></semantics></math>
@@ -396,7 +396,7 @@ the crystal’s symmetry operations to each atom in the asymmetric unit,
 generating the complete set of atoms within the primary unit cell. Note
 that it requires the unit cell metrics to resolve distance tolerances
 across boundaries.</p>
-<p><strong>Formula Context: Supercell Expansion</strong></p>
+<p><strong>Formula: Supercell Expansion</strong></p>
 <p>To find all nearest neighbors of an atom, we must also consider atoms
 in adjacent unit cells. The <code>expand_transformed_coords</code>
 function generates a <strong>supercell</strong> (in this case, 3x3x3) by
@@ -442,7 +442,7 @@ generates new coordinates:</p>
 <div class="section level4">
 <h4 id="calculating-interatomic-distances">1.2.5 Calculating Interatomic Distances<a class="anchor" aria-label="anchor" href="#calculating-interatomic-distances"></a>
 </h4>
-<p><strong>Formula Context: Interatomic Distance in a Triclinic
+<p><strong>Formula: Interatomic Distance in a Triclinic
 System</strong></p>
 <p>Because unit cell axes are not always orthogonal, the simple
 Pythagorean theorem is insufficient. The distance
@@ -482,7 +482,7 @@ the generated supercell.</p>
 <div class="section level4">
 <h4 id="identifying-bonds-and-neighbors">1.2.6 Identifying Bonds and Neighbors<a class="anchor" aria-label="anchor" href="#identifying-bonds-and-neighbors"></a>
 </h4>
-<p><strong>Formula Context: Bonding and Coordination Number</strong></p>
+<p><strong>Formula: Bonding and Coordination Number</strong></p>
 <p>Identifying which atoms are “bonded” is key to determining the
 <strong>coordination number (CN)</strong>. <code>crystract</code>
 implements several robust, geometric, and mathematical approaches:</p>
@@ -556,7 +556,7 @@ electronegativity weights.</li>
 <div class="section level4">
 <h4 id="calculating-bond-angles">1.2.7 Calculating Bond Angles<a class="anchor" aria-label="anchor" href="#calculating-bond-angles"></a>
 </h4>
-<p><strong>Formula Context: Bond Angle Calculation</strong></p>
+<p><strong>Formula: Bond Angle Calculation</strong></p>
 <p>To calculate a bond angle A-B-C (with B at the vertex), the
 fractional coordinates must first be converted to an orthogonal
 Cartesian system.</p>
@@ -623,7 +623,27 @@ possible bond angles around each central atom. We’ll pass it our
 uncertainties (i.e., the estimated standard deviations of the unit cell
 parameters and fractional atomic coordinates) from cell parameters and
 atomic coordinates to the calculated distances and angles.</p>
-<p><strong>Formula Context: Error Propagation</strong></p>
+<p>Errors in .cif files can be found in the respective tables for unit
+cell parameters and atomic coordinates in parenthesis following the
+positional values. Below, the errors for the atomic coordinates of the
+test file are shown:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode md"><code class="sourceCode markdown"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a>loop_</span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>_atom_site_label</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>_atom_site_type_symbol</span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a>_atom_site_fract_x</span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a>_atom_site_fract_y</span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a>_atom_site_fract_z</span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a>_atom_site_adp_type</span>
+<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a>_atom_site_U_iso_or_equiv</span>
+<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a>_atom_site_site_symmetry_multiplicity</span>
+<span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a>_atom_site_occupancy</span>
+<span id="cb12-11"><a href="#cb12-11" tabindex="-1"></a>_atom_site_calc_flag</span>
+<span id="cb12-12"><a href="#cb12-12" tabindex="-1"></a>_atom_site_refinement_flags</span>
+<span id="cb12-13"><a href="#cb12-13" tabindex="-1"></a>_atom_site_disorder_assembly</span>
+<span id="cb12-14"><a href="#cb12-14" tabindex="-1"></a>_atom_site_disorder_group</span>
+<span id="cb12-15"><a href="#cb12-15" tabindex="-1"></a>Yb1 Yb 0.17675(19) 0.25 0.6121(2) Uani 0.0215(4) 4 1 d . . .</span>
+<span id="cb12-16"><a href="#cb12-16" tabindex="-1"></a>Ge1 Ge 0.0355(4) 0.25 0.1268(5) Uani 0.0238(10) 4 1 d . . .</span></code></pre></div>
+<p><strong>Formula: Error Propagation</strong></p>
 <p>The uncertainty,
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>σ</mi><mi>f</mi></msub><annotation encoding="application/x-tex">\sigma_f</annotation></semantics></math>,
 in a calculated value
@@ -664,7 +684,7 @@ etc., the partial derivatives are, for example:</p>
 is a more complex, multi-step process involving propagating initial
 errors first to Cartesian coordinates, and then from those Cartesian
 uncertainties to the final angle via the chain rule.</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Propagate errors for interatomic distances</span></span>
 <span><span class="va">bonded_pairs_with_error</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/propagate_distance_error.html">propagate_distance_error</a></span><span class="op">(</span></span>
 <span>  <span class="va">bonds_min</span>,</span>
@@ -728,7 +748,7 @@ crystallographic properties.</p>
 <p>The <code><a href="../reference/filter_atoms_by_symbol.html">filter_atoms_by_symbol()</a></code> function provides an
 interactive way to filter results (like bond or angle tables) to focus
 on the coordination environment around a specific type of element.</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># In an interactive R session, you would run this:</span></span>
 <span><span class="va">filtered_bonds</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/filter_atoms_by_symbol.html">filter_atoms_by_symbol</a></span><span class="op">(</span></span>
 <span>  data_table <span class="op">=</span> <span class="va">bonded_pairs_with_error</span>,</span>
@@ -746,7 +766,7 @@ based on their specific site symmetry, described by their
 <strong>Wyckoff position</strong> (e.g., “2a”, “6c”). The
 <code><a href="../reference/filter_by_wyckoff_symbol.html">filter_by_wyckoff_symbol()</a></code> function is designed for this
 purpose.</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># 1. Let's look at the Wyckoff information already extracted from the CIF.</span></span>
 <span><span class="co"># All atoms in this structure are on the "a" site with a multiplicity of 4.</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="st">"Atomic coordinates showing Wyckoff information:"</span><span class="op">)</span></span>
@@ -786,7 +806,7 @@ calculated distance falling outside this physical range (defined by a
 <p><em>Note: Since this function evaluates the entire supercell distance
 matrix, pairs of atoms that are simply far away will be logged as “TOO
 LONG”.</em></p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># A distance d is kept if: (r1+r2)*(1-margin) &lt;= d &lt;= (r1+r2)*(1+margin)</span></span>
 <span><span class="va">filtered_result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/filter_ghost_distances.html">filter_ghost_distances</a></span><span class="op">(</span></span>
 <span>    distances <span class="op">=</span> <span class="va">distances</span>,</span>
@@ -830,7 +850,7 @@ LONG”.</em></p>
 <p>To focus an analysis on a specific part of a structure (e.g., a host
 framework without guest atoms), <code><a href="../reference/filter_by_elements.html">filter_by_elements()</a></code> allows
 for the complete removal of bonds involving certain elements.</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Let's filter our bond table to exclude any bonds involving Tin ("Sn").</span></span>
 <span><span class="co"># The resulting table will only contain Cu-Se bonds.</span></span>
 <span><span class="va">bonds_without_sn</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/filter_by_elements.html">filter_by_elements</a></span><span class="op">(</span></span>
@@ -856,7 +876,7 @@ specified atomic network (defined by a set of Wyckoff sites).</p>
 <strong>bonds</strong> to ensure the result is physically
 meaningful.</p>
 <div class="section level4">
-<h4 id="formula-context-weighted-average-network-distance">Formula Context: Weighted Average Network Distance<a class="anchor" aria-label="anchor" href="#formula-context-weighted-average-network-distance"></a>
+<h4 id="formula-weighted-average-network-distance">Formula: Weighted Average Network Distance<a class="anchor" aria-label="anchor" href="#formula-weighted-average-network-distance"></a>
 </h4>
 <p>To obtain a single, representative bond length for an atomic network,
 the function calculates a true weighted average over all individual
@@ -916,7 +936,7 @@ bonds to
 <p>This “Ghosts -&gt; Bonds -&gt; Average” sequence ensures the final
 metric is calculated only over actual chemical bonds, preventing
 artifacts from skewing the result.</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Calculate the weighted average BOND distance for the network.</span></span>
 <span><span class="co"># First, identify the bonds in the structure. We use the `bonds_min` table</span></span>
 <span><span class="co"># created in section 1.2.6.</span></span>
@@ -950,7 +970,7 @@ override the internal atomic radii tables with a custom dictionary, run
 an exhaustive parallel analysis using <strong>all five bonding
 algorithms</strong>, and then unnest the resulting tables to save the
 extracted Coordination Numbers (CNs) out to CSV files.</p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># --- 1. Define and set the custom radii dictionary ---</span></span>
 <span><span class="va">radii_dict</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
 <span>  Ac<span class="op">=</span><span class="fl">2.15</span>, Ag<span class="op">=</span><span class="fl">1.45</span>, Al<span class="op">=</span><span class="fl">1.21</span>, Am<span class="op">=</span><span class="fl">1.8</span>, Ar<span class="op">=</span><span class="fl">1.06</span>, As<span class="op">=</span><span class="fl">1.19</span>, At<span class="op">=</span><span class="fl">1.5</span>, Au<span class="op">=</span><span class="fl">1.36</span>, B<span class="op">=</span><span class="fl">0.84</span>, </span>
