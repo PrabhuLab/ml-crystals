@@ -671,7 +671,7 @@ operations</strong> to this unique set.</p>
 <p>Now we use the asymmetric atoms and symmetry operations to
 computationally build the full crystal structure. This is a two-step
 process.</p>
-<p><strong>Formula Context: Symmetry Operations</strong></p>
+<p><strong>Formula: Symmetry Operations</strong></p>
 <p>A symmetry operation is an affine transformation that maps an initial
 fractional coordinate <span class="math inline">\((x, y, z)\)</span> to
 a new coordinate <span class="math inline">\((x&#39;, y&#39;,
@@ -690,7 +690,7 @@ the crystal’s symmetry operations to each atom in the asymmetric unit,
 generating the complete set of atoms within the primary unit cell. Note
 that it requires the unit cell metrics to resolve distance tolerances
 across boundaries.</p>
-<p><strong>Formula Context: Supercell Expansion</strong></p>
+<p><strong>Formula: Supercell Expansion</strong></p>
 <p>To find all nearest neighbors of an atom, we must also consider atoms
 in adjacent unit cells. The <code>expand_transformed_coords</code>
 function generates a <strong>supercell</strong> (in this case, 3x3x3) by
@@ -730,7 +730,7 @@ generates new coordinates:</p>
 </div>
 <div id="calculating-interatomic-distances" class="section level4">
 <h4>1.2.5 Calculating Interatomic Distances</h4>
-<p><strong>Formula Context: Interatomic Distance in a Triclinic
+<p><strong>Formula: Interatomic Distance in a Triclinic
 System</strong></p>
 <p>Because unit cell axes are not always orthogonal, the simple
 Pythagorean theorem is insufficient. The distance <span class="math inline">\(d\)</span> between two atoms at fractional
@@ -767,7 +767,7 @@ the generated supercell.</p>
 </div>
 <div id="identifying-bonds-and-neighbors" class="section level4">
 <h4>1.2.6 Identifying Bonds and Neighbors</h4>
-<p><strong>Formula Context: Bonding and Coordination Number</strong></p>
+<p><strong>Formula: Bonding and Coordination Number</strong></p>
 <p>Identifying which atoms are “bonded” is key to determining the
 <strong>coordination number (CN)</strong>. <code>crystract</code>
 implements several robust, geometric, and mathematical approaches:</p>
@@ -828,7 +828,7 @@ electronegativity weights.</li>
 </div>
 <div id="calculating-bond-angles" class="section level4">
 <h4>1.2.7 Calculating Bond Angles</h4>
-<p><strong>Formula Context: Bond Angle Calculation</strong></p>
+<p><strong>Formula: Bond Angle Calculation</strong></p>
 <p>To calculate a bond angle A-B-C (with B at the vertex), the
 fractional coordinates must first be converted to an orthogonal
 Cartesian system.</p>
@@ -886,7 +886,27 @@ possible bond angles around each central atom. We’ll pass it our
 uncertainties (i.e., the estimated standard deviations of the unit cell
 parameters and fractional atomic coordinates) from cell parameters and
 atomic coordinates to the calculated distances and angles.</p>
-<p><strong>Formula Context: Error Propagation</strong></p>
+<p>Errors in .cif files can be found in the respective tables for unit
+cell parameters and atomic coordinates in parenthesis following the
+positional values. Below, the errors for the atomic coordinates of the
+test file are shown:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode md"><code class="sourceCode markdown"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a>loop_</span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>_atom_site_label</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>_atom_site_type_symbol</span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a>_atom_site_fract_x</span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a>_atom_site_fract_y</span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a>_atom_site_fract_z</span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a>_atom_site_adp_type</span>
+<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a>_atom_site_U_iso_or_equiv</span>
+<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a>_atom_site_site_symmetry_multiplicity</span>
+<span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a>_atom_site_occupancy</span>
+<span id="cb12-11"><a href="#cb12-11" tabindex="-1"></a>_atom_site_calc_flag</span>
+<span id="cb12-12"><a href="#cb12-12" tabindex="-1"></a>_atom_site_refinement_flags</span>
+<span id="cb12-13"><a href="#cb12-13" tabindex="-1"></a>_atom_site_disorder_assembly</span>
+<span id="cb12-14"><a href="#cb12-14" tabindex="-1"></a>_atom_site_disorder_group</span>
+<span id="cb12-15"><a href="#cb12-15" tabindex="-1"></a>Yb1 Yb 0.17675(19) 0.25 0.6121(2) Uani 0.0215(4) 4 1 d . . .</span>
+<span id="cb12-16"><a href="#cb12-16" tabindex="-1"></a>Ge1 Ge 0.0355(4) 0.25 0.1268(5) Uani 0.0238(10) 4 1 d . . .</span></code></pre></div>
+<p><strong>Formula: Error Propagation</strong></p>
 <p>The uncertainty, <span class="math inline">\(\sigma_f\)</span>, in a
 calculated value <span class="math inline">\(f\)</span> that depends on
 several uncorrelated variables <span class="math inline">\(p_i\)</span>
@@ -917,52 +937,52 @@ z_{f2}\}\)</span>. Letting <span class="math inline">\(\Delta x = x_{f1}
 process involving propagating initial errors first to Cartesian
 coordinates, and then from those Cartesian uncertainties to the final
 angle via the chain rule.</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="co"># Propagate errors for interatomic distances</span></span>
-<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>bonded_pairs_with_error <span class="ot">&lt;-</span> <span class="fu">propagate_distance_error</span>(</span>
-<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>  bonds_min,</span>
-<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a>  atomic_coordinates,</span>
-<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a>  unit_cell_metrics</span>
-<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a>)</span>
-<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a><span class="fu">print</span>(<span class="st">&quot;Bonded Pairs with Distance Error (first 6):&quot;</span>)</span>
-<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Bonded Pairs with Distance Error (first 6):&quot;</span></span>
-<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">head</span>(bonded_pairs_with_error))</span>
-<span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a><span class="co">#&gt; Key: &lt;Atom1, Atom2, Distance&gt;</span></span>
-<span id="cb12-11"><a href="#cb12-11" tabindex="-1"></a><span class="co">#&gt;     Atom1          Atom2 Distance   DeltaX DeltaY  DeltaZ    Weight</span></span>
-<span id="cb12-12"><a href="#cb12-12" tabindex="-1"></a><span class="co">#&gt;    &lt;char&gt;         &lt;char&gt;    &lt;num&gt;    &lt;num&gt;  &lt;num&gt;   &lt;num&gt;     &lt;num&gt;</span></span>
-<span id="cb12-13"><a href="#cb12-13" tabindex="-1"></a><span class="co">#&gt; 1:    Ge1 Ge1_3_-1_-1_-1 2.516281  0.07100    0.5  0.2536 1.0000000</span></span>
-<span id="cb12-14"><a href="#cb12-14" tabindex="-1"></a><span class="co">#&gt; 2:    Ge1  Ge1_3_-1_0_-1 2.516281  0.07100   -0.5  0.2536 1.0000000</span></span>
-<span id="cb12-15"><a href="#cb12-15" tabindex="-1"></a><span class="co">#&gt; 3:    Yb1    Ge1_1_0_0_0 3.060807  0.14125    0.0  0.4853 0.9780708</span></span>
-<span id="cb12-16"><a href="#cb12-16" tabindex="-1"></a><span class="co">#&gt; 4:    Yb1    Ge1_1_0_0_1 3.222200  0.14125    0.0 -0.5147 0.9290813</span></span>
-<span id="cb12-17"><a href="#cb12-17" tabindex="-1"></a><span class="co">#&gt; 5:    Yb1   Ge1_2_0_-1_0 2.995761 -0.28775    0.5 -0.0147 0.9993073</span></span>
-<span id="cb12-18"><a href="#cb12-18" tabindex="-1"></a><span class="co">#&gt; 6:    Yb1    Ge1_2_0_0_0 2.995761 -0.28775   -0.5 -0.0147 0.9993073</span></span>
-<span id="cb12-19"><a href="#cb12-19" tabindex="-1"></a><span class="co">#&gt;    DistanceError</span></span>
-<span id="cb12-20"><a href="#cb12-20" tabindex="-1"></a><span class="co">#&gt;            &lt;num&gt;</span></span>
-<span id="cb12-21"><a href="#cb12-21" tabindex="-1"></a><span class="co">#&gt; 1:   0.002684669</span></span>
-<span id="cb12-22"><a href="#cb12-22" tabindex="-1"></a><span class="co">#&gt; 2:   0.002684669</span></span>
-<span id="cb12-23"><a href="#cb12-23" tabindex="-1"></a><span class="co">#&gt; 3:   0.003281605</span></span>
-<span id="cb12-24"><a href="#cb12-24" tabindex="-1"></a><span class="co">#&gt; 4:   0.003286949</span></span>
-<span id="cb12-25"><a href="#cb12-25" tabindex="-1"></a><span class="co">#&gt; 5:   0.002704675</span></span>
-<span id="cb12-26"><a href="#cb12-26" tabindex="-1"></a><span class="co">#&gt; 6:   0.002704675</span></span>
-<span id="cb12-27"><a href="#cb12-27" tabindex="-1"></a></span>
-<span id="cb12-28"><a href="#cb12-28" tabindex="-1"></a><span class="co"># Propagate errors for bond angles</span></span>
-<span id="cb12-29"><a href="#cb12-29" tabindex="-1"></a>bond_angles_with_error <span class="ot">&lt;-</span> <span class="fu">propagate_angle_error</span>(</span>
-<span id="cb12-30"><a href="#cb12-30" tabindex="-1"></a>  bond_angles,</span>
-<span id="cb12-31"><a href="#cb12-31" tabindex="-1"></a>  atomic_coordinates,</span>
-<span id="cb12-32"><a href="#cb12-32" tabindex="-1"></a>  expanded_coords,</span>
-<span id="cb12-33"><a href="#cb12-33" tabindex="-1"></a>  unit_cell_metrics</span>
-<span id="cb12-34"><a href="#cb12-34" tabindex="-1"></a>)</span>
-<span id="cb12-35"><a href="#cb12-35" tabindex="-1"></a><span class="fu">print</span>(<span class="st">&quot;Bond Angles with Angle Error (first 6):&quot;</span>)</span>
-<span id="cb12-36"><a href="#cb12-36" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Bond Angles with Angle Error (first 6):&quot;</span></span>
-<span id="cb12-37"><a href="#cb12-37" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">head</span>(bond_angles_with_error))</span>
-<span id="cb12-38"><a href="#cb12-38" tabindex="-1"></a><span class="co">#&gt; Key: &lt;CentralAtom, Neighbor1, Neighbor2&gt;</span></span>
-<span id="cb12-39"><a href="#cb12-39" tabindex="-1"></a><span class="co">#&gt;    CentralAtom      Neighbor1     Neighbor2    Angle AngleError</span></span>
-<span id="cb12-40"><a href="#cb12-40" tabindex="-1"></a><span class="co">#&gt;         &lt;char&gt;         &lt;char&gt;        &lt;char&gt;    &lt;num&gt;      &lt;num&gt;</span></span>
-<span id="cb12-41"><a href="#cb12-41" tabindex="-1"></a><span class="co">#&gt; 1:         Ge1 Ge1_3_-1_-1_-1 Ge1_3_-1_0_-1 101.5332 0.12841756</span></span>
-<span id="cb12-42"><a href="#cb12-42" tabindex="-1"></a><span class="co">#&gt; 2:         Yb1    Ge1_1_0_0_0   Ge1_1_0_0_1 138.3540 0.09644671</span></span>
-<span id="cb12-43"><a href="#cb12-43" tabindex="-1"></a><span class="co">#&gt; 3:         Yb1    Ge1_1_0_0_0  Ge1_2_0_-1_0 107.6689 0.07978724</span></span>
-<span id="cb12-44"><a href="#cb12-44" tabindex="-1"></a><span class="co">#&gt; 4:         Yb1    Ge1_1_0_0_0   Ge1_2_0_0_0 107.6689 0.07978724</span></span>
-<span id="cb12-45"><a href="#cb12-45" tabindex="-1"></a><span class="co">#&gt; 5:         Yb1    Ge1_1_0_0_0 Ge1_3_-1_-1_0 105.8268 0.08131349</span></span>
-<span id="cb12-46"><a href="#cb12-46" tabindex="-1"></a><span class="co">#&gt; 6:         Yb1    Ge1_1_0_0_0  Ge1_3_-1_0_0 105.8268 0.08131349</span></span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="co"># Propagate errors for interatomic distances</span></span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>bonded_pairs_with_error <span class="ot">&lt;-</span> <span class="fu">propagate_distance_error</span>(</span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a>  bonds_min,</span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a>  atomic_coordinates,</span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a>  unit_cell_metrics</span>
+<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a>)</span>
+<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a><span class="fu">print</span>(<span class="st">&quot;Bonded Pairs with Distance Error (first 6):&quot;</span>)</span>
+<span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Bonded Pairs with Distance Error (first 6):&quot;</span></span>
+<span id="cb13-9"><a href="#cb13-9" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">head</span>(bonded_pairs_with_error))</span>
+<span id="cb13-10"><a href="#cb13-10" tabindex="-1"></a><span class="co">#&gt; Key: &lt;Atom1, Atom2, Distance&gt;</span></span>
+<span id="cb13-11"><a href="#cb13-11" tabindex="-1"></a><span class="co">#&gt;     Atom1          Atom2 Distance   DeltaX DeltaY  DeltaZ    Weight</span></span>
+<span id="cb13-12"><a href="#cb13-12" tabindex="-1"></a><span class="co">#&gt;    &lt;char&gt;         &lt;char&gt;    &lt;num&gt;    &lt;num&gt;  &lt;num&gt;   &lt;num&gt;     &lt;num&gt;</span></span>
+<span id="cb13-13"><a href="#cb13-13" tabindex="-1"></a><span class="co">#&gt; 1:    Ge1 Ge1_3_-1_-1_-1 2.516281  0.07100    0.5  0.2536 1.0000000</span></span>
+<span id="cb13-14"><a href="#cb13-14" tabindex="-1"></a><span class="co">#&gt; 2:    Ge1  Ge1_3_-1_0_-1 2.516281  0.07100   -0.5  0.2536 1.0000000</span></span>
+<span id="cb13-15"><a href="#cb13-15" tabindex="-1"></a><span class="co">#&gt; 3:    Yb1    Ge1_1_0_0_0 3.060807  0.14125    0.0  0.4853 0.9780708</span></span>
+<span id="cb13-16"><a href="#cb13-16" tabindex="-1"></a><span class="co">#&gt; 4:    Yb1    Ge1_1_0_0_1 3.222200  0.14125    0.0 -0.5147 0.9290813</span></span>
+<span id="cb13-17"><a href="#cb13-17" tabindex="-1"></a><span class="co">#&gt; 5:    Yb1   Ge1_2_0_-1_0 2.995761 -0.28775    0.5 -0.0147 0.9993073</span></span>
+<span id="cb13-18"><a href="#cb13-18" tabindex="-1"></a><span class="co">#&gt; 6:    Yb1    Ge1_2_0_0_0 2.995761 -0.28775   -0.5 -0.0147 0.9993073</span></span>
+<span id="cb13-19"><a href="#cb13-19" tabindex="-1"></a><span class="co">#&gt;    DistanceError</span></span>
+<span id="cb13-20"><a href="#cb13-20" tabindex="-1"></a><span class="co">#&gt;            &lt;num&gt;</span></span>
+<span id="cb13-21"><a href="#cb13-21" tabindex="-1"></a><span class="co">#&gt; 1:   0.002684669</span></span>
+<span id="cb13-22"><a href="#cb13-22" tabindex="-1"></a><span class="co">#&gt; 2:   0.002684669</span></span>
+<span id="cb13-23"><a href="#cb13-23" tabindex="-1"></a><span class="co">#&gt; 3:   0.003281605</span></span>
+<span id="cb13-24"><a href="#cb13-24" tabindex="-1"></a><span class="co">#&gt; 4:   0.003286949</span></span>
+<span id="cb13-25"><a href="#cb13-25" tabindex="-1"></a><span class="co">#&gt; 5:   0.002704675</span></span>
+<span id="cb13-26"><a href="#cb13-26" tabindex="-1"></a><span class="co">#&gt; 6:   0.002704675</span></span>
+<span id="cb13-27"><a href="#cb13-27" tabindex="-1"></a></span>
+<span id="cb13-28"><a href="#cb13-28" tabindex="-1"></a><span class="co"># Propagate errors for bond angles</span></span>
+<span id="cb13-29"><a href="#cb13-29" tabindex="-1"></a>bond_angles_with_error <span class="ot">&lt;-</span> <span class="fu">propagate_angle_error</span>(</span>
+<span id="cb13-30"><a href="#cb13-30" tabindex="-1"></a>  bond_angles,</span>
+<span id="cb13-31"><a href="#cb13-31" tabindex="-1"></a>  atomic_coordinates,</span>
+<span id="cb13-32"><a href="#cb13-32" tabindex="-1"></a>  expanded_coords,</span>
+<span id="cb13-33"><a href="#cb13-33" tabindex="-1"></a>  unit_cell_metrics</span>
+<span id="cb13-34"><a href="#cb13-34" tabindex="-1"></a>)</span>
+<span id="cb13-35"><a href="#cb13-35" tabindex="-1"></a><span class="fu">print</span>(<span class="st">&quot;Bond Angles with Angle Error (first 6):&quot;</span>)</span>
+<span id="cb13-36"><a href="#cb13-36" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Bond Angles with Angle Error (first 6):&quot;</span></span>
+<span id="cb13-37"><a href="#cb13-37" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">head</span>(bond_angles_with_error))</span>
+<span id="cb13-38"><a href="#cb13-38" tabindex="-1"></a><span class="co">#&gt; Key: &lt;CentralAtom, Neighbor1, Neighbor2&gt;</span></span>
+<span id="cb13-39"><a href="#cb13-39" tabindex="-1"></a><span class="co">#&gt;    CentralAtom      Neighbor1     Neighbor2    Angle AngleError</span></span>
+<span id="cb13-40"><a href="#cb13-40" tabindex="-1"></a><span class="co">#&gt;         &lt;char&gt;         &lt;char&gt;        &lt;char&gt;    &lt;num&gt;      &lt;num&gt;</span></span>
+<span id="cb13-41"><a href="#cb13-41" tabindex="-1"></a><span class="co">#&gt; 1:         Ge1 Ge1_3_-1_-1_-1 Ge1_3_-1_0_-1 101.5332 0.12841756</span></span>
+<span id="cb13-42"><a href="#cb13-42" tabindex="-1"></a><span class="co">#&gt; 2:         Yb1    Ge1_1_0_0_0   Ge1_1_0_0_1 138.3540 0.09644671</span></span>
+<span id="cb13-43"><a href="#cb13-43" tabindex="-1"></a><span class="co">#&gt; 3:         Yb1    Ge1_1_0_0_0  Ge1_2_0_-1_0 107.6689 0.07978724</span></span>
+<span id="cb13-44"><a href="#cb13-44" tabindex="-1"></a><span class="co">#&gt; 4:         Yb1    Ge1_1_0_0_0   Ge1_2_0_0_0 107.6689 0.07978724</span></span>
+<span id="cb13-45"><a href="#cb13-45" tabindex="-1"></a><span class="co">#&gt; 5:         Yb1    Ge1_1_0_0_0 Ge1_3_-1_-1_0 105.8268 0.08131349</span></span>
+<span id="cb13-46"><a href="#cb13-46" tabindex="-1"></a><span class="co">#&gt; 6:         Yb1    Ge1_1_0_0_0  Ge1_3_-1_0_0 105.8268 0.08131349</span></span></code></pre></div>
 </div>
 </div>
 </div>
@@ -978,11 +998,11 @@ crystallographic properties.</p>
 <p>The <code>filter_atoms_by_symbol()</code> function provides an
 interactive way to filter results (like bond or angle tables) to focus
 on the coordination environment around a specific type of element.</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="co"># In an interactive R session, you would run this:</span></span>
-<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>filtered_bonds <span class="ot">&lt;-</span> <span class="fu">filter_atoms_by_symbol</span>(</span>
-<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a>  <span class="at">data_table =</span> bonded_pairs_with_error,</span>
-<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a>  <span class="at">atom_col =</span> <span class="st">&quot;Atom1&quot;</span> <span class="co"># Filter based on the central atom</span></span>
-<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a>)</span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="co"># In an interactive R session, you would run this:</span></span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a>filtered_bonds <span class="ot">&lt;-</span> <span class="fu">filter_atoms_by_symbol</span>(</span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a>  <span class="at">data_table =</span> bonded_pairs_with_error,</span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a>  <span class="at">atom_col =</span> <span class="st">&quot;Atom1&quot;</span> <span class="co"># Filter based on the central atom</span></span>
+<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a>)</span></code></pre></div>
 <p>If you were to type <code>Si</code> and press Enter, the function
 would return a new <code>data.table</code> containing only the rows
 where the central atom (<code>Atom1</code>) is Silicon.</p>
@@ -994,29 +1014,29 @@ based on their specific site symmetry, described by their
 <strong>Wyckoff position</strong> (e.g., “2a”, “6c”). The
 <code>filter_by_wyckoff_symbol()</code> function is designed for this
 purpose.</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="co"># 1. Let&#39;s look at the Wyckoff information already extracted from the CIF.</span></span>
-<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a><span class="co"># All atoms in this structure are on the &quot;a&quot; site with a multiplicity of 4.</span></span>
-<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a><span class="fu">print</span>(<span class="st">&quot;Atomic coordinates showing Wyckoff information:&quot;</span>)</span>
-<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Atomic coordinates showing Wyckoff information:&quot;</span></span>
-<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a><span class="fu">print</span>(atomic_coordinates[, .(Label, WyckoffSymbol, WyckoffMultiplicity)])</span>
-<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a><span class="co">#&gt;     Label WyckoffSymbol WyckoffMultiplicity</span></span>
-<span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a><span class="co">#&gt;    &lt;char&gt;        &lt;char&gt;               &lt;num&gt;</span></span>
-<span id="cb14-8"><a href="#cb14-8" tabindex="-1"></a><span class="co">#&gt; 1:    Yb1             d                   4</span></span>
-<span id="cb14-9"><a href="#cb14-9" tabindex="-1"></a><span class="co">#&gt; 2:    Ge1             d                   4</span></span>
-<span id="cb14-10"><a href="#cb14-10" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
-<span id="cb14-11"><a href="#cb14-11" tabindex="-1"></a></span>
-<span id="cb14-12"><a href="#cb14-12" tabindex="-1"></a><span class="co"># 2. Filter bonds where the central atom is on the &quot;4d&quot; Wyckoff site.</span></span>
-<span id="cb14-13"><a href="#cb14-13" tabindex="-1"></a>bonds_from_4d_site <span class="ot">&lt;-</span> <span class="fu">filter_by_wyckoff_symbol</span>(</span>
-<span id="cb14-14"><a href="#cb14-14" tabindex="-1"></a>  <span class="at">data_table =</span> bonded_pairs_with_error,</span>
-<span id="cb14-15"><a href="#cb14-15" tabindex="-1"></a>  <span class="at">atomic_coordinates =</span> atomic_coordinates,</span>
-<span id="cb14-16"><a href="#cb14-16" tabindex="-1"></a>  <span class="at">atom_col =</span> <span class="st">&quot;Atom1&quot;</span>,</span>
-<span id="cb14-17"><a href="#cb14-17" tabindex="-1"></a>  <span class="at">wyckoff_symbols =</span> <span class="st">&quot;4d&quot;</span></span>
-<span id="cb14-18"><a href="#cb14-18" tabindex="-1"></a>)</span>
-<span id="cb14-19"><a href="#cb14-19" tabindex="-1"></a></span>
-<span id="cb14-20"><a href="#cb14-20" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">paste</span>(<span class="st">&quot;Number of rows in original bond table:&quot;</span>, <span class="fu">nrow</span>(bonded_pairs_with_error)))</span>
-<span id="cb14-21"><a href="#cb14-21" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Number of rows in original bond table: 9&quot;</span></span>
-<span id="cb14-22"><a href="#cb14-22" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">paste</span>(<span class="st">&quot;Number of rows after filtering for site &#39;4d&#39;:&quot;</span>, <span class="fu">nrow</span>(bonds_from_4d_site)))</span>
-<span id="cb14-23"><a href="#cb14-23" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Number of rows after filtering for site &#39;4d&#39;: 9&quot;</span></span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a><span class="co"># 1. Let&#39;s look at the Wyckoff information already extracted from the CIF.</span></span>
+<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a><span class="co"># All atoms in this structure are on the &quot;a&quot; site with a multiplicity of 4.</span></span>
+<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a><span class="fu">print</span>(<span class="st">&quot;Atomic coordinates showing Wyckoff information:&quot;</span>)</span>
+<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Atomic coordinates showing Wyckoff information:&quot;</span></span>
+<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a><span class="fu">print</span>(atomic_coordinates[, .(Label, WyckoffSymbol, WyckoffMultiplicity)])</span>
+<span id="cb15-6"><a href="#cb15-6" tabindex="-1"></a><span class="co">#&gt;     Label WyckoffSymbol WyckoffMultiplicity</span></span>
+<span id="cb15-7"><a href="#cb15-7" tabindex="-1"></a><span class="co">#&gt;    &lt;char&gt;        &lt;char&gt;               &lt;num&gt;</span></span>
+<span id="cb15-8"><a href="#cb15-8" tabindex="-1"></a><span class="co">#&gt; 1:    Yb1             d                   4</span></span>
+<span id="cb15-9"><a href="#cb15-9" tabindex="-1"></a><span class="co">#&gt; 2:    Ge1             d                   4</span></span>
+<span id="cb15-10"><a href="#cb15-10" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb15-11"><a href="#cb15-11" tabindex="-1"></a></span>
+<span id="cb15-12"><a href="#cb15-12" tabindex="-1"></a><span class="co"># 2. Filter bonds where the central atom is on the &quot;4d&quot; Wyckoff site.</span></span>
+<span id="cb15-13"><a href="#cb15-13" tabindex="-1"></a>bonds_from_4d_site <span class="ot">&lt;-</span> <span class="fu">filter_by_wyckoff_symbol</span>(</span>
+<span id="cb15-14"><a href="#cb15-14" tabindex="-1"></a>  <span class="at">data_table =</span> bonded_pairs_with_error,</span>
+<span id="cb15-15"><a href="#cb15-15" tabindex="-1"></a>  <span class="at">atomic_coordinates =</span> atomic_coordinates,</span>
+<span id="cb15-16"><a href="#cb15-16" tabindex="-1"></a>  <span class="at">atom_col =</span> <span class="st">&quot;Atom1&quot;</span>,</span>
+<span id="cb15-17"><a href="#cb15-17" tabindex="-1"></a>  <span class="at">wyckoff_symbols =</span> <span class="st">&quot;4d&quot;</span></span>
+<span id="cb15-18"><a href="#cb15-18" tabindex="-1"></a>)</span>
+<span id="cb15-19"><a href="#cb15-19" tabindex="-1"></a></span>
+<span id="cb15-20"><a href="#cb15-20" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">paste</span>(<span class="st">&quot;Number of rows in original bond table:&quot;</span>, <span class="fu">nrow</span>(bonded_pairs_with_error)))</span>
+<span id="cb15-21"><a href="#cb15-21" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Number of rows in original bond table: 9&quot;</span></span>
+<span id="cb15-22"><a href="#cb15-22" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">paste</span>(<span class="st">&quot;Number of rows after filtering for site &#39;4d&#39;:&quot;</span>, <span class="fu">nrow</span>(bonds_from_4d_site)))</span>
+<span id="cb15-23"><a href="#cb15-23" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Number of rows after filtering for site &#39;4d&#39;: 9&quot;</span></span></code></pre></div>
 </div>
 <div id="filtering-ghost-distances-using-atomic-radii" class="section level3">
 <h3>2.3 Filtering Ghost Distances Using Atomic Radii</h3>
@@ -1032,60 +1052,60 @@ calculated distance falling outside this physical range (defined by a
 <p><em>Note: Since this function evaluates the entire supercell distance
 matrix, pairs of atoms that are simply far away will be logged as “TOO
 LONG”.</em></p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a><span class="co"># A distance d is kept if: (r1+r2)*(1-margin) &lt;= d &lt;= (r1+r2)*(1+margin)</span></span>
-<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a>filtered_result <span class="ot">&lt;-</span> <span class="fu">filter_ghost_distances</span>(</span>
-<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a>    <span class="at">distances =</span> distances,</span>
-<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a>    <span class="at">atomic_coordinates =</span> atomic_coordinates,</span>
-<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a>    <span class="at">margin =</span> <span class="fl">0.1</span> <span class="co"># Default margin is 10%</span></span>
-<span id="cb15-6"><a href="#cb15-6" tabindex="-1"></a>)</span>
-<span id="cb15-7"><a href="#cb15-7" tabindex="-1"></a></span>
-<span id="cb15-8"><a href="#cb15-8" tabindex="-1"></a>kept_distances <span class="ot">&lt;-</span> filtered_result<span class="sc">$</span>kept</span>
-<span id="cb15-9"><a href="#cb15-9" tabindex="-1"></a>removed_distances <span class="ot">&lt;-</span> filtered_result<span class="sc">$</span>removed</span>
-<span id="cb15-10"><a href="#cb15-10" tabindex="-1"></a></span>
-<span id="cb15-11"><a href="#cb15-11" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Total distances calculated:&quot;</span>, <span class="fu">nrow</span>(distances), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
-<span id="cb15-12"><a href="#cb15-12" tabindex="-1"></a><span class="co">#&gt; Total distances calculated: 430</span></span>
-<span id="cb15-13"><a href="#cb15-13" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Distances kept after filtering:&quot;</span>, <span class="fu">nrow</span>(kept_distances), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
-<span id="cb15-14"><a href="#cb15-14" tabindex="-1"></a><span class="co">#&gt; Distances kept after filtering: 20</span></span>
-<span id="cb15-15"><a href="#cb15-15" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Unlikely / non-bonded distances removed:&quot;</span>, <span class="fu">nrow</span>(removed_distances), <span class="st">&quot;</span><span class="sc">\n\n</span><span class="st">&quot;</span>)</span>
-<span id="cb15-16"><a href="#cb15-16" tabindex="-1"></a><span class="co">#&gt; Unlikely / non-bonded distances removed: 410</span></span>
-<span id="cb15-17"><a href="#cb15-17" tabindex="-1"></a></span>
-<span id="cb15-18"><a href="#cb15-18" tabindex="-1"></a><span class="fu">print</span>(<span class="st">&quot;Subset of removed distances (showing physically impossible / too long connections):&quot;</span>)</span>
-<span id="cb15-19"><a href="#cb15-19" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Subset of removed distances (showing physically impossible / too long connections):&quot;</span></span>
-<span id="cb15-20"><a href="#cb15-20" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">head</span>(removed_distances))</span>
-<span id="cb15-21"><a href="#cb15-21" tabindex="-1"></a><span class="co">#&gt;     Atom1          Atom2  Distance expected_dist lower_bound upper_bound</span></span>
-<span id="cb15-22"><a href="#cb15-22" tabindex="-1"></a><span class="co">#&gt;    &lt;char&gt;         &lt;char&gt;     &lt;num&gt;         &lt;num&gt;       &lt;num&gt;       &lt;num&gt;</span></span>
-<span id="cb15-23"><a href="#cb15-23" tabindex="-1"></a><span class="co">#&gt; 1:    Ge1 Ge1_1_-1_-1_-1 10.587994          2.44       2.196       2.684</span></span>
-<span id="cb15-24"><a href="#cb15-24" tabindex="-1"></a><span class="co">#&gt; 2:    Ge1 Ge1_2_-1_-1_-1  5.724757          2.44       2.196       2.684</span></span>
-<span id="cb15-25"><a href="#cb15-25" tabindex="-1"></a><span class="co">#&gt; 3:    Ge1 Ge1_4_-1_-1_-1  7.098444          2.44       2.196       2.684</span></span>
-<span id="cb15-26"><a href="#cb15-26" tabindex="-1"></a><span class="co">#&gt; 4:    Ge1  Ge1_1_0_-1_-1  7.048839          2.44       2.196       2.684</span></span>
-<span id="cb15-27"><a href="#cb15-27" tabindex="-1"></a><span class="co">#&gt; 5:    Ge1  Ge1_2_0_-1_-1  4.889711          2.44       2.196       2.684</span></span>
-<span id="cb15-28"><a href="#cb15-28" tabindex="-1"></a><span class="co">#&gt; 6:    Ge1  Ge1_3_0_-1_-1  7.738707          2.44       2.196       2.684</span></span>
-<span id="cb15-29"><a href="#cb15-29" tabindex="-1"></a><span class="co">#&gt;                  Reason</span></span>
-<span id="cb15-30"><a href="#cb15-30" tabindex="-1"></a><span class="co">#&gt;                  &lt;char&gt;</span></span>
-<span id="cb15-31"><a href="#cb15-31" tabindex="-1"></a><span class="co">#&gt; 1: Distance is TOO LONG</span></span>
-<span id="cb15-32"><a href="#cb15-32" tabindex="-1"></a><span class="co">#&gt; 2: Distance is TOO LONG</span></span>
-<span id="cb15-33"><a href="#cb15-33" tabindex="-1"></a><span class="co">#&gt; 3: Distance is TOO LONG</span></span>
-<span id="cb15-34"><a href="#cb15-34" tabindex="-1"></a><span class="co">#&gt; 4: Distance is TOO LONG</span></span>
-<span id="cb15-35"><a href="#cb15-35" tabindex="-1"></a><span class="co">#&gt; 5: Distance is TOO LONG</span></span>
-<span id="cb15-36"><a href="#cb15-36" tabindex="-1"></a><span class="co">#&gt; 6: Distance is TOO LONG</span></span></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a><span class="co"># A distance d is kept if: (r1+r2)*(1-margin) &lt;= d &lt;= (r1+r2)*(1+margin)</span></span>
+<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a>filtered_result <span class="ot">&lt;-</span> <span class="fu">filter_ghost_distances</span>(</span>
+<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a>    <span class="at">distances =</span> distances,</span>
+<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a>    <span class="at">atomic_coordinates =</span> atomic_coordinates,</span>
+<span id="cb16-5"><a href="#cb16-5" tabindex="-1"></a>    <span class="at">margin =</span> <span class="fl">0.1</span> <span class="co"># Default margin is 10%</span></span>
+<span id="cb16-6"><a href="#cb16-6" tabindex="-1"></a>)</span>
+<span id="cb16-7"><a href="#cb16-7" tabindex="-1"></a></span>
+<span id="cb16-8"><a href="#cb16-8" tabindex="-1"></a>kept_distances <span class="ot">&lt;-</span> filtered_result<span class="sc">$</span>kept</span>
+<span id="cb16-9"><a href="#cb16-9" tabindex="-1"></a>removed_distances <span class="ot">&lt;-</span> filtered_result<span class="sc">$</span>removed</span>
+<span id="cb16-10"><a href="#cb16-10" tabindex="-1"></a></span>
+<span id="cb16-11"><a href="#cb16-11" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Total distances calculated:&quot;</span>, <span class="fu">nrow</span>(distances), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb16-12"><a href="#cb16-12" tabindex="-1"></a><span class="co">#&gt; Total distances calculated: 430</span></span>
+<span id="cb16-13"><a href="#cb16-13" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Distances kept after filtering:&quot;</span>, <span class="fu">nrow</span>(kept_distances), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb16-14"><a href="#cb16-14" tabindex="-1"></a><span class="co">#&gt; Distances kept after filtering: 20</span></span>
+<span id="cb16-15"><a href="#cb16-15" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Unlikely / non-bonded distances removed:&quot;</span>, <span class="fu">nrow</span>(removed_distances), <span class="st">&quot;</span><span class="sc">\n\n</span><span class="st">&quot;</span>)</span>
+<span id="cb16-16"><a href="#cb16-16" tabindex="-1"></a><span class="co">#&gt; Unlikely / non-bonded distances removed: 410</span></span>
+<span id="cb16-17"><a href="#cb16-17" tabindex="-1"></a></span>
+<span id="cb16-18"><a href="#cb16-18" tabindex="-1"></a><span class="fu">print</span>(<span class="st">&quot;Subset of removed distances (showing physically impossible / too long connections):&quot;</span>)</span>
+<span id="cb16-19"><a href="#cb16-19" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Subset of removed distances (showing physically impossible / too long connections):&quot;</span></span>
+<span id="cb16-20"><a href="#cb16-20" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">head</span>(removed_distances))</span>
+<span id="cb16-21"><a href="#cb16-21" tabindex="-1"></a><span class="co">#&gt;     Atom1          Atom2  Distance expected_dist lower_bound upper_bound</span></span>
+<span id="cb16-22"><a href="#cb16-22" tabindex="-1"></a><span class="co">#&gt;    &lt;char&gt;         &lt;char&gt;     &lt;num&gt;         &lt;num&gt;       &lt;num&gt;       &lt;num&gt;</span></span>
+<span id="cb16-23"><a href="#cb16-23" tabindex="-1"></a><span class="co">#&gt; 1:    Ge1 Ge1_1_-1_-1_-1 10.587994          2.44       2.196       2.684</span></span>
+<span id="cb16-24"><a href="#cb16-24" tabindex="-1"></a><span class="co">#&gt; 2:    Ge1 Ge1_2_-1_-1_-1  5.724757          2.44       2.196       2.684</span></span>
+<span id="cb16-25"><a href="#cb16-25" tabindex="-1"></a><span class="co">#&gt; 3:    Ge1 Ge1_4_-1_-1_-1  7.098444          2.44       2.196       2.684</span></span>
+<span id="cb16-26"><a href="#cb16-26" tabindex="-1"></a><span class="co">#&gt; 4:    Ge1  Ge1_1_0_-1_-1  7.048839          2.44       2.196       2.684</span></span>
+<span id="cb16-27"><a href="#cb16-27" tabindex="-1"></a><span class="co">#&gt; 5:    Ge1  Ge1_2_0_-1_-1  4.889711          2.44       2.196       2.684</span></span>
+<span id="cb16-28"><a href="#cb16-28" tabindex="-1"></a><span class="co">#&gt; 6:    Ge1  Ge1_3_0_-1_-1  7.738707          2.44       2.196       2.684</span></span>
+<span id="cb16-29"><a href="#cb16-29" tabindex="-1"></a><span class="co">#&gt;                  Reason</span></span>
+<span id="cb16-30"><a href="#cb16-30" tabindex="-1"></a><span class="co">#&gt;                  &lt;char&gt;</span></span>
+<span id="cb16-31"><a href="#cb16-31" tabindex="-1"></a><span class="co">#&gt; 1: Distance is TOO LONG</span></span>
+<span id="cb16-32"><a href="#cb16-32" tabindex="-1"></a><span class="co">#&gt; 2: Distance is TOO LONG</span></span>
+<span id="cb16-33"><a href="#cb16-33" tabindex="-1"></a><span class="co">#&gt; 3: Distance is TOO LONG</span></span>
+<span id="cb16-34"><a href="#cb16-34" tabindex="-1"></a><span class="co">#&gt; 4: Distance is TOO LONG</span></span>
+<span id="cb16-35"><a href="#cb16-35" tabindex="-1"></a><span class="co">#&gt; 5: Distance is TOO LONG</span></span>
+<span id="cb16-36"><a href="#cb16-36" tabindex="-1"></a><span class="co">#&gt; 6: Distance is TOO LONG</span></span></code></pre></div>
 </div>
 <div id="filtering-by-element-exclusion" class="section level3">
 <h3>2.4 Filtering by Element Exclusion</h3>
 <p>To focus an analysis on a specific part of a structure (e.g., a host
 framework without guest atoms), <code>filter_by_elements()</code> allows
 for the complete removal of bonds involving certain elements.</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a><span class="co"># Let&#39;s filter our bond table to exclude any bonds involving Tin (&quot;Sn&quot;).</span></span>
-<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a><span class="co"># The resulting table will only contain Cu-Se bonds.</span></span>
-<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a>bonds_without_sn <span class="ot">&lt;-</span> <span class="fu">filter_by_elements</span>(</span>
-<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a>    <span class="at">distances =</span> bonded_pairs_with_error,</span>
-<span id="cb16-5"><a href="#cb16-5" tabindex="-1"></a>    <span class="at">atomic_coordinates =</span> atomic_coordinates,</span>
-<span id="cb16-6"><a href="#cb16-6" tabindex="-1"></a>    <span class="at">elements_to_exclude =</span> <span class="st">&quot;Ge&quot;</span></span>
-<span id="cb16-7"><a href="#cb16-7" tabindex="-1"></a>)</span>
-<span id="cb16-8"><a href="#cb16-8" tabindex="-1"></a></span>
-<span id="cb16-9"><a href="#cb16-9" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Number of bonds in original table:&quot;</span>, <span class="fu">nrow</span>(bonded_pairs_with_error), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
-<span id="cb16-10"><a href="#cb16-10" tabindex="-1"></a><span class="co">#&gt; Number of bonds in original table: 9</span></span>
-<span id="cb16-11"><a href="#cb16-11" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Number of bonds after excluding &#39;Ge&#39;:&quot;</span>, <span class="fu">nrow</span>(bonds_without_sn), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
-<span id="cb16-12"><a href="#cb16-12" tabindex="-1"></a><span class="co">#&gt; Number of bonds after excluding &#39;Ge&#39;: 0</span></span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a><span class="co"># Let&#39;s filter our bond table to exclude any bonds involving Tin (&quot;Sn&quot;).</span></span>
+<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a><span class="co"># The resulting table will only contain Cu-Se bonds.</span></span>
+<span id="cb17-3"><a href="#cb17-3" tabindex="-1"></a>bonds_without_sn <span class="ot">&lt;-</span> <span class="fu">filter_by_elements</span>(</span>
+<span id="cb17-4"><a href="#cb17-4" tabindex="-1"></a>    <span class="at">distances =</span> bonded_pairs_with_error,</span>
+<span id="cb17-5"><a href="#cb17-5" tabindex="-1"></a>    <span class="at">atomic_coordinates =</span> atomic_coordinates,</span>
+<span id="cb17-6"><a href="#cb17-6" tabindex="-1"></a>    <span class="at">elements_to_exclude =</span> <span class="st">&quot;Ge&quot;</span></span>
+<span id="cb17-7"><a href="#cb17-7" tabindex="-1"></a>)</span>
+<span id="cb17-8"><a href="#cb17-8" tabindex="-1"></a></span>
+<span id="cb17-9"><a href="#cb17-9" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Number of bonds in original table:&quot;</span>, <span class="fu">nrow</span>(bonded_pairs_with_error), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb17-10"><a href="#cb17-10" tabindex="-1"></a><span class="co">#&gt; Number of bonds in original table: 9</span></span>
+<span id="cb17-11"><a href="#cb17-11" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Number of bonds after excluding &#39;Ge&#39;:&quot;</span>, <span class="fu">nrow</span>(bonds_without_sn), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb17-12"><a href="#cb17-12" tabindex="-1"></a><span class="co">#&gt; Number of bonds after excluding &#39;Ge&#39;: 0</span></span></code></pre></div>
 </div>
 <div id="calculating-weighted-average-network-bond-distance" class="section level3">
 <h3>2.5 Calculating Weighted Average Network Bond Distance</h3>
@@ -1097,8 +1117,8 @@ specified atomic network (defined by a set of Wyckoff sites).</p>
 <p>This calculation should always be performed on a table of identified
 <strong>bonds</strong> to ensure the result is physically
 meaningful.</p>
-<div id="formula-context-weighted-average-network-distance" class="section level4">
-<h4>Formula Context: Weighted Average Network Distance</h4>
+<div id="formula-weighted-average-network-distance" class="section level4">
+<h4>Formula: Weighted Average Network Distance</h4>
 <p>To obtain a single, representative bond length for an atomic network,
 the function calculates a true weighted average over all individual
 bonds in the unit cell. This is equivalent to calculating the
@@ -1150,23 +1170,23 @@ bonds to
 <p>This “Ghosts -&gt; Bonds -&gt; Average” sequence ensures the final
 metric is calculated only over actual chemical bonds, preventing
 artifacts from skewing the result.</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a><span class="co"># Calculate the weighted average BOND distance for the network.</span></span>
-<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a><span class="co"># First, identify the bonds in the structure. We use the `bonds_min` table</span></span>
-<span id="cb17-3"><a href="#cb17-3" tabindex="-1"></a><span class="co"># created in section 1.2.6.</span></span>
-<span id="cb17-4"><a href="#cb17-4" tabindex="-1"></a></span>
-<span id="cb17-5"><a href="#cb17-5" tabindex="-1"></a><span class="co"># Then, define the Wyckoff sites belonging to the network. </span></span>
-<span id="cb17-6"><a href="#cb17-6" tabindex="-1"></a><span class="co"># For this file, the framework atoms are on the &quot;4d&quot; sites.</span></span>
-<span id="cb17-7"><a href="#cb17-7" tabindex="-1"></a>network_wyckoff_sites <span class="ot">&lt;-</span> <span class="st">&quot;4d&quot;</span></span>
-<span id="cb17-8"><a href="#cb17-8" tabindex="-1"></a></span>
-<span id="cb17-9"><a href="#cb17-9" tabindex="-1"></a><span class="co"># Apply the function to the table of identified bonds.</span></span>
-<span id="cb17-10"><a href="#cb17-10" tabindex="-1"></a>weighted_avg_bond_dist <span class="ot">&lt;-</span> <span class="fu">calculate_weighted_average_network_distance</span>(</span>
-<span id="cb17-11"><a href="#cb17-11" tabindex="-1"></a>    <span class="at">distances =</span> bonds_min, <span class="co"># Use the bond table as input</span></span>
-<span id="cb17-12"><a href="#cb17-12" tabindex="-1"></a>    <span class="at">atomic_coordinates =</span> atomic_coordinates,</span>
-<span id="cb17-13"><a href="#cb17-13" tabindex="-1"></a>    <span class="at">wyckoff_symbols =</span> network_wyckoff_sites</span>
-<span id="cb17-14"><a href="#cb17-14" tabindex="-1"></a>)</span>
-<span id="cb17-15"><a href="#cb17-15" tabindex="-1"></a></span>
-<span id="cb17-16"><a href="#cb17-16" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Weighted average network bond distance for the &#39;4d&#39; sites:&quot;</span>, weighted_avg_bond_dist, <span class="st">&quot;Å</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
-<span id="cb17-17"><a href="#cb17-17" tabindex="-1"></a><span class="co">#&gt; Weighted average network bond distance for the &#39;4d&#39; sites: 2.939673 Å</span></span></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a><span class="co"># Calculate the weighted average BOND distance for the network.</span></span>
+<span id="cb18-2"><a href="#cb18-2" tabindex="-1"></a><span class="co"># First, identify the bonds in the structure. We use the `bonds_min` table</span></span>
+<span id="cb18-3"><a href="#cb18-3" tabindex="-1"></a><span class="co"># created in section 1.2.6.</span></span>
+<span id="cb18-4"><a href="#cb18-4" tabindex="-1"></a></span>
+<span id="cb18-5"><a href="#cb18-5" tabindex="-1"></a><span class="co"># Then, define the Wyckoff sites belonging to the network. </span></span>
+<span id="cb18-6"><a href="#cb18-6" tabindex="-1"></a><span class="co"># For this file, the framework atoms are on the &quot;4d&quot; sites.</span></span>
+<span id="cb18-7"><a href="#cb18-7" tabindex="-1"></a>network_wyckoff_sites <span class="ot">&lt;-</span> <span class="st">&quot;4d&quot;</span></span>
+<span id="cb18-8"><a href="#cb18-8" tabindex="-1"></a></span>
+<span id="cb18-9"><a href="#cb18-9" tabindex="-1"></a><span class="co"># Apply the function to the table of identified bonds.</span></span>
+<span id="cb18-10"><a href="#cb18-10" tabindex="-1"></a>weighted_avg_bond_dist <span class="ot">&lt;-</span> <span class="fu">calculate_weighted_average_network_distance</span>(</span>
+<span id="cb18-11"><a href="#cb18-11" tabindex="-1"></a>    <span class="at">distances =</span> bonds_min, <span class="co"># Use the bond table as input</span></span>
+<span id="cb18-12"><a href="#cb18-12" tabindex="-1"></a>    <span class="at">atomic_coordinates =</span> atomic_coordinates,</span>
+<span id="cb18-13"><a href="#cb18-13" tabindex="-1"></a>    <span class="at">wyckoff_symbols =</span> network_wyckoff_sites</span>
+<span id="cb18-14"><a href="#cb18-14" tabindex="-1"></a>)</span>
+<span id="cb18-15"><a href="#cb18-15" tabindex="-1"></a></span>
+<span id="cb18-16"><a href="#cb18-16" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Weighted average network bond distance for the &#39;4d&#39; sites:&quot;</span>, weighted_avg_bond_dist, <span class="st">&quot;Å</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb18-17"><a href="#cb18-17" tabindex="-1"></a><span class="co">#&gt; Weighted average network bond distance for the &#39;4d&#39; sites: 2.939673 Å</span></span></code></pre></div>
 </div>
 </div>
 </div>
@@ -1182,79 +1202,79 @@ override the internal atomic radii tables with a custom dictionary, run
 an exhaustive parallel analysis using <strong>all five bonding
 algorithms</strong>, and then unnest the resulting tables to save the
 extracted Coordination Numbers (CNs) out to CSV files.</p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a><span class="co"># --- 1. Define and set the custom radii dictionary ---</span></span>
-<span id="cb18-2"><a href="#cb18-2" tabindex="-1"></a>radii_dict <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
-<span id="cb18-3"><a href="#cb18-3" tabindex="-1"></a>  <span class="at">Ac=</span><span class="fl">2.15</span>, <span class="at">Ag=</span><span class="fl">1.45</span>, <span class="at">Al=</span><span class="fl">1.21</span>, <span class="at">Am=</span><span class="fl">1.8</span>, <span class="at">Ar=</span><span class="fl">1.06</span>, <span class="at">As=</span><span class="fl">1.19</span>, <span class="at">At=</span><span class="fl">1.5</span>, <span class="at">Au=</span><span class="fl">1.36</span>, <span class="at">B=</span><span class="fl">0.84</span>, </span>
-<span id="cb18-4"><a href="#cb18-4" tabindex="-1"></a>  <span class="at">Ba=</span><span class="fl">2.15</span>, <span class="at">Be=</span><span class="fl">0.96</span>, <span class="at">Bi=</span><span class="fl">1.48</span>, <span class="at">Br=</span><span class="fl">1.2</span>, <span class="at">C=</span><span class="fl">0.73</span>, <span class="at">Ca=</span><span class="fl">1.76</span>, <span class="at">Cd=</span><span class="fl">1.44</span>, <span class="at">Ce=</span><span class="fl">2.04</span>, <span class="at">Cl=</span><span class="fl">1.02</span>, </span>
-<span id="cb18-5"><a href="#cb18-5" tabindex="-1"></a>  <span class="at">Cm=</span><span class="fl">1.69</span>, <span class="at">Co=</span><span class="fl">1.38</span>, <span class="at">Cr=</span><span class="fl">1.39</span>, <span class="at">Cs=</span><span class="fl">2.44</span>, <span class="at">Cu=</span><span class="fl">1.32</span>, <span class="at">Dy=</span><span class="fl">1.92</span>, <span class="at">Er=</span><span class="fl">1.89</span>, <span class="at">Eu=</span><span class="fl">1.98</span>, <span class="at">F=</span><span class="fl">0.57</span>, </span>
-<span id="cb18-6"><a href="#cb18-6" tabindex="-1"></a>  <span class="at">Fe=</span><span class="fl">1.42</span>, <span class="at">Fr=</span><span class="fl">2.6</span>, <span class="at">Ga=</span><span class="fl">1.22</span>, <span class="at">Gd=</span><span class="fl">1.96</span>, <span class="at">Ge=</span><span class="fl">1.2</span>, <span class="at">H=</span><span class="fl">0.31</span>, <span class="at">He=</span><span class="fl">0.28</span>, <span class="at">Hf=</span><span class="fl">1.75</span>, <span class="at">Hg=</span><span class="fl">1.32</span>, </span>
-<span id="cb18-7"><a href="#cb18-7" tabindex="-1"></a>  <span class="at">Ho=</span><span class="fl">1.92</span>, <span class="at">I=</span><span class="fl">1.39</span>, <span class="at">In=</span><span class="fl">1.42</span>, <span class="at">Ir=</span><span class="fl">1.41</span>, <span class="at">K=</span><span class="fl">2.03</span>, <span class="at">Kr=</span><span class="fl">1.16</span>, <span class="at">La=</span><span class="fl">2.07</span>, <span class="at">Li=</span><span class="fl">1.28</span>, <span class="at">Lu=</span><span class="fl">1.87</span>, </span>
-<span id="cb18-8"><a href="#cb18-8" tabindex="-1"></a>  <span class="at">Mg=</span><span class="fl">1.41</span>, <span class="at">Mn=</span><span class="fl">1.5</span>, <span class="at">Mo=</span><span class="fl">1.54</span>, <span class="at">N=</span><span class="fl">0.71</span>, <span class="at">Na=</span><span class="fl">1.66</span>, <span class="at">Nb=</span><span class="fl">1.64</span>, <span class="at">Nd=</span><span class="fl">2.01</span>, <span class="at">Ne=</span><span class="fl">0.58</span>, <span class="at">Ni=</span><span class="fl">1.24</span>, </span>
-<span id="cb18-9"><a href="#cb18-9" tabindex="-1"></a>  <span class="at">Np=</span><span class="fl">1.9</span>, <span class="at">O=</span><span class="fl">0.66</span>, <span class="at">Os=</span><span class="fl">1.44</span>, <span class="at">P=</span><span class="fl">1.07</span>, <span class="at">Pa=</span><span class="dv">2</span>, <span class="at">Pb=</span><span class="fl">1.46</span>, <span class="at">Pd=</span><span class="fl">1.39</span>, <span class="at">Pm=</span><span class="fl">1.99</span>, <span class="at">Po=</span><span class="fl">1.4</span>, <span class="at">Pr=</span><span class="fl">2.03</span>, </span>
-<span id="cb18-10"><a href="#cb18-10" tabindex="-1"></a>  <span class="at">Pt=</span><span class="fl">1.36</span>, <span class="at">Pu=</span><span class="fl">1.87</span>, <span class="at">Ra=</span><span class="fl">2.21</span>, <span class="at">Rb=</span><span class="fl">2.2</span>, <span class="at">Re=</span><span class="fl">1.51</span>, <span class="at">Rh=</span><span class="fl">1.42</span>, <span class="at">Rn=</span><span class="fl">1.5</span>, <span class="at">Ru=</span><span class="fl">1.46</span>, <span class="at">S=</span><span class="fl">1.05</span>, </span>
-<span id="cb18-11"><a href="#cb18-11" tabindex="-1"></a>  <span class="at">Sb=</span><span class="fl">1.39</span>, <span class="at">Sc=</span><span class="fl">1.7</span>, <span class="at">Se=</span><span class="fl">1.2</span>, <span class="at">Si=</span><span class="fl">1.11</span>, <span class="at">Sm=</span><span class="fl">1.98</span>, <span class="at">Sn=</span><span class="fl">1.39</span>, <span class="at">Sr=</span><span class="fl">1.95</span>, <span class="at">Ta=</span><span class="fl">1.7</span>, <span class="at">Tb=</span><span class="fl">1.94</span>, </span>
-<span id="cb18-12"><a href="#cb18-12" tabindex="-1"></a>  <span class="at">Tc=</span><span class="fl">1.47</span>, <span class="at">Te=</span><span class="fl">1.38</span>, <span class="at">Th=</span><span class="fl">2.06</span>, <span class="at">Ti=</span><span class="fl">1.6</span>, <span class="at">Tl=</span><span class="fl">1.45</span>, <span class="at">Tm=</span><span class="fl">1.9</span>, <span class="at">U=</span><span class="fl">1.96</span>, <span class="at">V=</span><span class="fl">1.53</span>, <span class="at">W=</span><span class="fl">1.62</span>, </span>
-<span id="cb18-13"><a href="#cb18-13" tabindex="-1"></a>  <span class="at">Xe=</span><span class="fl">1.4</span>, <span class="at">Y=</span><span class="fl">1.9</span>, <span class="at">Yb=</span><span class="fl">1.87</span>, <span class="at">Zn=</span><span class="fl">1.22</span>, <span class="at">Zr=</span><span class="fl">1.75</span></span>
-<span id="cb18-14"><a href="#cb18-14" tabindex="-1"></a>)</span>
-<span id="cb18-15"><a href="#cb18-15" tabindex="-1"></a></span>
-<span id="cb18-16"><a href="#cb18-16" tabindex="-1"></a>custom_radii_table <span class="ot">&lt;-</span> <span class="fu">data.table</span>(</span>
-<span id="cb18-17"><a href="#cb18-17" tabindex="-1"></a>  <span class="at">Symbol =</span> <span class="fu">names</span>(radii_dict),</span>
-<span id="cb18-18"><a href="#cb18-18" tabindex="-1"></a>  <span class="at">Radius =</span> <span class="fu">as.numeric</span>(radii_dict),</span>
-<span id="cb18-19"><a href="#cb18-19" tabindex="-1"></a>  <span class="at">Type   =</span> <span class="st">&quot;covalent&quot;</span></span>
-<span id="cb18-20"><a href="#cb18-20" tabindex="-1"></a>)</span>
-<span id="cb18-21"><a href="#cb18-21" tabindex="-1"></a></span>
-<span id="cb18-22"><a href="#cb18-22" tabindex="-1"></a><span class="co"># Inject the custom table into the current crystract session</span></span>
-<span id="cb18-23"><a href="#cb18-23" tabindex="-1"></a><span class="fu">set_radii_data</span>(custom_radii_table)</span>
-<span id="cb18-24"><a href="#cb18-24" tabindex="-1"></a></span>
-<span id="cb18-25"><a href="#cb18-25" tabindex="-1"></a><span class="co"># --- 2. Run the batch analysis ---</span></span>
-<span id="cb18-26"><a href="#cb18-26" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Starting batch analysis on CIF files...</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
-<span id="cb18-27"><a href="#cb18-27" tabindex="-1"></a>results <span class="ot">&lt;-</span> <span class="fu">analyze_cif_files</span>(</span>
-<span id="cb18-28"><a href="#cb18-28" tabindex="-1"></a>  <span class="at">file_paths =</span> <span class="st">&quot;path/to/cif_directory&quot;</span>,</span>
-<span id="cb18-29"><a href="#cb18-29" tabindex="-1"></a>  <span class="at">tolerance =</span> <span class="fl">1e-4</span>,</span>
-<span id="cb18-30"><a href="#cb18-30" tabindex="-1"></a>  <span class="at">bonding_algorithms =</span> <span class="fu">c</span>(<span class="st">&quot;minimum_distance&quot;</span>, <span class="st">&quot;brunner&quot;</span>, <span class="st">&quot;econ&quot;</span>, <span class="st">&quot;voronoi&quot;</span>, <span class="st">&quot;crystal_nn&quot;</span>),</span>
-<span id="cb18-31"><a href="#cb18-31" tabindex="-1"></a>  <span class="at">calculate_bond_angles =</span> <span class="cn">FALSE</span>,       <span class="co"># Skip angles to speed up extraction</span></span>
-<span id="cb18-32"><a href="#cb18-32" tabindex="-1"></a>  <span class="at">perform_error_propagation =</span> <span class="cn">FALSE</span>,   <span class="co"># Skip uncertainties</span></span>
-<span id="cb18-33"><a href="#cb18-33" tabindex="-1"></a>  <span class="at">workers =</span> <span class="dv">4</span>                          <span class="co"># Adjust based on your available CPU cores</span></span>
-<span id="cb18-34"><a href="#cb18-34" tabindex="-1"></a>)</span>
-<span id="cb18-35"><a href="#cb18-35" tabindex="-1"></a></span>
-<span id="cb18-36"><a href="#cb18-36" tabindex="-1"></a><span class="co"># --- 3. Extract and Save Coordination Numbers to CSV ---</span></span>
-<span id="cb18-37"><a href="#cb18-37" tabindex="-1"></a><span class="co"># Create a dedicated folder for the outputs to avoid clutter</span></span>
-<span id="cb18-38"><a href="#cb18-38" tabindex="-1"></a>output_dir <span class="ot">&lt;-</span> <span class="st">&quot;path/to/output_directory&quot;</span></span>
-<span id="cb18-39"><a href="#cb18-39" tabindex="-1"></a><span class="cf">if</span> (<span class="sc">!</span><span class="fu">dir.exists</span>(output_dir)) <span class="fu">dir.create</span>(output_dir)</span>
-<span id="cb18-40"><a href="#cb18-40" tabindex="-1"></a></span>
-<span id="cb18-41"><a href="#cb18-41" tabindex="-1"></a><span class="co"># Identify all coordination number columns generated by the pipeline</span></span>
-<span id="cb18-42"><a href="#cb18-42" tabindex="-1"></a>cn_columns <span class="ot">&lt;-</span> <span class="fu">grep</span>(<span class="st">&quot;^cn_&quot;</span>, <span class="fu">names</span>(results), <span class="at">value =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb18-43"><a href="#cb18-43" tabindex="-1"></a></span>
-<span id="cb18-44"><a href="#cb18-44" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;</span><span class="sc">\n</span><span class="st">Extracting coordination numbers and saving to CSV...</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
-<span id="cb18-45"><a href="#cb18-45" tabindex="-1"></a></span>
-<span id="cb18-46"><a href="#cb18-46" tabindex="-1"></a><span class="cf">for</span> (col <span class="cf">in</span> cn_columns) {</span>
-<span id="cb18-47"><a href="#cb18-47" tabindex="-1"></a>  </span>
-<span id="cb18-48"><a href="#cb18-48" tabindex="-1"></a>  <span class="co"># Extract the list of data.tables for this specific algorithm</span></span>
-<span id="cb18-49"><a href="#cb18-49" tabindex="-1"></a>  list_of_dts <span class="ot">&lt;-</span> results[[col]]</span>
-<span id="cb18-50"><a href="#cb18-50" tabindex="-1"></a>  </span>
-<span id="cb18-51"><a href="#cb18-51" tabindex="-1"></a>  <span class="co"># Associate each table with its CIF file name</span></span>
-<span id="cb18-52"><a href="#cb18-52" tabindex="-1"></a>  <span class="fu">names</span>(list_of_dts) <span class="ot">&lt;-</span> results<span class="sc">$</span>file_name</span>
-<span id="cb18-53"><a href="#cb18-53" tabindex="-1"></a>  </span>
-<span id="cb18-54"><a href="#cb18-54" tabindex="-1"></a>  <span class="co"># Unnest and bind all tables together into one giant table</span></span>
-<span id="cb18-55"><a href="#cb18-55" tabindex="-1"></a>  combined_dt <span class="ot">&lt;-</span> <span class="fu">rbindlist</span>(list_of_dts, <span class="at">idcol =</span> <span class="st">&quot;file_name&quot;</span>, <span class="at">fill =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb18-56"><a href="#cb18-56" tabindex="-1"></a>  </span>
-<span id="cb18-57"><a href="#cb18-57" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">nrow</span>(combined_dt) <span class="sc">&gt;</span> <span class="dv">0</span>) {</span>
-<span id="cb18-58"><a href="#cb18-58" tabindex="-1"></a>    <span class="co"># Format the file path (e.g., &quot;cn_crystal_nn_crystract.csv&quot;)</span></span>
-<span id="cb18-59"><a href="#cb18-59" tabindex="-1"></a>    file_path <span class="ot">&lt;-</span> <span class="fu">file.path</span>(output_dir, <span class="fu">paste0</span>(col, <span class="st">&quot;_crystract.csv&quot;</span>))</span>
-<span id="cb18-60"><a href="#cb18-60" tabindex="-1"></a>    </span>
-<span id="cb18-61"><a href="#cb18-61" tabindex="-1"></a>    <span class="co"># Save to CSV</span></span>
-<span id="cb18-62"><a href="#cb18-62" tabindex="-1"></a>    <span class="fu">fwrite</span>(combined_dt, file_path)</span>
-<span id="cb18-63"><a href="#cb18-63" tabindex="-1"></a>    </span>
-<span id="cb18-64"><a href="#cb18-64" tabindex="-1"></a>    <span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;Saved %d rows across %d files to: %s</span><span class="sc">\n</span><span class="st">&quot;</span>, </span>
-<span id="cb18-65"><a href="#cb18-65" tabindex="-1"></a>                <span class="fu">nrow</span>(combined_dt), </span>
-<span id="cb18-66"><a href="#cb18-66" tabindex="-1"></a>                <span class="fu">uniqueN</span>(combined_dt<span class="sc">$</span>file_name), </span>
-<span id="cb18-67"><a href="#cb18-67" tabindex="-1"></a>                <span class="fu">basename</span>(file_path)))</span>
-<span id="cb18-68"><a href="#cb18-68" tabindex="-1"></a>  } <span class="cf">else</span> {</span>
-<span id="cb18-69"><a href="#cb18-69" tabindex="-1"></a>    <span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;No valid coordination data found for %s, skipping.</span><span class="sc">\n</span><span class="st">&quot;</span>, col))</span>
-<span id="cb18-70"><a href="#cb18-70" tabindex="-1"></a>  }</span>
-<span id="cb18-71"><a href="#cb18-71" tabindex="-1"></a>}</span>
-<span id="cb18-72"><a href="#cb18-72" tabindex="-1"></a></span>
-<span id="cb18-73"><a href="#cb18-73" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;</span><span class="sc">\n</span><span class="st">All operations finished successfully! Files are in:&quot;</span>, output_dir, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" tabindex="-1"></a><span class="co"># --- 1. Define and set the custom radii dictionary ---</span></span>
+<span id="cb19-2"><a href="#cb19-2" tabindex="-1"></a>radii_dict <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb19-3"><a href="#cb19-3" tabindex="-1"></a>  <span class="at">Ac=</span><span class="fl">2.15</span>, <span class="at">Ag=</span><span class="fl">1.45</span>, <span class="at">Al=</span><span class="fl">1.21</span>, <span class="at">Am=</span><span class="fl">1.8</span>, <span class="at">Ar=</span><span class="fl">1.06</span>, <span class="at">As=</span><span class="fl">1.19</span>, <span class="at">At=</span><span class="fl">1.5</span>, <span class="at">Au=</span><span class="fl">1.36</span>, <span class="at">B=</span><span class="fl">0.84</span>, </span>
+<span id="cb19-4"><a href="#cb19-4" tabindex="-1"></a>  <span class="at">Ba=</span><span class="fl">2.15</span>, <span class="at">Be=</span><span class="fl">0.96</span>, <span class="at">Bi=</span><span class="fl">1.48</span>, <span class="at">Br=</span><span class="fl">1.2</span>, <span class="at">C=</span><span class="fl">0.73</span>, <span class="at">Ca=</span><span class="fl">1.76</span>, <span class="at">Cd=</span><span class="fl">1.44</span>, <span class="at">Ce=</span><span class="fl">2.04</span>, <span class="at">Cl=</span><span class="fl">1.02</span>, </span>
+<span id="cb19-5"><a href="#cb19-5" tabindex="-1"></a>  <span class="at">Cm=</span><span class="fl">1.69</span>, <span class="at">Co=</span><span class="fl">1.38</span>, <span class="at">Cr=</span><span class="fl">1.39</span>, <span class="at">Cs=</span><span class="fl">2.44</span>, <span class="at">Cu=</span><span class="fl">1.32</span>, <span class="at">Dy=</span><span class="fl">1.92</span>, <span class="at">Er=</span><span class="fl">1.89</span>, <span class="at">Eu=</span><span class="fl">1.98</span>, <span class="at">F=</span><span class="fl">0.57</span>, </span>
+<span id="cb19-6"><a href="#cb19-6" tabindex="-1"></a>  <span class="at">Fe=</span><span class="fl">1.42</span>, <span class="at">Fr=</span><span class="fl">2.6</span>, <span class="at">Ga=</span><span class="fl">1.22</span>, <span class="at">Gd=</span><span class="fl">1.96</span>, <span class="at">Ge=</span><span class="fl">1.2</span>, <span class="at">H=</span><span class="fl">0.31</span>, <span class="at">He=</span><span class="fl">0.28</span>, <span class="at">Hf=</span><span class="fl">1.75</span>, <span class="at">Hg=</span><span class="fl">1.32</span>, </span>
+<span id="cb19-7"><a href="#cb19-7" tabindex="-1"></a>  <span class="at">Ho=</span><span class="fl">1.92</span>, <span class="at">I=</span><span class="fl">1.39</span>, <span class="at">In=</span><span class="fl">1.42</span>, <span class="at">Ir=</span><span class="fl">1.41</span>, <span class="at">K=</span><span class="fl">2.03</span>, <span class="at">Kr=</span><span class="fl">1.16</span>, <span class="at">La=</span><span class="fl">2.07</span>, <span class="at">Li=</span><span class="fl">1.28</span>, <span class="at">Lu=</span><span class="fl">1.87</span>, </span>
+<span id="cb19-8"><a href="#cb19-8" tabindex="-1"></a>  <span class="at">Mg=</span><span class="fl">1.41</span>, <span class="at">Mn=</span><span class="fl">1.5</span>, <span class="at">Mo=</span><span class="fl">1.54</span>, <span class="at">N=</span><span class="fl">0.71</span>, <span class="at">Na=</span><span class="fl">1.66</span>, <span class="at">Nb=</span><span class="fl">1.64</span>, <span class="at">Nd=</span><span class="fl">2.01</span>, <span class="at">Ne=</span><span class="fl">0.58</span>, <span class="at">Ni=</span><span class="fl">1.24</span>, </span>
+<span id="cb19-9"><a href="#cb19-9" tabindex="-1"></a>  <span class="at">Np=</span><span class="fl">1.9</span>, <span class="at">O=</span><span class="fl">0.66</span>, <span class="at">Os=</span><span class="fl">1.44</span>, <span class="at">P=</span><span class="fl">1.07</span>, <span class="at">Pa=</span><span class="dv">2</span>, <span class="at">Pb=</span><span class="fl">1.46</span>, <span class="at">Pd=</span><span class="fl">1.39</span>, <span class="at">Pm=</span><span class="fl">1.99</span>, <span class="at">Po=</span><span class="fl">1.4</span>, <span class="at">Pr=</span><span class="fl">2.03</span>, </span>
+<span id="cb19-10"><a href="#cb19-10" tabindex="-1"></a>  <span class="at">Pt=</span><span class="fl">1.36</span>, <span class="at">Pu=</span><span class="fl">1.87</span>, <span class="at">Ra=</span><span class="fl">2.21</span>, <span class="at">Rb=</span><span class="fl">2.2</span>, <span class="at">Re=</span><span class="fl">1.51</span>, <span class="at">Rh=</span><span class="fl">1.42</span>, <span class="at">Rn=</span><span class="fl">1.5</span>, <span class="at">Ru=</span><span class="fl">1.46</span>, <span class="at">S=</span><span class="fl">1.05</span>, </span>
+<span id="cb19-11"><a href="#cb19-11" tabindex="-1"></a>  <span class="at">Sb=</span><span class="fl">1.39</span>, <span class="at">Sc=</span><span class="fl">1.7</span>, <span class="at">Se=</span><span class="fl">1.2</span>, <span class="at">Si=</span><span class="fl">1.11</span>, <span class="at">Sm=</span><span class="fl">1.98</span>, <span class="at">Sn=</span><span class="fl">1.39</span>, <span class="at">Sr=</span><span class="fl">1.95</span>, <span class="at">Ta=</span><span class="fl">1.7</span>, <span class="at">Tb=</span><span class="fl">1.94</span>, </span>
+<span id="cb19-12"><a href="#cb19-12" tabindex="-1"></a>  <span class="at">Tc=</span><span class="fl">1.47</span>, <span class="at">Te=</span><span class="fl">1.38</span>, <span class="at">Th=</span><span class="fl">2.06</span>, <span class="at">Ti=</span><span class="fl">1.6</span>, <span class="at">Tl=</span><span class="fl">1.45</span>, <span class="at">Tm=</span><span class="fl">1.9</span>, <span class="at">U=</span><span class="fl">1.96</span>, <span class="at">V=</span><span class="fl">1.53</span>, <span class="at">W=</span><span class="fl">1.62</span>, </span>
+<span id="cb19-13"><a href="#cb19-13" tabindex="-1"></a>  <span class="at">Xe=</span><span class="fl">1.4</span>, <span class="at">Y=</span><span class="fl">1.9</span>, <span class="at">Yb=</span><span class="fl">1.87</span>, <span class="at">Zn=</span><span class="fl">1.22</span>, <span class="at">Zr=</span><span class="fl">1.75</span></span>
+<span id="cb19-14"><a href="#cb19-14" tabindex="-1"></a>)</span>
+<span id="cb19-15"><a href="#cb19-15" tabindex="-1"></a></span>
+<span id="cb19-16"><a href="#cb19-16" tabindex="-1"></a>custom_radii_table <span class="ot">&lt;-</span> <span class="fu">data.table</span>(</span>
+<span id="cb19-17"><a href="#cb19-17" tabindex="-1"></a>  <span class="at">Symbol =</span> <span class="fu">names</span>(radii_dict),</span>
+<span id="cb19-18"><a href="#cb19-18" tabindex="-1"></a>  <span class="at">Radius =</span> <span class="fu">as.numeric</span>(radii_dict),</span>
+<span id="cb19-19"><a href="#cb19-19" tabindex="-1"></a>  <span class="at">Type   =</span> <span class="st">&quot;covalent&quot;</span></span>
+<span id="cb19-20"><a href="#cb19-20" tabindex="-1"></a>)</span>
+<span id="cb19-21"><a href="#cb19-21" tabindex="-1"></a></span>
+<span id="cb19-22"><a href="#cb19-22" tabindex="-1"></a><span class="co"># Inject the custom table into the current crystract session</span></span>
+<span id="cb19-23"><a href="#cb19-23" tabindex="-1"></a><span class="fu">set_radii_data</span>(custom_radii_table)</span>
+<span id="cb19-24"><a href="#cb19-24" tabindex="-1"></a></span>
+<span id="cb19-25"><a href="#cb19-25" tabindex="-1"></a><span class="co"># --- 2. Run the batch analysis ---</span></span>
+<span id="cb19-26"><a href="#cb19-26" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Starting batch analysis on CIF files...</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb19-27"><a href="#cb19-27" tabindex="-1"></a>results <span class="ot">&lt;-</span> <span class="fu">analyze_cif_files</span>(</span>
+<span id="cb19-28"><a href="#cb19-28" tabindex="-1"></a>  <span class="at">file_paths =</span> <span class="st">&quot;path/to/cif_directory&quot;</span>,</span>
+<span id="cb19-29"><a href="#cb19-29" tabindex="-1"></a>  <span class="at">tolerance =</span> <span class="fl">1e-4</span>,</span>
+<span id="cb19-30"><a href="#cb19-30" tabindex="-1"></a>  <span class="at">bonding_algorithms =</span> <span class="fu">c</span>(<span class="st">&quot;minimum_distance&quot;</span>, <span class="st">&quot;brunner&quot;</span>, <span class="st">&quot;econ&quot;</span>, <span class="st">&quot;voronoi&quot;</span>, <span class="st">&quot;crystal_nn&quot;</span>),</span>
+<span id="cb19-31"><a href="#cb19-31" tabindex="-1"></a>  <span class="at">calculate_bond_angles =</span> <span class="cn">FALSE</span>,       <span class="co"># Skip angles to speed up extraction</span></span>
+<span id="cb19-32"><a href="#cb19-32" tabindex="-1"></a>  <span class="at">perform_error_propagation =</span> <span class="cn">FALSE</span>,   <span class="co"># Skip uncertainties</span></span>
+<span id="cb19-33"><a href="#cb19-33" tabindex="-1"></a>  <span class="at">workers =</span> <span class="dv">4</span>                          <span class="co"># Adjust based on your available CPU cores</span></span>
+<span id="cb19-34"><a href="#cb19-34" tabindex="-1"></a>)</span>
+<span id="cb19-35"><a href="#cb19-35" tabindex="-1"></a></span>
+<span id="cb19-36"><a href="#cb19-36" tabindex="-1"></a><span class="co"># --- 3. Extract and Save Coordination Numbers to CSV ---</span></span>
+<span id="cb19-37"><a href="#cb19-37" tabindex="-1"></a><span class="co"># Create a dedicated folder for the outputs to avoid clutter</span></span>
+<span id="cb19-38"><a href="#cb19-38" tabindex="-1"></a>output_dir <span class="ot">&lt;-</span> <span class="st">&quot;path/to/output_directory&quot;</span></span>
+<span id="cb19-39"><a href="#cb19-39" tabindex="-1"></a><span class="cf">if</span> (<span class="sc">!</span><span class="fu">dir.exists</span>(output_dir)) <span class="fu">dir.create</span>(output_dir)</span>
+<span id="cb19-40"><a href="#cb19-40" tabindex="-1"></a></span>
+<span id="cb19-41"><a href="#cb19-41" tabindex="-1"></a><span class="co"># Identify all coordination number columns generated by the pipeline</span></span>
+<span id="cb19-42"><a href="#cb19-42" tabindex="-1"></a>cn_columns <span class="ot">&lt;-</span> <span class="fu">grep</span>(<span class="st">&quot;^cn_&quot;</span>, <span class="fu">names</span>(results), <span class="at">value =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb19-43"><a href="#cb19-43" tabindex="-1"></a></span>
+<span id="cb19-44"><a href="#cb19-44" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;</span><span class="sc">\n</span><span class="st">Extracting coordination numbers and saving to CSV...</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb19-45"><a href="#cb19-45" tabindex="-1"></a></span>
+<span id="cb19-46"><a href="#cb19-46" tabindex="-1"></a><span class="cf">for</span> (col <span class="cf">in</span> cn_columns) {</span>
+<span id="cb19-47"><a href="#cb19-47" tabindex="-1"></a>  </span>
+<span id="cb19-48"><a href="#cb19-48" tabindex="-1"></a>  <span class="co"># Extract the list of data.tables for this specific algorithm</span></span>
+<span id="cb19-49"><a href="#cb19-49" tabindex="-1"></a>  list_of_dts <span class="ot">&lt;-</span> results[[col]]</span>
+<span id="cb19-50"><a href="#cb19-50" tabindex="-1"></a>  </span>
+<span id="cb19-51"><a href="#cb19-51" tabindex="-1"></a>  <span class="co"># Associate each table with its CIF file name</span></span>
+<span id="cb19-52"><a href="#cb19-52" tabindex="-1"></a>  <span class="fu">names</span>(list_of_dts) <span class="ot">&lt;-</span> results<span class="sc">$</span>file_name</span>
+<span id="cb19-53"><a href="#cb19-53" tabindex="-1"></a>  </span>
+<span id="cb19-54"><a href="#cb19-54" tabindex="-1"></a>  <span class="co"># Unnest and bind all tables together into one giant table</span></span>
+<span id="cb19-55"><a href="#cb19-55" tabindex="-1"></a>  combined_dt <span class="ot">&lt;-</span> <span class="fu">rbindlist</span>(list_of_dts, <span class="at">idcol =</span> <span class="st">&quot;file_name&quot;</span>, <span class="at">fill =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb19-56"><a href="#cb19-56" tabindex="-1"></a>  </span>
+<span id="cb19-57"><a href="#cb19-57" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">nrow</span>(combined_dt) <span class="sc">&gt;</span> <span class="dv">0</span>) {</span>
+<span id="cb19-58"><a href="#cb19-58" tabindex="-1"></a>    <span class="co"># Format the file path (e.g., &quot;cn_crystal_nn_crystract.csv&quot;)</span></span>
+<span id="cb19-59"><a href="#cb19-59" tabindex="-1"></a>    file_path <span class="ot">&lt;-</span> <span class="fu">file.path</span>(output_dir, <span class="fu">paste0</span>(col, <span class="st">&quot;_crystract.csv&quot;</span>))</span>
+<span id="cb19-60"><a href="#cb19-60" tabindex="-1"></a>    </span>
+<span id="cb19-61"><a href="#cb19-61" tabindex="-1"></a>    <span class="co"># Save to CSV</span></span>
+<span id="cb19-62"><a href="#cb19-62" tabindex="-1"></a>    <span class="fu">fwrite</span>(combined_dt, file_path)</span>
+<span id="cb19-63"><a href="#cb19-63" tabindex="-1"></a>    </span>
+<span id="cb19-64"><a href="#cb19-64" tabindex="-1"></a>    <span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;Saved %d rows across %d files to: %s</span><span class="sc">\n</span><span class="st">&quot;</span>, </span>
+<span id="cb19-65"><a href="#cb19-65" tabindex="-1"></a>                <span class="fu">nrow</span>(combined_dt), </span>
+<span id="cb19-66"><a href="#cb19-66" tabindex="-1"></a>                <span class="fu">uniqueN</span>(combined_dt<span class="sc">$</span>file_name), </span>
+<span id="cb19-67"><a href="#cb19-67" tabindex="-1"></a>                <span class="fu">basename</span>(file_path)))</span>
+<span id="cb19-68"><a href="#cb19-68" tabindex="-1"></a>  } <span class="cf">else</span> {</span>
+<span id="cb19-69"><a href="#cb19-69" tabindex="-1"></a>    <span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;No valid coordination data found for %s, skipping.</span><span class="sc">\n</span><span class="st">&quot;</span>, col))</span>
+<span id="cb19-70"><a href="#cb19-70" tabindex="-1"></a>  }</span>
+<span id="cb19-71"><a href="#cb19-71" tabindex="-1"></a>}</span>
+<span id="cb19-72"><a href="#cb19-72" tabindex="-1"></a></span>
+<span id="cb19-73"><a href="#cb19-73" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;</span><span class="sc">\n</span><span class="st">All operations finished successfully! Files are in:&quot;</span>, output_dir, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code></pre></div>
 <p>This workflow ensures that you can adapt <code>crystract</code>’s
 core metrics to your own chemical definitions while harnessing its
 parallel speed to crunch massive datasets efficiently.</p>
