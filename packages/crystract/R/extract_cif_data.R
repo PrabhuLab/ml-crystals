@@ -1,23 +1,24 @@
 #' @title Generic Value Extractor (Internal)
 #' @description Extracts a single value from CIF content based on a matching text pattern.
 #' @param cif_content A data.table containing the lines of a CIF file.
-#' @param pattern The text pattern (e.g., "_database_code_") to search for.
+#' @param patterns A character vector of text patterns to search for. The first matching pattern is returned.
 #' @param remove_pattern A boolean indicating whether to remove the search pattern from the result.
 #' @return A character string of the cleaned value, or NA if not found.
 #' @noRd
-extract_value <- function(cif_content, pattern, remove_pattern = TRUE) {
-  matching_lines <- cif_content[grepl(pattern, V1, fixed = TRUE)]
-  if (nrow(matching_lines) > 0) {
-    value <- matching_lines$V1[1]
-    if (remove_pattern) {
-      value <- gsub(pattern, "", value, fixed = TRUE)
+extract_value <- function(cif_content, patterns, remove_pattern = TRUE) {
+  for (pattern in patterns) {
+    matching_lines <- cif_content[grepl(pattern, V1, fixed = TRUE)]
+    if (nrow(matching_lines) > 0) {
+      value <- matching_lines$V1[1]
+      if (remove_pattern) {
+        value <- gsub(pattern, "", value, fixed = TRUE)
+      }
+      value <- gsub("'", "", value)
+      value <- trimws(value)
+      return(value)
     }
-    value <- gsub("'", "", value)
-    value <- trimws(value)
-    return(value)
-  } else {
-    return(NA)
   }
+  return(NA)
 }
 
 #' @title Extract Database Code from CIF Content
@@ -49,7 +50,15 @@ extract_database_code <- function (cif_content) {
 #'   extract_chemical_formula(cif_content)
 #' }
 extract_chemical_formula <- function(cif_content) {
-  extract_value(cif_content, "_chemical_formula_sum")
+  extract_value(
+    cif_content,
+    c(
+      "_chemical_formula_sum",
+      "_chemical_formula_structural",
+      "_chemical_formula_moiety",
+      "_chemical_formula_analytical"
+    )
+  )
 }
 
 #' @title Extract Structure Type from CIF Content
@@ -81,12 +90,14 @@ extract_structure_type <- function(cif_content) {
 #'   extract_space_group_name(cif_content)
 #' }
 extract_space_group_name <- function(cif_content) {
-  val <- extract_value(cif_content, "_space_group_name_H-M_alt")
-  if (is.na(val))
-    val <- extract_value(cif_content, "_symmetry_space_group_name_H-M")
-  if (is.na(val))
-    val <- extract_value(cif_content, "_space_group_name_H-M")
-  return(val)
+  extract_value(
+    cif_content,
+    c(
+      "_space_group_name_H-M_alt",
+      "_symmetry_space_group_name_H-M",
+      "_space_group_name_H-M"
+    )
+  )
 }
 
 #' @title Extract Space Group Number from CIF Content
@@ -102,10 +113,8 @@ extract_space_group_name <- function(cif_content) {
 #'   extract_space_group_number(cif_content)
 #' }
 extract_space_group_number <- function(cif_content) {
-  val <- extract_value(cif_content, "_space_group_IT_number")
-  if (is.na(val))
-    val <- extract_value(cif_content, "_symmetry_Int_Tables_number")
-  return(val)
+  extract_value(cif_content,
+                c("_space_group_IT_number", "_symmetry_Int_Tables_number"))
 }
 
 #' @title Extract Unit Cell Metrics
@@ -300,26 +309,36 @@ extract_atomic_coordinates <- function(cif_content, chemical_formula = NA) {
     }
   }
 
-  tags_to_find <- c(
-    label = "_atom_site_label",
-    type_symbol = "_atom_site_type_symbol",
-    x = "_atom_site_fract_x",
-    y = "_atom_site_fract_y",
-    z = "_atom_site_fract_z",
-    occupancy = "_atom_site_occupancy",
-    wyckoff = "_atom_site_Wyckoff_symbol",
-    multiplicity = "_atom_site_symmetry_multiplicity",
-    oxidation = "_atom_site_oxidation_number",
-    u_iso = "_atom_site_U_iso_or_equiv",
-    b_iso = "_atom_site_B_iso_or_equiv"
+  tags_to_find <- list(
+    label = c("_atom_site_label"),
+    type_symbol = c("_atom_site_type_symbol", "_atom_site_type_symbol_"),
+    x = c("_atom_site_fract_x"),
+    y = c("_atom_site_fract_y"),
+    z = c("_atom_site_fract_z"),
+    occupancy = c("_atom_site_occupancy"),
+    wyckoff = c(
+      "_atom_site_Wyckoff_symbol",
+      "_atom_site_wyckoff_symbol",
+      "_atom_site_Wychoff_symbol",
+      "_atom_site_calc_flag"
+    ),
+    multiplicity = c(
+      "_atom_site_symmetry_multiplicity",
+      "_atom_site_site_symmetry_multiplicity"
+    ),
+    oxidation = c("_atom_site_oxidation_number"),
+    u_iso = c("_atom_site_U_iso_or_equiv"),
+    b_iso = c("_atom_site_B_iso_or_equiv")
   )
 
-  col_indices <- sapply(tags_to_find, function(tag) {
-    idx <- which(headers == tag)
-    if (length(idx) == 0)
-      NA
-    else
-      idx
+  # Grabs the index of the first matched potential alias for a given metric
+  col_indices <- sapply(tags_to_find, function(tags) {
+    for (tag in tags) {
+      idx <- which(headers == tag)
+      if (length(idx) > 0)
+        return(idx[1])
+    }
+    return(NA)
   })
 
   if (anyNA(col_indices[c("label", "x", "y", "z")]))

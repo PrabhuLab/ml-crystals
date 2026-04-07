@@ -13,16 +13,16 @@ library(data.table)
 ## ----full-pipeline-with-comments, eval=TRUE------------------------------
 # IMPORTANT: Update this path to point to your own downloaded CIF file.
 # 1. Try to find the file in the installed package
-cif_path <- system.file("extdata", "1590946.cif", package = "crystract")
+cif_path <- system.file("extdata", "2405219.cif", package = "crystract")
 
 # 2. If that fails, look in the source directory
 if (cif_path == "") {
-  cif_path <- "../inst/extdata/1590946.cif"
+  cif_path <- "../inst/extdata/2405219.cif"
 }
 
 # 3. Final check to provide a clear error if both fail
 if (!file.exists(cif_path)) {
-  stop("Could not find 1590946.cif in installed package or inst/extdata/")
+  stop("Could not find 2405219.cif in installed package or inst/extdata/")
 }
 
 # Run the pipeline on our single example file, extracting multiple bonding types at once
@@ -157,25 +157,22 @@ print(head(bond_angles_with_error))
 # )
 
 ## ----filter-by-wyckoff, eval=TRUE----------------------------------------
-# 1. In our example, the asymmetric atoms do not have Wyckoff information from the CIF.
-# We will mock them as "4c" for this demonstration to show how the function works.
-atomic_coordinates[, WyckoffSymbol := c("c", "c", "c")]
-atomic_coordinates[, WyckoffMultiplicity := c(4, 4, 4)]
-
+# 1. Let's look at the Wyckoff information already extracted from the CIF.
+# All atoms in this structure are on the "a" site with a multiplicity of 4.
 print("Atomic coordinates showing Wyckoff information:")
 print(atomic_coordinates[, .(Label, WyckoffSymbol, WyckoffMultiplicity)])
 cat("\n")
 
-# 2. Filter bonds where the central atom is on the "4c" Wyckoff site.
-bonds_from_4c_site <- filter_by_wyckoff_symbol(
+# 2. Filter bonds where the central atom is on the "4a" Wyckoff site.
+bonds_from_4a_site <- filter_by_wyckoff_symbol(
   data_table = bonded_pairs_with_error,
   atomic_coordinates = atomic_coordinates,
   atom_col = "Atom1",
-  wyckoff_symbols = "4c"
+  wyckoff_symbols = "4a"  # Note: change to "a" if your package only expects the letter
 )
 
 print(paste("Number of rows in original bond table:", nrow(bonded_pairs_with_error)))
-print(paste("Number of rows after filtering for site '4c':", nrow(bonds_from_4c_site)))
+print(paste("Number of rows after filtering for site '4a':", nrow(bonds_from_4a_site)))
 
 ## ----filter-ghost-distances, eval=TRUE-----------------------------------
 # A distance d is kept if: (r1+r2)*(1-margin) <= d <= (r1+r2)*(1+margin)
@@ -196,36 +193,34 @@ print("Subset of removed distances (showing physically impossible / too long con
 print(head(removed_distances))
 
 ## ----filter-by-elements, eval=TRUE---------------------------------------
-# Let's filter our bond table to exclude any bonds involving Strontium ("Sr").
-# Since all bonds in this structure are Si-Sr, the result should be an empty table.
-bonds_without_sr <- filter_by_elements(
+# Let's filter our bond table to exclude any bonds involving Tin ("Sn").
+# The resulting table will only contain Cu-Se bonds.
+bonds_without_sn <- filter_by_elements(
     distances = bonded_pairs_with_error,
     atomic_coordinates = atomic_coordinates,
-    elements_to_exclude = "Sr"
+    elements_to_exclude = "Ge"
 )
 
 cat("Number of bonds in original table:", nrow(bonded_pairs_with_error), "\n")
-cat("Number of bonds after excluding 'Sr':", nrow(bonds_without_sr), "\n")
+cat("Number of bonds after excluding 'Ge':", nrow(bonds_without_sn), "\n")
 
 ## ----calculate-weighted-average-distance, eval=TRUE----------------------
-# Calculate the weighted average BOND distance for the entire Sr2Si network.
+# Calculate the weighted average BOND distance for the network.
 # First, identify the bonds in the structure. We use the `bonds_min` table
 # created in section 1.2.6.
 
-# Then, define the Wyckoff sites belonging to the network. Here, it's just "4c".
-# (We assigned dummy "4c" and "4a" Wyckoff positions to our coordinates in section 2.2).
-network_wyckoff_sites <- "4c"
+# Then, define the Wyckoff sites belonging to the network. 
+# For Okruginite, the framework atoms are on the "4a" sites.
+network_wyckoff_sites <- "4d" # Note: change to "a" if your package only expects the letter
 
 # Apply the function to the table of identified bonds.
-# For this simple, ordered structure, all occupancies are 1.0, but the function
-# correctly applies the full formula.
 weighted_avg_bond_dist <- calculate_weighted_average_network_distance(
     distances = bonds_min, # Use the bond table as input
     atomic_coordinates = atomic_coordinates,
     wyckoff_symbols = network_wyckoff_sites
 )
 
-cat("Weighted average network bond distance for the '4c' sites:", weighted_avg_bond_dist, "Å\n")
+cat("Weighted average network bond distance for the '4a' sites:", weighted_avg_bond_dist, "Å\n")
 
 ## ----custom-radii-and-batch, eval=FALSE----------------------------------
 # # --- 1. Define and set the custom radii dictionary ---
