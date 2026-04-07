@@ -1005,18 +1005,18 @@ purpose.</p>
 <span id="cb14-9"><a href="#cb14-9" tabindex="-1"></a><span class="co">#&gt; 2:    Ge1             d                   4</span></span>
 <span id="cb14-10"><a href="#cb14-10" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
 <span id="cb14-11"><a href="#cb14-11" tabindex="-1"></a></span>
-<span id="cb14-12"><a href="#cb14-12" tabindex="-1"></a><span class="co"># 2. Filter bonds where the central atom is on the &quot;4a&quot; Wyckoff site.</span></span>
-<span id="cb14-13"><a href="#cb14-13" tabindex="-1"></a>bonds_from_4a_site <span class="ot">&lt;-</span> <span class="fu">filter_by_wyckoff_symbol</span>(</span>
+<span id="cb14-12"><a href="#cb14-12" tabindex="-1"></a><span class="co"># 2. Filter bonds where the central atom is on the &quot;4d&quot; Wyckoff site.</span></span>
+<span id="cb14-13"><a href="#cb14-13" tabindex="-1"></a>bonds_from_4d_site <span class="ot">&lt;-</span> <span class="fu">filter_by_wyckoff_symbol</span>(</span>
 <span id="cb14-14"><a href="#cb14-14" tabindex="-1"></a>  <span class="at">data_table =</span> bonded_pairs_with_error,</span>
 <span id="cb14-15"><a href="#cb14-15" tabindex="-1"></a>  <span class="at">atomic_coordinates =</span> atomic_coordinates,</span>
 <span id="cb14-16"><a href="#cb14-16" tabindex="-1"></a>  <span class="at">atom_col =</span> <span class="st">&quot;Atom1&quot;</span>,</span>
-<span id="cb14-17"><a href="#cb14-17" tabindex="-1"></a>  <span class="at">wyckoff_symbols =</span> <span class="st">&quot;4a&quot;</span>  <span class="co"># Note: change to &quot;a&quot; if your package only expects the letter</span></span>
+<span id="cb14-17"><a href="#cb14-17" tabindex="-1"></a>  <span class="at">wyckoff_symbols =</span> <span class="st">&quot;4d&quot;</span></span>
 <span id="cb14-18"><a href="#cb14-18" tabindex="-1"></a>)</span>
 <span id="cb14-19"><a href="#cb14-19" tabindex="-1"></a></span>
 <span id="cb14-20"><a href="#cb14-20" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">paste</span>(<span class="st">&quot;Number of rows in original bond table:&quot;</span>, <span class="fu">nrow</span>(bonded_pairs_with_error)))</span>
 <span id="cb14-21"><a href="#cb14-21" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Number of rows in original bond table: 9&quot;</span></span>
-<span id="cb14-22"><a href="#cb14-22" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">paste</span>(<span class="st">&quot;Number of rows after filtering for site &#39;4a&#39;:&quot;</span>, <span class="fu">nrow</span>(bonds_from_4a_site)))</span>
-<span id="cb14-23"><a href="#cb14-23" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Number of rows after filtering for site &#39;4a&#39;: 0&quot;</span></span></code></pre></div>
+<span id="cb14-22"><a href="#cb14-22" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">paste</span>(<span class="st">&quot;Number of rows after filtering for site &#39;4d&#39;:&quot;</span>, <span class="fu">nrow</span>(bonds_from_4d_site)))</span>
+<span id="cb14-23"><a href="#cb14-23" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Number of rows after filtering for site &#39;4d&#39;: 9&quot;</span></span></code></pre></div>
 </div>
 <div id="filtering-ghost-distances-using-atomic-radii" class="section level3">
 <h3>2.3 Filtering Ghost Distances Using Atomic Radii</h3>
@@ -1155,8 +1155,8 @@ artifacts from skewing the result.</p>
 <span id="cb17-3"><a href="#cb17-3" tabindex="-1"></a><span class="co"># created in section 1.2.6.</span></span>
 <span id="cb17-4"><a href="#cb17-4" tabindex="-1"></a></span>
 <span id="cb17-5"><a href="#cb17-5" tabindex="-1"></a><span class="co"># Then, define the Wyckoff sites belonging to the network. </span></span>
-<span id="cb17-6"><a href="#cb17-6" tabindex="-1"></a><span class="co"># For Okruginite, the framework atoms are on the &quot;4a&quot; sites.</span></span>
-<span id="cb17-7"><a href="#cb17-7" tabindex="-1"></a>network_wyckoff_sites <span class="ot">&lt;-</span> <span class="st">&quot;4d&quot;</span> <span class="co"># Note: change to &quot;a&quot; if your package only expects the letter</span></span>
+<span id="cb17-6"><a href="#cb17-6" tabindex="-1"></a><span class="co"># For this file, the framework atoms are on the &quot;4d&quot; sites.</span></span>
+<span id="cb17-7"><a href="#cb17-7" tabindex="-1"></a>network_wyckoff_sites <span class="ot">&lt;-</span> <span class="st">&quot;4d&quot;</span></span>
 <span id="cb17-8"><a href="#cb17-8" tabindex="-1"></a></span>
 <span id="cb17-9"><a href="#cb17-9" tabindex="-1"></a><span class="co"># Apply the function to the table of identified bonds.</span></span>
 <span id="cb17-10"><a href="#cb17-10" tabindex="-1"></a>weighted_avg_bond_dist <span class="ot">&lt;-</span> <span class="fu">calculate_weighted_average_network_distance</span>(</span>
@@ -1165,8 +1165,8 @@ artifacts from skewing the result.</p>
 <span id="cb17-13"><a href="#cb17-13" tabindex="-1"></a>    <span class="at">wyckoff_symbols =</span> network_wyckoff_sites</span>
 <span id="cb17-14"><a href="#cb17-14" tabindex="-1"></a>)</span>
 <span id="cb17-15"><a href="#cb17-15" tabindex="-1"></a></span>
-<span id="cb17-16"><a href="#cb17-16" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Weighted average network bond distance for the &#39;4a&#39; sites:&quot;</span>, weighted_avg_bond_dist, <span class="st">&quot;Å</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
-<span id="cb17-17"><a href="#cb17-17" tabindex="-1"></a><span class="co">#&gt; Weighted average network bond distance for the &#39;4a&#39; sites: 2.939673 Å</span></span></code></pre></div>
+<span id="cb17-16"><a href="#cb17-16" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Weighted average network bond distance for the &#39;4d&#39; sites:&quot;</span>, weighted_avg_bond_dist, <span class="st">&quot;Å</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb17-17"><a href="#cb17-17" tabindex="-1"></a><span class="co">#&gt; Weighted average network bond distance for the &#39;4d&#39; sites: 2.939673 Å</span></span></code></pre></div>
 </div>
 </div>
 </div>
