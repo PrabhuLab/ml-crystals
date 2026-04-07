@@ -46,16 +46,16 @@ simultaneously.
 ``` r
 # IMPORTANT: Update this path to point to your own downloaded CIF file.
 # 1. Try to find the file in the installed package
-cif_path <- system.file("extdata", "1590946.cif", package = "crystract")
+cif_path <- system.file("extdata", "2405219.cif", package = "crystract")
 
 # 2. If that fails, look in the source directory
 if (cif_path == "") {
-  cif_path <- "../inst/extdata/1590946.cif"
+  cif_path <- "../inst/extdata/2405219.cif"
 }
 
 # 3. Final check to provide a clear error if both fail
 if (!file.exists(cif_path)) {
-  stop("Could not find 1590946.cif in installed package or inst/extdata/")
+  stop("Could not find 2405219.cif in installed package or inst/extdata/")
 }
 
 # Run the pipeline on our single example file, extracting multiple bonding types at once
@@ -68,9 +68,9 @@ analysis_results <- analyze_single_cif(
 # It's a single row containing all our results in nested data.tables.
 str(analysis_results, max.level = 2)
 #> Classes 'data.table' and 'data.frame':   1 obs. of  27 variables:
-#>  $ file_name              : chr "1590946.cif"
-#>  $ database_code          : chr "depnum_ccdc_archive CCDC 1590946"
-#>  $ chemical_formula       : chr "Si1 Sr2"
+#>  $ file_name              : chr "2405219.cif"
+#>  $ database_code          : chr "depnum_ccdc_archive CCDC 2405219"
+#>  $ chemical_formula       : chr "Ge Yb"
 #>  $ structure_type         : logi NA
 #>  $ space_group_name       : chr "P n m a"
 #>  $ space_group_number     : chr "62"
@@ -78,62 +78,62 @@ str(analysis_results, max.level = 2)
 #>   ..$ :Classes 'data.table' and 'data.frame':    1 obs. of  12 variables:
 #>   .. ..- attr(*, ".internal.selfref")=<externalptr> 
 #>  $ atomic_coordinates     :List of 1
-#>   ..$ :Classes 'data.table' and 'data.frame':    3 obs. of  14 variables:
+#>   ..$ :Classes 'data.table' and 'data.frame':    2 obs. of  14 variables:
 #>   .. ..- attr(*, ".internal.selfref")=<externalptr> 
 #>  $ symmetry_operations    :List of 1
 #>   ..$ :Classes 'data.table' and 'data.frame':    8 obs. of  3 variables:
 #>   .. ..- attr(*, ".internal.selfref")=<externalptr> 
 #>  $ transformed_coords     :List of 1
-#>   ..$ :Classes 'data.table' and 'data.frame':    12 obs. of  5 variables:
+#>   ..$ :Classes 'data.table' and 'data.frame':    8 obs. of  5 variables:
 #>   .. ..- attr(*, ".internal.selfref")=<externalptr> 
 #>  $ expanded_coords        :List of 1
-#>   ..$ :Classes 'data.table' and 'data.frame':    324 obs. of  8 variables:
+#>   ..$ :Classes 'data.table' and 'data.frame':    216 obs. of  8 variables:
 #>   .. ..- attr(*, ".internal.selfref")=<externalptr> 
 #>  $ distances              :List of 1
-#>   ..$ :Classes 'data.table' and 'data.frame':    969 obs. of  6 variables:
+#>   ..$ :Classes 'data.table' and 'data.frame':    430 obs. of  6 variables:
 #>   .. ..- attr(*, ".internal.selfref")=<externalptr> 
 #>  $ bonds_minimum_distance :List of 1
-#>   ..$ :Classes 'data.table' and 'data.frame':    14 obs. of  8 variables:
+#>   ..$ :Classes 'data.table' and 'data.frame':    9 obs. of  8 variables:
 #>   .. ..- attr(*, ".internal.selfref")=<externalptr> 
 #>   .. ..- attr(*, "sorted")= chr [1:3] "Atom1" "Atom2" "Distance"
 #>  $ cn_minimum_distance    :List of 1
-#>   ..$ :Classes 'data.table' and 'data.frame':    3 obs. of  3 variables:
+#>   ..$ :Classes 'data.table' and 'data.frame':    2 obs. of  3 variables:
 #>   .. ..- attr(*, "sorted")= chr "Atom"
 #>   .. ..- attr(*, ".internal.selfref")=<externalptr> 
 #>  $ angles_minimum_distance:List of 1
-#>   ..$ :Classes 'data.table' and 'data.frame':    30 obs. of  5 variables:
+#>   ..$ :Classes 'data.table' and 'data.frame':    22 obs. of  5 variables:
 #>   .. ..- attr(*, "sorted")= chr [1:3] "CentralAtom" "Neighbor1" "Neighbor2"
 #>   .. ..- attr(*, ".internal.selfref")=<externalptr> 
 #>  $ bonds_brunner          :List of 1
-#>   ..$ :Classes 'data.table' and 'data.frame':    24 obs. of  8 variables:
+#>   ..$ :Classes 'data.table' and 'data.frame':    9 obs. of  8 variables:
 #>   .. ..- attr(*, ".internal.selfref")=<externalptr> 
 #>   .. ..- attr(*, "sorted")= chr [1:3] "Atom1" "Atom2" "Distance"
 #>  $ cn_brunner             :List of 1
-#>   ..$ :Classes 'data.table' and 'data.frame':    3 obs. of  3 variables:
+#>   ..$ :Classes 'data.table' and 'data.frame':    2 obs. of  3 variables:
 #>   .. ..- attr(*, "sorted")= chr "Atom"
 #>   .. ..- attr(*, ".internal.selfref")=<externalptr> 
 #>  $ angles_brunner         :List of 1
-#>   ..$ :Classes 'data.table' and 'data.frame':    105 obs. of  5 variables:
+#>   ..$ :Classes 'data.table' and 'data.frame':    22 obs. of  5 variables:
 #>   .. ..- attr(*, "sorted")= chr [1:3] "CentralAtom" "Neighbor1" "Neighbor2"
 #>   .. ..- attr(*, ".internal.selfref")=<externalptr> 
 #>  $ bonds_econ             :List of 1
-#>   ..$ :Classes 'data.table' and 'data.frame':    36 obs. of  8 variables:
+#>   ..$ :Classes 'data.table' and 'data.frame':    18 obs. of  8 variables:
 #>   .. ..- attr(*, ".internal.selfref")=<externalptr> 
 #>   .. ..- attr(*, "sorted")= chr [1:3] "Atom1" "Atom2" "Distance"
 #>  $ cn_econ                :List of 1
-#>   ..$ :Classes 'data.table' and 'data.frame':    3 obs. of  3 variables:
+#>   ..$ :Classes 'data.table' and 'data.frame':    2 obs. of  3 variables:
 #>   .. ..- attr(*, "sorted")= chr "Atom"
 #>   .. ..- attr(*, ".internal.selfref")=<externalptr> 
 #>  $ angles_econ            :List of 1
-#>   ..$ :Classes 'data.table' and 'data.frame':    207 obs. of  5 variables:
+#>   ..$ :Classes 'data.table' and 'data.frame':    72 obs. of  5 variables:
 #>   .. ..- attr(*, "sorted")= chr [1:3] "CentralAtom" "Neighbor1" "Neighbor2"
 #>   .. ..- attr(*, ".internal.selfref")=<externalptr> 
 #>  $ bonds_voronoi          :List of 1
-#>   ..$ :Classes 'data.table' and 'data.frame':    42 obs. of  11 variables:
+#>   ..$ :Classes 'data.table' and 'data.frame':    30 obs. of  11 variables:
 #>   .. ..- attr(*, ".internal.selfref")=<externalptr> 
 #>   .. ..- attr(*, "sorted")= chr [1:3] "Atom1" "Atom2" "Distance"
 #>  $ cn_voronoi             :List of 1
-#>   ..$ :Classes 'data.table' and 'data.frame':    3 obs. of  3 variables:
+#>   ..$ :Classes 'data.table' and 'data.frame':    2 obs. of  3 variables:
 #>   .. ..- attr(*, "sorted")= chr "Atom"
 #>   .. ..- attr(*, ".internal.selfref")=<externalptr> 
 #>  $ angles_voronoi         :List of 1
@@ -141,11 +141,11 @@ str(analysis_results, max.level = 2)
 #>   .. ..- attr(*, ".internal.selfref")=<externalptr> 
 #>   .. ..- attr(*, "sorted")= chr "CentralAtom"
 #>  $ bonds_crystal_nn       :List of 1
-#>   ..$ :Classes 'data.table' and 'data.frame':    36 obs. of  8 variables:
+#>   ..$ :Classes 'data.table' and 'data.frame':    26 obs. of  8 variables:
 #>   .. ..- attr(*, ".internal.selfref")=<externalptr> 
 #>   .. ..- attr(*, "sorted")= chr [1:3] "Atom1" "Atom2" "Distance"
 #>  $ cn_crystal_nn          :List of 1
-#>   ..$ :Classes 'data.table' and 'data.frame':    3 obs. of  3 variables:
+#>   ..$ :Classes 'data.table' and 'data.frame':    2 obs. of  3 variables:
 #>   .. ..- attr(*, "sorted")= chr "Atom"
 #>   .. ..- attr(*, ".internal.selfref")=<externalptr> 
 #>  $ angles_crystal_nn      :List of 1
@@ -197,14 +197,14 @@ knitr::kable(
 )
 ```
 
-| V1                                                                        |
-|:--------------------------------------------------------------------------|
-| \#######################################################################  |
-| \#                                                                        |
-| \# This file contains crystal structure data downloaded from the          |
-| \# Cambridge Structural Database (CSD) hosted by the Cambridge            |
-| \# Crystallographic Data Centre (CCDC) in cooperation with FIZ Karlsruhe. |
-| \#                                                                        |
+| V1                                                                       |
+|:-------------------------------------------------------------------------|
+| \####################################################################### |
+| \#                                                                       |
+| \# This file contains crystal structure data downloaded from the         |
+| \# Cambridge Structural Database (CSD) hosted by the Cambridge           |
+| \# Crystallographic Data Centre (CCDC).                                  |
+| \#                                                                       |
 
 First 6 lines of the raw CIF data.
 
@@ -220,9 +220,9 @@ space_group_name <- extract_space_group_name(cif_content)
 space_group_number <- extract_space_group_number(cif_content)
 
 cat("Database Code:", database_code, "\n")
-#> Database Code: depnum_ccdc_archive CCDC 1590946
+#> Database Code: depnum_ccdc_archive CCDC 2405219
 cat("Chemical Formula:", chemical_formula, "\n")
-#> Chemical Formula: Si1 Sr2
+#> Chemical Formula: Ge Yb
 cat("Space Group:", space_group_name, "(No.", space_group_number, ")\n")
 #> Space Group: P n m a (No. 62 )
 ```
@@ -239,13 +239,13 @@ unit_cell_metrics <- extract_unit_cell_metrics(cif_content)
 print(unit_cell_metrics)
 #>    _cell_length_a _cell_length_b _cell_length_c _cell_angle_alpha
 #>             <num>          <num>          <num>             <num>
-#> 1:           8.11           5.15           9.54                90
+#> 1:         7.9006         3.8981         5.8729                90
 #>    _cell_angle_beta _cell_angle_gamma _cell_length_a_error
 #>               <num>             <num>                <num>
-#> 1:               90                90                   NA
+#> 1:               90                90               0.0019
 #>    _cell_length_b_error _cell_length_c_error _cell_angle_alpha_error
 #>                   <num>                <num>                   <num>
-#> 1:                   NA                   NA                      NA
+#> 1:                9e-04               0.0015                      NA
 #>    _cell_angle_beta_error _cell_angle_gamma_error
 #>                     <num>                   <num>
 #> 1:                     NA                      NA
@@ -266,19 +266,16 @@ print("Asymmetric Atomic Coordinates:")
 print(atomic_coordinates)
 #>     Label TypeSymbol WyckoffSymbol WyckoffMultiplicity OxidationState
 #>    <char>     <char>        <char>               <num>          <num>
-#> 1:    Sr1       Sr0+          <NA>                  NA             NA
-#> 2:    Sr2       Sr0+          <NA>                  NA             NA
-#> 3:    Si1       Si0+          <NA>                  NA             NA
-#>    ThermalParam Occupancy OccupancyError    x_a   y_b    z_c x_error
-#>           <num>     <num>          <num>  <num> <num>  <num>   <num>
-#> 1:           NA         1             NA 0.6529  0.25 0.0769       0
-#> 2:           NA         1             NA 0.5192  0.25 0.6748       0
-#> 3:           NA         1             NA 0.2539  0.25 0.1028       0
+#> 1:    Yb1         Yb             d                   4             NA
+#> 2:    Ge1         Ge             d                   4             NA
+#>    ThermalParam Occupancy OccupancyError     x_a   y_b    z_c x_error
+#>           <num>     <num>          <num>   <num> <num>  <num>   <num>
+#> 1:       0.0215         1              0 0.17675  0.25 0.6121 0.00019
+#> 2:       0.0238         1              0 0.03550  0.25 0.1268 0.00040
 #>    y_error z_error
 #>      <num>   <num>
-#> 1:       0       0
-#> 2:       0       0
-#> 3:       0       0
+#> 1:       0   2e-04
+#> 2:       0   5e-04
 
 # Extract the symmetry operations
 symmetry_operations <- extract_symmetry_operations(cif_content)
@@ -287,12 +284,12 @@ print("Symmetry Operations (first 6 of 8):")
 print(head(symmetry_operations))
 #>         x      y      z
 #>    <char> <char> <char>
-#> 1:  x+1/2      y -z+1/2
-#> 2:      x -y+1/2      z
-#> 3: -x+1/2  y+1/2  z+1/2
-#> 4:     -x     -y     -z
-#> 5: -x+1/2     -y  z+1/2
-#> 6:     -x  y+1/2     -z
+#> 1:      x      y      z
+#> 2: -x+1/2     -y  z+1/2
+#> 3:     -x  y+1/2     -z
+#> 4:  x+1/2 -y+1/2 -z+1/2
+#> 5:     -x     -y     -z
+#> 6:  x+1/2      y -z+1/2
 ```
 
 #### 1.2.4 Generating the Full Crystal Structure
@@ -349,28 +346,28 @@ transformed_coords <- apply_symmetry_operations(atomic_coordinates, symmetry_ope
 print("Unique atoms in full unit cell (first 6):")
 #> [1] "Unique atoms in full unit cell (first 6):"
 print(head(transformed_coords))
-#>     Label SymOp    x_a   y_b    z_c
-#>    <char> <int>  <num> <num>  <num>
-#> 1:  Sr1_1     1 0.1529  0.25 0.4231
-#> 2:  Sr1_2     2 0.6529  0.25 0.0769
-#> 3:  Sr1_3     3 0.8471  0.75 0.5769
-#> 4:  Sr1_4     4 0.3471  0.75 0.9231
-#> 5:  Sr2_1     1 0.0192  0.25 0.8252
-#> 6:  Sr2_2     2 0.5192  0.25 0.6748
+#>     Label SymOp     x_a   y_b    z_c
+#>    <char> <int>   <num> <num>  <num>
+#> 1:  Yb1_1     1 0.17675  0.25 0.6121
+#> 2:  Yb1_2     2 0.32325  0.75 0.1121
+#> 3:  Yb1_3     3 0.82325  0.75 0.3879
+#> 4:  Yb1_4     4 0.67675  0.25 0.8879
+#> 5:  Ge1_1     1 0.03550  0.25 0.1268
+#> 6:  Ge1_2     2 0.46450  0.75 0.6268
 
 # Expand into a supercell for neighbor calculations
 expanded_coords <- expand_transformed_coords(transformed_coords)
 print("Atoms in supercell (first 6):")
 #> [1] "Atoms in supercell (first 6):"
 print(head(expanded_coords))
-#>             Label SymOp     x_a   y_b     z_c    Tx    Ty    Tz
-#>            <char> <int>   <num> <num>   <num> <int> <int> <int>
-#> 1: Sr1_1_-1_-1_-1     1 -0.8471 -0.75 -0.5769    -1    -1    -1
-#> 2: Sr1_2_-1_-1_-1     2 -0.3471 -0.75 -0.9231    -1    -1    -1
-#> 3: Sr1_3_-1_-1_-1     3 -0.1529 -0.25 -0.4231    -1    -1    -1
-#> 4: Sr1_4_-1_-1_-1     4 -0.6529 -0.25 -0.0769    -1    -1    -1
-#> 5: Sr2_1_-1_-1_-1     1 -0.9808 -0.75 -0.1748    -1    -1    -1
-#> 6: Sr2_2_-1_-1_-1     2 -0.4808 -0.75 -0.3252    -1    -1    -1
+#>             Label SymOp      x_a   y_b     z_c    Tx    Ty    Tz
+#>            <char> <int>    <num> <num>   <num> <int> <int> <int>
+#> 1: Yb1_1_-1_-1_-1     1 -0.82325 -0.75 -0.3879    -1    -1    -1
+#> 2: Yb1_2_-1_-1_-1     2 -0.67675 -0.25 -0.8879    -1    -1    -1
+#> 3: Yb1_3_-1_-1_-1     3 -0.17675 -0.25 -0.6121    -1    -1    -1
+#> 4: Yb1_4_-1_-1_-1     4 -0.32325 -0.75 -0.1121    -1    -1    -1
+#> 5: Ge1_1_-1_-1_-1     1 -0.96450 -0.75 -0.8732    -1    -1    -1
+#> 6: Ge1_2_-1_-1_-1     2 -0.53550 -0.25 -0.3732    -1    -1    -1
 ```
 
 #### 1.2.5 Calculating Interatomic Distances
@@ -399,14 +396,14 @@ distances <- calculate_distances(atomic_coordinates, expanded_coords, unit_cell_
 print("Calculated Distances (shortest 6):")
 #> [1] "Calculated Distances (shortest 6):"
 print(head(distances[order(Distance)]))
-#>     Atom1         Atom2 Distance  DeltaX DeltaY  DeltaZ
-#>    <char>        <char>    <num>   <num>  <num>   <num>
-#> 1:    Si1   Sr1_1_0_0_0 3.163544  0.1010    0.0 -0.3203
-#> 2:    Sr1   Si1_1_0_0_0 3.163544 -0.1010    0.0 -0.3203
-#> 3:    Si1 Sr1_4_0_-1_-1 3.184477 -0.0932    0.5  0.1797
-#> 4:    Sr1 Si1_4_0_-1_-1 3.184477 -0.0932    0.5  0.1797
-#> 5:    Si1  Sr1_4_0_0_-1 3.184477 -0.0932   -0.5  0.1797
-#> 6:    Sr1  Si1_4_0_0_-1 3.184477 -0.0932   -0.5  0.1797
+#>     Atom1          Atom2 Distance  DeltaX DeltaY  DeltaZ
+#>    <char>         <char>    <num>   <num>  <num>   <num>
+#> 1:    Ge1 Ge1_3_-1_-1_-1 2.516281 0.07100    0.5  0.2536
+#> 2:    Ge1  Ge1_3_-1_0_-1 2.516281 0.07100   -0.5  0.2536
+#> 3:    Ge1  Yb1_3_-1_-1_0 2.993686 0.21225    0.5 -0.2611
+#> 4:    Yb1  Ge1_3_-1_-1_0 2.993686 0.21225    0.5 -0.2611
+#> 5:    Ge1   Yb1_3_-1_0_0 2.993686 0.21225   -0.5 -0.2611
+#> 6:    Yb1   Ge1_3_-1_0_0 2.993686 0.21225   -0.5 -0.2611
 ```
 
 #### 1.2.6 Identifying Bonds and Neighbors
@@ -455,9 +452,9 @@ bonds_voronoi <- voronoi_nn(atomic_coordinates, expanded_coords, unit_cell_metri
 bonds_crystal_nn <- crystal_nn(distances, atomic_coordinates, expanded_coords, unit_cell_metrics)
 
 cat("Minimum Distance found", nrow(bonds_min), "bonds.\n")
-#> Minimum Distance found 14 bonds.
+#> Minimum Distance found 9 bonds.
 cat("CrystalNN found", nrow(bonds_crystal_nn), "bonds.\n")
-#> CrystalNN found 36 bonds.
+#> CrystalNN found 26 bonds.
 
 # Calculate integer neighbor counts based on the bonded pairs (e.g., using CrystalNN)
 neighbor_counts <- calculate_neighbor_counts(bonds_crystal_nn)
@@ -466,9 +463,8 @@ print("CrystalNN Neighbor Counts:")
 print(neighbor_counts)
 #>      Atom CoordinationNumber
 #>    <char>              <int>
-#> 1:  Sr1_2                 12
-#> 2:  Sr2_2                 15
-#> 3:  Si1_2                  9
+#> 1:  Yb1_1                 17
+#> 2:  Ge1_1                  9
 ```
 
 #### 1.2.7 Calculating Bond Angles
@@ -516,21 +512,22 @@ bond_angles <- calculate_angles(
 print("Calculated Bond Angles (first 6):")
 #> [1] "Calculated Bond Angles (first 6):"
 print(head(bond_angles))
-#>    CentralAtom   Neighbor1     Neighbor2     Angle
-#>         <char>      <char>        <char>     <num>
-#> 1:         Si1 Sr1_1_0_0_0   Sr1_2_0_0_0 109.37260
-#> 2:         Si1 Sr1_1_0_0_0 Sr1_4_0_-1_-1 125.55190
-#> 3:         Si1 Sr1_1_0_0_0  Sr1_4_0_0_-1 125.55190
-#> 4:         Si1 Sr1_1_0_0_0  Sr2_1_0_0_-1 129.28796
-#> 5:         Si1 Sr1_1_0_0_0 Sr2_3_-1_-1_0  69.08689
-#> 6:         Si1 Sr1_1_0_0_0  Sr2_3_-1_0_0  69.08689
+#>    CentralAtom      Neighbor1     Neighbor2    Angle
+#>         <char>         <char>        <char>    <num>
+#> 1:         Ge1 Ge1_3_-1_-1_-1 Ge1_3_-1_0_-1 101.5332
+#> 2:         Yb1    Ge1_1_0_0_0   Ge1_1_0_0_1 138.3540
+#> 3:         Yb1    Ge1_1_0_0_0  Ge1_2_0_-1_0 107.6689
+#> 4:         Yb1    Ge1_1_0_0_0   Ge1_2_0_0_0 107.6689
+#> 5:         Yb1    Ge1_1_0_0_0 Ge1_3_-1_-1_0 105.8268
+#> 6:         Yb1    Ge1_1_0_0_0  Ge1_3_-1_0_0 105.8268
 ```
 
 #### 1.2.8 Error Propagation
 
-Finally, `crystract` propagates the experimental uncertainties from cell
-parameters and atomic coordinates to the calculated distances and
-angles.
+Finally, `crystract` propagates the experimental uncertainties (i.e.,
+the estimated standard deviations of the unit cell parameters and
+fractional atomic coordinates) from cell parameters and atomic
+coordinates to the calculated distances and angles.
 
 **Formula Context: Error Propagation**
 
@@ -570,22 +567,22 @@ print("Bonded Pairs with Distance Error (first 6):")
 #> [1] "Bonded Pairs with Distance Error (first 6):"
 print(head(bonded_pairs_with_error))
 #> Key: <Atom1, Atom2, Distance>
-#>     Atom1         Atom2 Distance  DeltaX DeltaY  DeltaZ    Weight
-#>    <char>        <char>    <num>   <num>  <num>   <num>     <num>
-#> 1:    Si1   Sr1_1_0_0_0 3.163544  0.1010    0.0 -0.3203 1.0000000
-#> 2:    Si1   Sr1_2_0_0_0 3.245310 -0.3990    0.0  0.0259 0.9748050
-#> 3:    Si1 Sr1_4_0_-1_-1 3.184477 -0.0932    0.5  0.1797 0.9934267
-#> 4:    Si1  Sr1_4_0_0_-1 3.184477 -0.0932   -0.5  0.1797 0.9934267
-#> 5:    Si1  Sr2_1_0_0_-1 3.261366  0.2347    0.0  0.2776 0.9700058
-#> 6:    Si1 Sr2_3_-1_-1_0 3.465249  0.2731    0.5 -0.0720 0.9129342
+#>     Atom1          Atom2 Distance   DeltaX DeltaY  DeltaZ    Weight
+#>    <char>         <char>    <num>    <num>  <num>   <num>     <num>
+#> 1:    Ge1 Ge1_3_-1_-1_-1 2.516281  0.07100    0.5  0.2536 1.0000000
+#> 2:    Ge1  Ge1_3_-1_0_-1 2.516281  0.07100   -0.5  0.2536 1.0000000
+#> 3:    Yb1    Ge1_1_0_0_0 3.060807  0.14125    0.0  0.4853 0.9780708
+#> 4:    Yb1    Ge1_1_0_0_1 3.222200  0.14125    0.0 -0.5147 0.9290813
+#> 5:    Yb1   Ge1_2_0_-1_0 2.995761 -0.28775    0.5 -0.0147 0.9993073
+#> 6:    Yb1    Ge1_2_0_0_0 2.995761 -0.28775   -0.5 -0.0147 0.9993073
 #>    DistanceError
 #>            <num>
-#> 1:             0
-#> 2:             0
-#> 3:             0
-#> 4:             0
-#> 5:             0
-#> 6:             0
+#> 1:   0.002684669
+#> 2:   0.002684669
+#> 3:   0.003281605
+#> 4:   0.003286949
+#> 5:   0.002704675
+#> 6:   0.002704675
 
 # Propagate errors for bond angles
 bond_angles_with_error <- propagate_angle_error(
@@ -598,14 +595,14 @@ print("Bond Angles with Angle Error (first 6):")
 #> [1] "Bond Angles with Angle Error (first 6):"
 print(head(bond_angles_with_error))
 #> Key: <CentralAtom, Neighbor1, Neighbor2>
-#>    CentralAtom   Neighbor1     Neighbor2     Angle AngleError
-#>         <char>      <char>        <char>     <num>      <num>
-#> 1:         Si1 Sr1_1_0_0_0   Sr1_2_0_0_0 109.37260          0
-#> 2:         Si1 Sr1_1_0_0_0 Sr1_4_0_-1_-1 125.55190          0
-#> 3:         Si1 Sr1_1_0_0_0  Sr1_4_0_0_-1 125.55190          0
-#> 4:         Si1 Sr1_1_0_0_0  Sr2_1_0_0_-1 129.28796          0
-#> 5:         Si1 Sr1_1_0_0_0 Sr2_3_-1_-1_0  69.08689          0
-#> 6:         Si1 Sr1_1_0_0_0  Sr2_3_-1_0_0  69.08689          0
+#>    CentralAtom      Neighbor1     Neighbor2    Angle AngleError
+#>         <char>         <char>        <char>    <num>      <num>
+#> 1:         Ge1 Ge1_3_-1_-1_-1 Ge1_3_-1_0_-1 101.5332 0.12841756
+#> 2:         Yb1    Ge1_1_0_0_0   Ge1_1_0_0_1 138.3540 0.09644671
+#> 3:         Yb1    Ge1_1_0_0_0  Ge1_2_0_-1_0 107.6689 0.07978724
+#> 4:         Yb1    Ge1_1_0_0_0   Ge1_2_0_0_0 107.6689 0.07978724
+#> 5:         Yb1    Ge1_1_0_0_0 Ge1_3_-1_-1_0 105.8268 0.08131349
+#> 6:         Yb1    Ge1_1_0_0_0  Ge1_3_-1_0_0 105.8268 0.08131349
 ```
 
 ## 2. Tools for Post-Processing and Analysis
@@ -644,33 +641,29 @@ on their specific site symmetry, described by their **Wyckoff position**
 function is designed for this purpose.
 
 ``` r
-# 1. In our example, the asymmetric atoms do not have Wyckoff information from the CIF.
-# We will mock them as "4c" for this demonstration to show how the function works.
-atomic_coordinates[, WyckoffSymbol := c("c", "c", "c")]
-atomic_coordinates[, WyckoffMultiplicity := c(4, 4, 4)]
-
+# 1. Let's look at the Wyckoff information already extracted from the CIF.
+# All atoms in this structure are on the "a" site with a multiplicity of 4.
 print("Atomic coordinates showing Wyckoff information:")
 #> [1] "Atomic coordinates showing Wyckoff information:"
 print(atomic_coordinates[, .(Label, WyckoffSymbol, WyckoffMultiplicity)])
 #>     Label WyckoffSymbol WyckoffMultiplicity
 #>    <char>        <char>               <num>
-#> 1:    Sr1             c                   4
-#> 2:    Sr2             c                   4
-#> 3:    Si1             c                   4
+#> 1:    Yb1             d                   4
+#> 2:    Ge1             d                   4
 cat("\n")
 
-# 2. Filter bonds where the central atom is on the "4c" Wyckoff site.
-bonds_from_4c_site <- filter_by_wyckoff_symbol(
+# 2. Filter bonds where the central atom is on the "4a" Wyckoff site.
+bonds_from_4a_site <- filter_by_wyckoff_symbol(
   data_table = bonded_pairs_with_error,
   atomic_coordinates = atomic_coordinates,
   atom_col = "Atom1",
-  wyckoff_symbols = "4c"
+  wyckoff_symbols = "4a"  # Note: change to "a" if your package only expects the letter
 )
 
 print(paste("Number of rows in original bond table:", nrow(bonded_pairs_with_error)))
-#> [1] "Number of rows in original bond table: 14"
-print(paste("Number of rows after filtering for site '4c':", nrow(bonds_from_4c_site)))
-#> [1] "Number of rows after filtering for site '4c': 14"
+#> [1] "Number of rows in original bond table: 9"
+print(paste("Number of rows after filtering for site '4a':", nrow(bonds_from_4a_site)))
+#> [1] "Number of rows after filtering for site '4a': 0"
 ```
 
 ### 2.3 Filtering Ghost Distances Using Atomic Radii
@@ -703,23 +696,23 @@ kept_distances <- filtered_result$kept
 removed_distances <- filtered_result$removed
 
 cat("Total distances calculated:", nrow(distances), "\n")
-#> Total distances calculated: 969
+#> Total distances calculated: 430
 cat("Distances kept after filtering:", nrow(kept_distances), "\n")
-#> Distances kept after filtering: 24
+#> Distances kept after filtering: 20
 cat("Unlikely / non-bonded distances removed:", nrow(removed_distances), "\n\n")
-#> Unlikely / non-bonded distances removed: 945
+#> Unlikely / non-bonded distances removed: 410
 
 print("Subset of removed distances (showing physically impossible / too long connections):")
 #> [1] "Subset of removed distances (showing physically impossible / too long connections):"
 print(head(removed_distances))
 #>     Atom1          Atom2  Distance expected_dist lower_bound upper_bound
 #>    <char>         <char>     <num>         <num>       <num>       <num>
-#> 1:    Si1 Si1_1_-1_-1_-1  9.395616          2.34       2.106       2.574
-#> 2:    Si1 Si1_2_-1_-1_-1 13.539062          2.34       2.106       2.574
-#> 3:    Si1 Si1_3_-1_-1_-1  9.807429          2.34       2.106       2.574
-#> 4:    Si1 Si1_4_-1_-1_-1  5.238116          2.34       2.106       2.574
-#> 5:    Si1  Si1_1_0_-1_-1  9.395616          2.34       2.106       2.574
-#> 6:    Si1  Si1_2_0_-1_-1 10.841314          2.34       2.106       2.574
+#> 1:    Ge1 Ge1_1_-1_-1_-1 10.587994          2.44       2.196       2.684
+#> 2:    Ge1 Ge1_2_-1_-1_-1  5.724757          2.44       2.196       2.684
+#> 3:    Ge1 Ge1_4_-1_-1_-1  7.098444          2.44       2.196       2.684
+#> 4:    Ge1  Ge1_1_0_-1_-1  7.048839          2.44       2.196       2.684
+#> 5:    Ge1  Ge1_2_0_-1_-1  4.889711          2.44       2.196       2.684
+#> 6:    Ge1  Ge1_3_0_-1_-1  7.738707          2.44       2.196       2.684
 #>                  Reason
 #>                  <char>
 #> 1: Distance is TOO LONG
@@ -738,18 +731,18 @@ framework without guest atoms),
 allows for the complete removal of bonds involving certain elements.
 
 ``` r
-# Let's filter our bond table to exclude any bonds involving Strontium ("Sr").
-# Since all bonds in this structure are Si-Sr, the result should be an empty table.
-bonds_without_sr <- filter_by_elements(
+# Let's filter our bond table to exclude any bonds involving Tin ("Sn").
+# The resulting table will only contain Cu-Se bonds.
+bonds_without_sn <- filter_by_elements(
     distances = bonded_pairs_with_error,
     atomic_coordinates = atomic_coordinates,
-    elements_to_exclude = "Sr"
+    elements_to_exclude = "Ge"
 )
 
 cat("Number of bonds in original table:", nrow(bonded_pairs_with_error), "\n")
-#> Number of bonds in original table: 14
-cat("Number of bonds after excluding 'Sr':", nrow(bonds_without_sr), "\n")
-#> Number of bonds after excluding 'Sr': 0
+#> Number of bonds in original table: 9
+cat("Number of bonds after excluding 'Ge':", nrow(bonds_without_sn), "\n")
+#> Number of bonds after excluding 'Ge': 0
 ```
 
 ### 2.5 Calculating Weighted Average Network Bond Distance
@@ -819,25 +812,23 @@ calculated only over actual chemical bonds, preventing artifacts from
 skewing the result.
 
 ``` r
-# Calculate the weighted average BOND distance for the entire Sr2Si network.
+# Calculate the weighted average BOND distance for the network.
 # First, identify the bonds in the structure. We use the `bonds_min` table
 # created in section 1.2.6.
 
-# Then, define the Wyckoff sites belonging to the network. Here, it's just "4c".
-# (We assigned dummy "4c" and "4a" Wyckoff positions to our coordinates in section 2.2).
-network_wyckoff_sites <- "4c"
+# Then, define the Wyckoff sites belonging to the network. 
+# For Okruginite, the framework atoms are on the "4a" sites.
+network_wyckoff_sites <- "4d" # Note: change to "a" if your package only expects the letter
 
 # Apply the function to the table of identified bonds.
-# For this simple, ordered structure, all occupancies are 1.0, but the function
-# correctly applies the full formula.
 weighted_avg_bond_dist <- calculate_weighted_average_network_distance(
     distances = bonds_min, # Use the bond table as input
     atomic_coordinates = atomic_coordinates,
     wyckoff_symbols = network_wyckoff_sites
 )
 
-cat("Weighted average network bond distance for the '4c' sites:", weighted_avg_bond_dist, "Å\n")
-#> Weighted average network bond distance for the '4c' sites: 3.281382 Å
+cat("Weighted average network bond distance for the '4a' sites:", weighted_avg_bond_dist, "Å\n")
+#> Weighted average network bond distance for the '4a' sites: 2.939673 Å
 ```
 
 ## 3. End-to-End Example: High-Throughput Batch Processing & CSV Extraction

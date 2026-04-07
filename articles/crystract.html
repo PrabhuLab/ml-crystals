@@ -56,7 +56,7 @@
                         <h4 data-toc-skip class="author">Don Ngo, Julia
 Maria Hubner, Anirudh Prabhu</h4>
             
-            <h4 data-toc-skip class="date">2026-03-30</h4>
+            <h4 data-toc-skip class="date">2026-04-07</h4>
       
 
       <div class="d-none name"><code>crystract.Rmd</code></div>
@@ -107,16 +107,16 @@ specify which bonding algorithms to run simultaneously.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># IMPORTANT: Update this path to point to your own downloaded CIF file.</span></span>
 <span><span class="co"># 1. Try to find the file in the installed package</span></span>
-<span><span class="va">cif_path</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"1590946.cif"</span>, package <span class="op">=</span> <span class="st">"crystract"</span><span class="op">)</span></span>
+<span><span class="va">cif_path</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"2405219.cif"</span>, package <span class="op">=</span> <span class="st">"crystract"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># 2. If that fails, look in the source directory</span></span>
 <span><span class="kw">if</span> <span class="op">(</span><span class="va">cif_path</span> <span class="op">==</span> <span class="st">""</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="va">cif_path</span> <span class="op">&lt;-</span> <span class="st">"../inst/extdata/1590946.cif"</span></span>
+<span>  <span class="va">cif_path</span> <span class="op">&lt;-</span> <span class="st">"../inst/extdata/2405219.cif"</span></span>
 <span><span class="op">}</span></span>
 <span></span>
 <span><span class="co"># 3. Final check to provide a clear error if both fail</span></span>
 <span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/files.html" class="external-link">file.exists</a></span><span class="op">(</span><span class="va">cif_path</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="kw"><a href="https://rdrr.io/r/base/stop.html" class="external-link">stop</a></span><span class="op">(</span><span class="st">"Could not find 1590946.cif in installed package or inst/extdata/"</span><span class="op">)</span></span>
+<span>  <span class="kw"><a href="https://rdrr.io/r/base/stop.html" class="external-link">stop</a></span><span class="op">(</span><span class="st">"Could not find 2405219.cif in installed package or inst/extdata/"</span><span class="op">)</span></span>
 <span><span class="op">}</span></span>
 <span></span>
 <span><span class="co"># Run the pipeline on our single example file, extracting multiple bonding types at once</span></span>
@@ -129,9 +129,9 @@ specify which bonding algorithms to run simultaneously.</p>
 <span><span class="co"># It's a single row containing all our results in nested data.tables.</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/str.html" class="external-link">str</a></span><span class="op">(</span><span class="va">analysis_results</span>, max.level <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Classes 'data.table' and 'data.frame':   1 obs. of  27 variables:</span></span>
-<span><span class="co">#&gt;  $ file_name              : chr "1590946.cif"</span></span>
-<span><span class="co">#&gt;  $ database_code          : chr "depnum_ccdc_archive CCDC 1590946"</span></span>
-<span><span class="co">#&gt;  $ chemical_formula       : chr "Si1 Sr2"</span></span>
+<span><span class="co">#&gt;  $ file_name              : chr "2405219.cif"</span></span>
+<span><span class="co">#&gt;  $ database_code          : chr "depnum_ccdc_archive CCDC 2405219"</span></span>
+<span><span class="co">#&gt;  $ chemical_formula       : chr "Ge Yb"</span></span>
 <span><span class="co">#&gt;  $ structure_type         : logi NA</span></span>
 <span><span class="co">#&gt;  $ space_group_name       : chr "P n m a"</span></span>
 <span><span class="co">#&gt;  $ space_group_number     : chr "62"</span></span>
@@ -139,62 +139,62 @@ specify which bonding algorithms to run simultaneously.</p>
 <span><span class="co">#&gt;   ..$ :Classes 'data.table' and 'data.frame':    1 obs. of  12 variables:</span></span>
 <span><span class="co">#&gt;   .. ..- attr(*, ".internal.selfref")=&lt;externalptr&gt; </span></span>
 <span><span class="co">#&gt;  $ atomic_coordinates     :List of 1</span></span>
-<span><span class="co">#&gt;   ..$ :Classes 'data.table' and 'data.frame':    3 obs. of  14 variables:</span></span>
+<span><span class="co">#&gt;   ..$ :Classes 'data.table' and 'data.frame':    2 obs. of  14 variables:</span></span>
 <span><span class="co">#&gt;   .. ..- attr(*, ".internal.selfref")=&lt;externalptr&gt; </span></span>
 <span><span class="co">#&gt;  $ symmetry_operations    :List of 1</span></span>
 <span><span class="co">#&gt;   ..$ :Classes 'data.table' and 'data.frame':    8 obs. of  3 variables:</span></span>
 <span><span class="co">#&gt;   .. ..- attr(*, ".internal.selfref")=&lt;externalptr&gt; </span></span>
 <span><span class="co">#&gt;  $ transformed_coords     :List of 1</span></span>
-<span><span class="co">#&gt;   ..$ :Classes 'data.table' and 'data.frame':    12 obs. of  5 variables:</span></span>
+<span><span class="co">#&gt;   ..$ :Classes 'data.table' and 'data.frame':    8 obs. of  5 variables:</span></span>
 <span><span class="co">#&gt;   .. ..- attr(*, ".internal.selfref")=&lt;externalptr&gt; </span></span>
 <span><span class="co">#&gt;  $ expanded_coords        :List of 1</span></span>
-<span><span class="co">#&gt;   ..$ :Classes 'data.table' and 'data.frame':    324 obs. of  8 variables:</span></span>
+<span><span class="co">#&gt;   ..$ :Classes 'data.table' and 'data.frame':    216 obs. of  8 variables:</span></span>
 <span><span class="co">#&gt;   .. ..- attr(*, ".internal.selfref")=&lt;externalptr&gt; </span></span>
 <span><span class="co">#&gt;  $ distances              :List of 1</span></span>
-<span><span class="co">#&gt;   ..$ :Classes 'data.table' and 'data.frame':    969 obs. of  6 variables:</span></span>
+<span><span class="co">#&gt;   ..$ :Classes 'data.table' and 'data.frame':    430 obs. of  6 variables:</span></span>
 <span><span class="co">#&gt;   .. ..- attr(*, ".internal.selfref")=&lt;externalptr&gt; </span></span>
 <span><span class="co">#&gt;  $ bonds_minimum_distance :List of 1</span></span>
-<span><span class="co">#&gt;   ..$ :Classes 'data.table' and 'data.frame':    14 obs. of  8 variables:</span></span>
+<span><span class="co">#&gt;   ..$ :Classes 'data.table' and 'data.frame':    9 obs. of  8 variables:</span></span>
 <span><span class="co">#&gt;   .. ..- attr(*, ".internal.selfref")=&lt;externalptr&gt; </span></span>
 <span><span class="co">#&gt;   .. ..- attr(*, "sorted")= chr [1:3] "Atom1" "Atom2" "Distance"</span></span>
 <span><span class="co">#&gt;  $ cn_minimum_distance    :List of 1</span></span>
-<span><span class="co">#&gt;   ..$ :Classes 'data.table' and 'data.frame':    3 obs. of  3 variables:</span></span>
+<span><span class="co">#&gt;   ..$ :Classes 'data.table' and 'data.frame':    2 obs. of  3 variables:</span></span>
 <span><span class="co">#&gt;   .. ..- attr(*, "sorted")= chr "Atom"</span></span>
 <span><span class="co">#&gt;   .. ..- attr(*, ".internal.selfref")=&lt;externalptr&gt; </span></span>
 <span><span class="co">#&gt;  $ angles_minimum_distance:List of 1</span></span>
-<span><span class="co">#&gt;   ..$ :Classes 'data.table' and 'data.frame':    30 obs. of  5 variables:</span></span>
+<span><span class="co">#&gt;   ..$ :Classes 'data.table' and 'data.frame':    22 obs. of  5 variables:</span></span>
 <span><span class="co">#&gt;   .. ..- attr(*, "sorted")= chr [1:3] "CentralAtom" "Neighbor1" "Neighbor2"</span></span>
 <span><span class="co">#&gt;   .. ..- attr(*, ".internal.selfref")=&lt;externalptr&gt; </span></span>
 <span><span class="co">#&gt;  $ bonds_brunner          :List of 1</span></span>
-<span><span class="co">#&gt;   ..$ :Classes 'data.table' and 'data.frame':    24 obs. of  8 variables:</span></span>
+<span><span class="co">#&gt;   ..$ :Classes 'data.table' and 'data.frame':    9 obs. of  8 variables:</span></span>
 <span><span class="co">#&gt;   .. ..- attr(*, ".internal.selfref")=&lt;externalptr&gt; </span></span>
 <span><span class="co">#&gt;   .. ..- attr(*, "sorted")= chr [1:3] "Atom1" "Atom2" "Distance"</span></span>
 <span><span class="co">#&gt;  $ cn_brunner             :List of 1</span></span>
-<span><span class="co">#&gt;   ..$ :Classes 'data.table' and 'data.frame':    3 obs. of  3 variables:</span></span>
+<span><span class="co">#&gt;   ..$ :Classes 'data.table' and 'data.frame':    2 obs. of  3 variables:</span></span>
 <span><span class="co">#&gt;   .. ..- attr(*, "sorted")= chr "Atom"</span></span>
 <span><span class="co">#&gt;   .. ..- attr(*, ".internal.selfref")=&lt;externalptr&gt; </span></span>
 <span><span class="co">#&gt;  $ angles_brunner         :List of 1</span></span>
-<span><span class="co">#&gt;   ..$ :Classes 'data.table' and 'data.frame':    105 obs. of  5 variables:</span></span>
+<span><span class="co">#&gt;   ..$ :Classes 'data.table' and 'data.frame':    22 obs. of  5 variables:</span></span>
 <span><span class="co">#&gt;   .. ..- attr(*, "sorted")= chr [1:3] "CentralAtom" "Neighbor1" "Neighbor2"</span></span>
 <span><span class="co">#&gt;   .. ..- attr(*, ".internal.selfref")=&lt;externalptr&gt; </span></span>
 <span><span class="co">#&gt;  $ bonds_econ             :List of 1</span></span>
-<span><span class="co">#&gt;   ..$ :Classes 'data.table' and 'data.frame':    36 obs. of  8 variables:</span></span>
+<span><span class="co">#&gt;   ..$ :Classes 'data.table' and 'data.frame':    18 obs. of  8 variables:</span></span>
 <span><span class="co">#&gt;   .. ..- attr(*, ".internal.selfref")=&lt;externalptr&gt; </span></span>
 <span><span class="co">#&gt;   .. ..- attr(*, "sorted")= chr [1:3] "Atom1" "Atom2" "Distance"</span></span>
 <span><span class="co">#&gt;  $ cn_econ                :List of 1</span></span>
-<span><span class="co">#&gt;   ..$ :Classes 'data.table' and 'data.frame':    3 obs. of  3 variables:</span></span>
+<span><span class="co">#&gt;   ..$ :Classes 'data.table' and 'data.frame':    2 obs. of  3 variables:</span></span>
 <span><span class="co">#&gt;   .. ..- attr(*, "sorted")= chr "Atom"</span></span>
 <span><span class="co">#&gt;   .. ..- attr(*, ".internal.selfref")=&lt;externalptr&gt; </span></span>
 <span><span class="co">#&gt;  $ angles_econ            :List of 1</span></span>
-<span><span class="co">#&gt;   ..$ :Classes 'data.table' and 'data.frame':    207 obs. of  5 variables:</span></span>
+<span><span class="co">#&gt;   ..$ :Classes 'data.table' and 'data.frame':    72 obs. of  5 variables:</span></span>
 <span><span class="co">#&gt;   .. ..- attr(*, "sorted")= chr [1:3] "CentralAtom" "Neighbor1" "Neighbor2"</span></span>
 <span><span class="co">#&gt;   .. ..- attr(*, ".internal.selfref")=&lt;externalptr&gt; </span></span>
 <span><span class="co">#&gt;  $ bonds_voronoi          :List of 1</span></span>
-<span><span class="co">#&gt;   ..$ :Classes 'data.table' and 'data.frame':    42 obs. of  11 variables:</span></span>
+<span><span class="co">#&gt;   ..$ :Classes 'data.table' and 'data.frame':    30 obs. of  11 variables:</span></span>
 <span><span class="co">#&gt;   .. ..- attr(*, ".internal.selfref")=&lt;externalptr&gt; </span></span>
 <span><span class="co">#&gt;   .. ..- attr(*, "sorted")= chr [1:3] "Atom1" "Atom2" "Distance"</span></span>
 <span><span class="co">#&gt;  $ cn_voronoi             :List of 1</span></span>
-<span><span class="co">#&gt;   ..$ :Classes 'data.table' and 'data.frame':    3 obs. of  3 variables:</span></span>
+<span><span class="co">#&gt;   ..$ :Classes 'data.table' and 'data.frame':    2 obs. of  3 variables:</span></span>
 <span><span class="co">#&gt;   .. ..- attr(*, "sorted")= chr "Atom"</span></span>
 <span><span class="co">#&gt;   .. ..- attr(*, ".internal.selfref")=&lt;externalptr&gt; </span></span>
 <span><span class="co">#&gt;  $ angles_voronoi         :List of 1</span></span>
@@ -202,11 +202,11 @@ specify which bonding algorithms to run simultaneously.</p>
 <span><span class="co">#&gt;   .. ..- attr(*, ".internal.selfref")=&lt;externalptr&gt; </span></span>
 <span><span class="co">#&gt;   .. ..- attr(*, "sorted")= chr "CentralAtom"</span></span>
 <span><span class="co">#&gt;  $ bonds_crystal_nn       :List of 1</span></span>
-<span><span class="co">#&gt;   ..$ :Classes 'data.table' and 'data.frame':    36 obs. of  8 variables:</span></span>
+<span><span class="co">#&gt;   ..$ :Classes 'data.table' and 'data.frame':    26 obs. of  8 variables:</span></span>
 <span><span class="co">#&gt;   .. ..- attr(*, ".internal.selfref")=&lt;externalptr&gt; </span></span>
 <span><span class="co">#&gt;   .. ..- attr(*, "sorted")= chr [1:3] "Atom1" "Atom2" "Distance"</span></span>
 <span><span class="co">#&gt;  $ cn_crystal_nn          :List of 1</span></span>
-<span><span class="co">#&gt;   ..$ :Classes 'data.table' and 'data.frame':    3 obs. of  3 variables:</span></span>
+<span><span class="co">#&gt;   ..$ :Classes 'data.table' and 'data.frame':    2 obs. of  3 variables:</span></span>
 <span><span class="co">#&gt;   .. ..- attr(*, "sorted")= chr "Atom"</span></span>
 <span><span class="co">#&gt;   .. ..- attr(*, ".internal.selfref")=&lt;externalptr&gt; </span></span>
 <span><span class="co">#&gt;  $ angles_crystal_nn      :List of 1</span></span>
@@ -274,8 +274,7 @@ from the</td>
 Cambridge</td>
 </tr>
 <tr class="odd">
-<td align="left"># Crystallographic Data Centre (CCDC) in cooperation
-with FIZ Karlsruhe.</td>
+<td align="left"># Crystallographic Data Centre (CCDC).</td>
 </tr>
 <tr class="even">
 <td align="left">#</td>
@@ -296,9 +295,9 @@ information.</p>
 <span><span class="va">space_group_number</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/extract_space_group_number.html">extract_space_group_number</a></span><span class="op">(</span><span class="va">cif_content</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Database Code:"</span>, <span class="va">database_code</span>, <span class="st">"\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Database Code: depnum_ccdc_archive CCDC 1590946</span></span>
+<span><span class="co">#&gt; Database Code: depnum_ccdc_archive CCDC 2405219</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Chemical Formula:"</span>, <span class="va">chemical_formula</span>, <span class="st">"\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Chemical Formula: Si1 Sr2</span></span>
+<span><span class="co">#&gt; Chemical Formula: Ge Yb</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Space Group:"</span>, <span class="va">space_group_name</span>, <span class="st">"(No."</span>, <span class="va">space_group_number</span>, <span class="st">")\n"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Space Group: P n m a (No. 62 )</span></span></code></pre></div>
 <p>Next, <code><a href="../reference/extract_unit_cell_metrics.html">extract_unit_cell_metrics()</a></code> extracts the six
@@ -317,13 +316,13 @@ Their experimental uncertainties are also extracted.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">unit_cell_metrics</span><span class="op">)</span></span>
 <span><span class="co">#&gt;    _cell_length_a _cell_length_b _cell_length_c _cell_angle_alpha</span></span>
 <span><span class="co">#&gt;             &lt;num&gt;          &lt;num&gt;          &lt;num&gt;             &lt;num&gt;</span></span>
-<span><span class="co">#&gt; 1:           8.11           5.15           9.54                90</span></span>
+<span><span class="co">#&gt; 1:         7.9006         3.8981         5.8729                90</span></span>
 <span><span class="co">#&gt;    _cell_angle_beta _cell_angle_gamma _cell_length_a_error</span></span>
 <span><span class="co">#&gt;               &lt;num&gt;             &lt;num&gt;                &lt;num&gt;</span></span>
-<span><span class="co">#&gt; 1:               90                90                   NA</span></span>
+<span><span class="co">#&gt; 1:               90                90               0.0019</span></span>
 <span><span class="co">#&gt;    _cell_length_b_error _cell_length_c_error _cell_angle_alpha_error</span></span>
 <span><span class="co">#&gt;                   &lt;num&gt;                &lt;num&gt;                   &lt;num&gt;</span></span>
-<span><span class="co">#&gt; 1:                   NA                   NA                      NA</span></span>
+<span><span class="co">#&gt; 1:                9e-04               0.0015                      NA</span></span>
 <span><span class="co">#&gt;    _cell_angle_beta_error _cell_angle_gamma_error</span></span>
 <span><span class="co">#&gt;                     &lt;num&gt;                   &lt;num&gt;</span></span>
 <span><span class="co">#&gt; 1:                     NA                      NA</span></span></code></pre></div>
@@ -344,19 +343,16 @@ operations</strong> to this unique set.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">atomic_coordinates</span><span class="op">)</span></span>
 <span><span class="co">#&gt;     Label TypeSymbol WyckoffSymbol WyckoffMultiplicity OxidationState</span></span>
 <span><span class="co">#&gt;    &lt;char&gt;     &lt;char&gt;        &lt;char&gt;               &lt;num&gt;          &lt;num&gt;</span></span>
-<span><span class="co">#&gt; 1:    Sr1       Sr0+          &lt;NA&gt;                  NA             NA</span></span>
-<span><span class="co">#&gt; 2:    Sr2       Sr0+          &lt;NA&gt;                  NA             NA</span></span>
-<span><span class="co">#&gt; 3:    Si1       Si0+          &lt;NA&gt;                  NA             NA</span></span>
-<span><span class="co">#&gt;    ThermalParam Occupancy OccupancyError    x_a   y_b    z_c x_error</span></span>
-<span><span class="co">#&gt;           &lt;num&gt;     &lt;num&gt;          &lt;num&gt;  &lt;num&gt; &lt;num&gt;  &lt;num&gt;   &lt;num&gt;</span></span>
-<span><span class="co">#&gt; 1:           NA         1             NA 0.6529  0.25 0.0769       0</span></span>
-<span><span class="co">#&gt; 2:           NA         1             NA 0.5192  0.25 0.6748       0</span></span>
-<span><span class="co">#&gt; 3:           NA         1             NA 0.2539  0.25 0.1028       0</span></span>
+<span><span class="co">#&gt; 1:    Yb1         Yb             d                   4             NA</span></span>
+<span><span class="co">#&gt; 2:    Ge1         Ge             d                   4             NA</span></span>
+<span><span class="co">#&gt;    ThermalParam Occupancy OccupancyError     x_a   y_b    z_c x_error</span></span>
+<span><span class="co">#&gt;           &lt;num&gt;     &lt;num&gt;          &lt;num&gt;   &lt;num&gt; &lt;num&gt;  &lt;num&gt;   &lt;num&gt;</span></span>
+<span><span class="co">#&gt; 1:       0.0215         1              0 0.17675  0.25 0.6121 0.00019</span></span>
+<span><span class="co">#&gt; 2:       0.0238         1              0 0.03550  0.25 0.1268 0.00040</span></span>
 <span><span class="co">#&gt;    y_error z_error</span></span>
 <span><span class="co">#&gt;      &lt;num&gt;   &lt;num&gt;</span></span>
-<span><span class="co">#&gt; 1:       0       0</span></span>
-<span><span class="co">#&gt; 2:       0       0</span></span>
-<span><span class="co">#&gt; 3:       0       0</span></span>
+<span><span class="co">#&gt; 1:       0   2e-04</span></span>
+<span><span class="co">#&gt; 2:       0   5e-04</span></span>
 <span></span>
 <span><span class="co"># Extract the symmetry operations</span></span>
 <span><span class="va">symmetry_operations</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/extract_symmetry_operations.html">extract_symmetry_operations</a></span><span class="op">(</span><span class="va">cif_content</span><span class="op">)</span></span>
@@ -365,12 +361,12 @@ operations</strong> to this unique set.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">symmetry_operations</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;         x      y      z</span></span>
 <span><span class="co">#&gt;    &lt;char&gt; &lt;char&gt; &lt;char&gt;</span></span>
-<span><span class="co">#&gt; 1:  x+1/2      y -z+1/2</span></span>
-<span><span class="co">#&gt; 2:      x -y+1/2      z</span></span>
-<span><span class="co">#&gt; 3: -x+1/2  y+1/2  z+1/2</span></span>
-<span><span class="co">#&gt; 4:     -x     -y     -z</span></span>
-<span><span class="co">#&gt; 5: -x+1/2     -y  z+1/2</span></span>
-<span><span class="co">#&gt; 6:     -x  y+1/2     -z</span></span></code></pre></div>
+<span><span class="co">#&gt; 1:      x      y      z</span></span>
+<span><span class="co">#&gt; 2: -x+1/2     -y  z+1/2</span></span>
+<span><span class="co">#&gt; 3:     -x  y+1/2     -z</span></span>
+<span><span class="co">#&gt; 4:  x+1/2 -y+1/2 -z+1/2</span></span>
+<span><span class="co">#&gt; 5:     -x     -y     -z</span></span>
+<span><span class="co">#&gt; 6:  x+1/2      y -z+1/2</span></span></code></pre></div>
 </div>
 <div class="section level4">
 <h4 id="generating-the-full-crystal-structure">1.2.4 Generating the Full Crystal Structure<a class="anchor" aria-label="anchor" href="#generating-the-full-crystal-structure"></a>
@@ -420,28 +416,28 @@ generates new coordinates:</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="st">"Unique atoms in full unit cell (first 6):"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "Unique atoms in full unit cell (first 6):"</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">transformed_coords</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt;     Label SymOp    x_a   y_b    z_c</span></span>
-<span><span class="co">#&gt;    &lt;char&gt; &lt;int&gt;  &lt;num&gt; &lt;num&gt;  &lt;num&gt;</span></span>
-<span><span class="co">#&gt; 1:  Sr1_1     1 0.1529  0.25 0.4231</span></span>
-<span><span class="co">#&gt; 2:  Sr1_2     2 0.6529  0.25 0.0769</span></span>
-<span><span class="co">#&gt; 3:  Sr1_3     3 0.8471  0.75 0.5769</span></span>
-<span><span class="co">#&gt; 4:  Sr1_4     4 0.3471  0.75 0.9231</span></span>
-<span><span class="co">#&gt; 5:  Sr2_1     1 0.0192  0.25 0.8252</span></span>
-<span><span class="co">#&gt; 6:  Sr2_2     2 0.5192  0.25 0.6748</span></span>
+<span><span class="co">#&gt;     Label SymOp     x_a   y_b    z_c</span></span>
+<span><span class="co">#&gt;    &lt;char&gt; &lt;int&gt;   &lt;num&gt; &lt;num&gt;  &lt;num&gt;</span></span>
+<span><span class="co">#&gt; 1:  Yb1_1     1 0.17675  0.25 0.6121</span></span>
+<span><span class="co">#&gt; 2:  Yb1_2     2 0.32325  0.75 0.1121</span></span>
+<span><span class="co">#&gt; 3:  Yb1_3     3 0.82325  0.75 0.3879</span></span>
+<span><span class="co">#&gt; 4:  Yb1_4     4 0.67675  0.25 0.8879</span></span>
+<span><span class="co">#&gt; 5:  Ge1_1     1 0.03550  0.25 0.1268</span></span>
+<span><span class="co">#&gt; 6:  Ge1_2     2 0.46450  0.75 0.6268</span></span>
 <span></span>
 <span><span class="co"># Expand into a supercell for neighbor calculations</span></span>
 <span><span class="va">expanded_coords</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/expand_transformed_coords.html">expand_transformed_coords</a></span><span class="op">(</span><span class="va">transformed_coords</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="st">"Atoms in supercell (first 6):"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "Atoms in supercell (first 6):"</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">expanded_coords</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt;             Label SymOp     x_a   y_b     z_c    Tx    Ty    Tz</span></span>
-<span><span class="co">#&gt;            &lt;char&gt; &lt;int&gt;   &lt;num&gt; &lt;num&gt;   &lt;num&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt;</span></span>
-<span><span class="co">#&gt; 1: Sr1_1_-1_-1_-1     1 -0.8471 -0.75 -0.5769    -1    -1    -1</span></span>
-<span><span class="co">#&gt; 2: Sr1_2_-1_-1_-1     2 -0.3471 -0.75 -0.9231    -1    -1    -1</span></span>
-<span><span class="co">#&gt; 3: Sr1_3_-1_-1_-1     3 -0.1529 -0.25 -0.4231    -1    -1    -1</span></span>
-<span><span class="co">#&gt; 4: Sr1_4_-1_-1_-1     4 -0.6529 -0.25 -0.0769    -1    -1    -1</span></span>
-<span><span class="co">#&gt; 5: Sr2_1_-1_-1_-1     1 -0.9808 -0.75 -0.1748    -1    -1    -1</span></span>
-<span><span class="co">#&gt; 6: Sr2_2_-1_-1_-1     2 -0.4808 -0.75 -0.3252    -1    -1    -1</span></span></code></pre></div>
+<span><span class="co">#&gt;             Label SymOp      x_a   y_b     z_c    Tx    Ty    Tz</span></span>
+<span><span class="co">#&gt;            &lt;char&gt; &lt;int&gt;    &lt;num&gt; &lt;num&gt;   &lt;num&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt;</span></span>
+<span><span class="co">#&gt; 1: Yb1_1_-1_-1_-1     1 -0.82325 -0.75 -0.3879    -1    -1    -1</span></span>
+<span><span class="co">#&gt; 2: Yb1_2_-1_-1_-1     2 -0.67675 -0.25 -0.8879    -1    -1    -1</span></span>
+<span><span class="co">#&gt; 3: Yb1_3_-1_-1_-1     3 -0.17675 -0.25 -0.6121    -1    -1    -1</span></span>
+<span><span class="co">#&gt; 4: Yb1_4_-1_-1_-1     4 -0.32325 -0.75 -0.1121    -1    -1    -1</span></span>
+<span><span class="co">#&gt; 5: Ge1_1_-1_-1_-1     1 -0.96450 -0.75 -0.8732    -1    -1    -1</span></span>
+<span><span class="co">#&gt; 6: Ge1_2_-1_-1_-1     2 -0.53550 -0.25 -0.3732    -1    -1    -1</span></span></code></pre></div>
 </div>
 <div class="section level4">
 <h4 id="calculating-interatomic-distances">1.2.5 Calculating Interatomic Distances<a class="anchor" aria-label="anchor" href="#calculating-interatomic-distances"></a>
@@ -474,14 +470,14 @@ the generated supercell.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="st">"Calculated Distances (shortest 6):"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "Calculated Distances (shortest 6):"</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">distances</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/order.html" class="external-link">order</a></span><span class="op">(</span><span class="va">Distance</span><span class="op">)</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt;     Atom1         Atom2 Distance  DeltaX DeltaY  DeltaZ</span></span>
-<span><span class="co">#&gt;    &lt;char&gt;        &lt;char&gt;    &lt;num&gt;   &lt;num&gt;  &lt;num&gt;   &lt;num&gt;</span></span>
-<span><span class="co">#&gt; 1:    Si1   Sr1_1_0_0_0 3.163544  0.1010    0.0 -0.3203</span></span>
-<span><span class="co">#&gt; 2:    Sr1   Si1_1_0_0_0 3.163544 -0.1010    0.0 -0.3203</span></span>
-<span><span class="co">#&gt; 3:    Si1 Sr1_4_0_-1_-1 3.184477 -0.0932    0.5  0.1797</span></span>
-<span><span class="co">#&gt; 4:    Sr1 Si1_4_0_-1_-1 3.184477 -0.0932    0.5  0.1797</span></span>
-<span><span class="co">#&gt; 5:    Si1  Sr1_4_0_0_-1 3.184477 -0.0932   -0.5  0.1797</span></span>
-<span><span class="co">#&gt; 6:    Sr1  Si1_4_0_0_-1 3.184477 -0.0932   -0.5  0.1797</span></span></code></pre></div>
+<span><span class="co">#&gt;     Atom1          Atom2 Distance  DeltaX DeltaY  DeltaZ</span></span>
+<span><span class="co">#&gt;    &lt;char&gt;         &lt;char&gt;    &lt;num&gt;   &lt;num&gt;  &lt;num&gt;   &lt;num&gt;</span></span>
+<span><span class="co">#&gt; 1:    Ge1 Ge1_3_-1_-1_-1 2.516281 0.07100    0.5  0.2536</span></span>
+<span><span class="co">#&gt; 2:    Ge1  Ge1_3_-1_0_-1 2.516281 0.07100   -0.5  0.2536</span></span>
+<span><span class="co">#&gt; 3:    Ge1  Yb1_3_-1_-1_0 2.993686 0.21225    0.5 -0.2611</span></span>
+<span><span class="co">#&gt; 4:    Yb1  Ge1_3_-1_-1_0 2.993686 0.21225    0.5 -0.2611</span></span>
+<span><span class="co">#&gt; 5:    Ge1   Yb1_3_-1_0_0 2.993686 0.21225   -0.5 -0.2611</span></span>
+<span><span class="co">#&gt; 6:    Yb1   Ge1_3_-1_0_0 2.993686 0.21225   -0.5 -0.2611</span></span></code></pre></div>
 </div>
 <div class="section level4">
 <h4 id="identifying-bonds-and-neighbors">1.2.6 Identifying Bonds and Neighbors<a class="anchor" aria-label="anchor" href="#identifying-bonds-and-neighbors"></a>
@@ -543,9 +539,9 @@ electronegativity weights.</li>
 <span><span class="va">bonds_crystal_nn</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/crystal_nn.html">crystal_nn</a></span><span class="op">(</span><span class="va">distances</span>, <span class="va">atomic_coordinates</span>, <span class="va">expanded_coords</span>, <span class="va">unit_cell_metrics</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Minimum Distance found"</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">bonds_min</span><span class="op">)</span>, <span class="st">"bonds.\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Minimum Distance found 14 bonds.</span></span>
+<span><span class="co">#&gt; Minimum Distance found 9 bonds.</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"CrystalNN found"</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">bonds_crystal_nn</span><span class="op">)</span>, <span class="st">"bonds.\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; CrystalNN found 36 bonds.</span></span>
+<span><span class="co">#&gt; CrystalNN found 26 bonds.</span></span>
 <span></span>
 <span><span class="co"># Calculate integer neighbor counts based on the bonded pairs (e.g., using CrystalNN)</span></span>
 <span><span class="va">neighbor_counts</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calculate_neighbor_counts.html">calculate_neighbor_counts</a></span><span class="op">(</span><span class="va">bonds_crystal_nn</span><span class="op">)</span></span>
@@ -554,9 +550,8 @@ electronegativity weights.</li>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">neighbor_counts</span><span class="op">)</span></span>
 <span><span class="co">#&gt;      Atom CoordinationNumber</span></span>
 <span><span class="co">#&gt;    &lt;char&gt;              &lt;int&gt;</span></span>
-<span><span class="co">#&gt; 1:  Sr1_2                 12</span></span>
-<span><span class="co">#&gt; 2:  Sr2_2                 15</span></span>
-<span><span class="co">#&gt; 3:  Si1_2                  9</span></span></code></pre></div>
+<span><span class="co">#&gt; 1:  Yb1_1                 17</span></span>
+<span><span class="co">#&gt; 2:  Ge1_1                  9</span></span></code></pre></div>
 </div>
 <div class="section level4">
 <h4 id="calculating-bond-angles">1.2.7 Calculating Bond Angles<a class="anchor" aria-label="anchor" href="#calculating-bond-angles"></a>
@@ -612,21 +607,22 @@ possible bond angles around each central atom. We’ll pass it our
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="st">"Calculated Bond Angles (first 6):"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "Calculated Bond Angles (first 6):"</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">bond_angles</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt;    CentralAtom   Neighbor1     Neighbor2     Angle</span></span>
-<span><span class="co">#&gt;         &lt;char&gt;      &lt;char&gt;        &lt;char&gt;     &lt;num&gt;</span></span>
-<span><span class="co">#&gt; 1:         Si1 Sr1_1_0_0_0   Sr1_2_0_0_0 109.37260</span></span>
-<span><span class="co">#&gt; 2:         Si1 Sr1_1_0_0_0 Sr1_4_0_-1_-1 125.55190</span></span>
-<span><span class="co">#&gt; 3:         Si1 Sr1_1_0_0_0  Sr1_4_0_0_-1 125.55190</span></span>
-<span><span class="co">#&gt; 4:         Si1 Sr1_1_0_0_0  Sr2_1_0_0_-1 129.28796</span></span>
-<span><span class="co">#&gt; 5:         Si1 Sr1_1_0_0_0 Sr2_3_-1_-1_0  69.08689</span></span>
-<span><span class="co">#&gt; 6:         Si1 Sr1_1_0_0_0  Sr2_3_-1_0_0  69.08689</span></span></code></pre></div>
+<span><span class="co">#&gt;    CentralAtom      Neighbor1     Neighbor2    Angle</span></span>
+<span><span class="co">#&gt;         &lt;char&gt;         &lt;char&gt;        &lt;char&gt;    &lt;num&gt;</span></span>
+<span><span class="co">#&gt; 1:         Ge1 Ge1_3_-1_-1_-1 Ge1_3_-1_0_-1 101.5332</span></span>
+<span><span class="co">#&gt; 2:         Yb1    Ge1_1_0_0_0   Ge1_1_0_0_1 138.3540</span></span>
+<span><span class="co">#&gt; 3:         Yb1    Ge1_1_0_0_0  Ge1_2_0_-1_0 107.6689</span></span>
+<span><span class="co">#&gt; 4:         Yb1    Ge1_1_0_0_0   Ge1_2_0_0_0 107.6689</span></span>
+<span><span class="co">#&gt; 5:         Yb1    Ge1_1_0_0_0 Ge1_3_-1_-1_0 105.8268</span></span>
+<span><span class="co">#&gt; 6:         Yb1    Ge1_1_0_0_0  Ge1_3_-1_0_0 105.8268</span></span></code></pre></div>
 </div>
 <div class="section level4">
 <h4 id="error-propagation">1.2.8 Error Propagation<a class="anchor" aria-label="anchor" href="#error-propagation"></a>
 </h4>
 <p>Finally, <code>crystract</code> propagates the experimental
-uncertainties from cell parameters and atomic coordinates to the
-calculated distances and angles.</p>
+uncertainties (i.e., the estimated standard deviations of the unit cell
+parameters and fractional atomic coordinates) from cell parameters and
+atomic coordinates to the calculated distances and angles.</p>
 <p><strong>Formula Context: Error Propagation</strong></p>
 <p>The uncertainty,
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>σ</mi><mi>f</mi></msub><annotation encoding="application/x-tex">\sigma_f</annotation></semantics></math>,
@@ -679,22 +675,22 @@ uncertainties to the final angle via the chain rule.</p>
 <span><span class="co">#&gt; [1] "Bonded Pairs with Distance Error (first 6):"</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">bonded_pairs_with_error</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Key: &lt;Atom1, Atom2, Distance&gt;</span></span>
-<span><span class="co">#&gt;     Atom1         Atom2 Distance  DeltaX DeltaY  DeltaZ    Weight</span></span>
-<span><span class="co">#&gt;    &lt;char&gt;        &lt;char&gt;    &lt;num&gt;   &lt;num&gt;  &lt;num&gt;   &lt;num&gt;     &lt;num&gt;</span></span>
-<span><span class="co">#&gt; 1:    Si1   Sr1_1_0_0_0 3.163544  0.1010    0.0 -0.3203 1.0000000</span></span>
-<span><span class="co">#&gt; 2:    Si1   Sr1_2_0_0_0 3.245310 -0.3990    0.0  0.0259 0.9748050</span></span>
-<span><span class="co">#&gt; 3:    Si1 Sr1_4_0_-1_-1 3.184477 -0.0932    0.5  0.1797 0.9934267</span></span>
-<span><span class="co">#&gt; 4:    Si1  Sr1_4_0_0_-1 3.184477 -0.0932   -0.5  0.1797 0.9934267</span></span>
-<span><span class="co">#&gt; 5:    Si1  Sr2_1_0_0_-1 3.261366  0.2347    0.0  0.2776 0.9700058</span></span>
-<span><span class="co">#&gt; 6:    Si1 Sr2_3_-1_-1_0 3.465249  0.2731    0.5 -0.0720 0.9129342</span></span>
+<span><span class="co">#&gt;     Atom1          Atom2 Distance   DeltaX DeltaY  DeltaZ    Weight</span></span>
+<span><span class="co">#&gt;    &lt;char&gt;         &lt;char&gt;    &lt;num&gt;    &lt;num&gt;  &lt;num&gt;   &lt;num&gt;     &lt;num&gt;</span></span>
+<span><span class="co">#&gt; 1:    Ge1 Ge1_3_-1_-1_-1 2.516281  0.07100    0.5  0.2536 1.0000000</span></span>
+<span><span class="co">#&gt; 2:    Ge1  Ge1_3_-1_0_-1 2.516281  0.07100   -0.5  0.2536 1.0000000</span></span>
+<span><span class="co">#&gt; 3:    Yb1    Ge1_1_0_0_0 3.060807  0.14125    0.0  0.4853 0.9780708</span></span>
+<span><span class="co">#&gt; 4:    Yb1    Ge1_1_0_0_1 3.222200  0.14125    0.0 -0.5147 0.9290813</span></span>
+<span><span class="co">#&gt; 5:    Yb1   Ge1_2_0_-1_0 2.995761 -0.28775    0.5 -0.0147 0.9993073</span></span>
+<span><span class="co">#&gt; 6:    Yb1    Ge1_2_0_0_0 2.995761 -0.28775   -0.5 -0.0147 0.9993073</span></span>
 <span><span class="co">#&gt;    DistanceError</span></span>
 <span><span class="co">#&gt;            &lt;num&gt;</span></span>
-<span><span class="co">#&gt; 1:             0</span></span>
-<span><span class="co">#&gt; 2:             0</span></span>
-<span><span class="co">#&gt; 3:             0</span></span>
-<span><span class="co">#&gt; 4:             0</span></span>
-<span><span class="co">#&gt; 5:             0</span></span>
-<span><span class="co">#&gt; 6:             0</span></span>
+<span><span class="co">#&gt; 1:   0.002684669</span></span>
+<span><span class="co">#&gt; 2:   0.002684669</span></span>
+<span><span class="co">#&gt; 3:   0.003281605</span></span>
+<span><span class="co">#&gt; 4:   0.003286949</span></span>
+<span><span class="co">#&gt; 5:   0.002704675</span></span>
+<span><span class="co">#&gt; 6:   0.002704675</span></span>
 <span></span>
 <span><span class="co"># Propagate errors for bond angles</span></span>
 <span><span class="va">bond_angles_with_error</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/propagate_angle_error.html">propagate_angle_error</a></span><span class="op">(</span></span>
@@ -707,14 +703,14 @@ uncertainties to the final angle via the chain rule.</p>
 <span><span class="co">#&gt; [1] "Bond Angles with Angle Error (first 6):"</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">bond_angles_with_error</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Key: &lt;CentralAtom, Neighbor1, Neighbor2&gt;</span></span>
-<span><span class="co">#&gt;    CentralAtom   Neighbor1     Neighbor2     Angle AngleError</span></span>
-<span><span class="co">#&gt;         &lt;char&gt;      &lt;char&gt;        &lt;char&gt;     &lt;num&gt;      &lt;num&gt;</span></span>
-<span><span class="co">#&gt; 1:         Si1 Sr1_1_0_0_0   Sr1_2_0_0_0 109.37260          0</span></span>
-<span><span class="co">#&gt; 2:         Si1 Sr1_1_0_0_0 Sr1_4_0_-1_-1 125.55190          0</span></span>
-<span><span class="co">#&gt; 3:         Si1 Sr1_1_0_0_0  Sr1_4_0_0_-1 125.55190          0</span></span>
-<span><span class="co">#&gt; 4:         Si1 Sr1_1_0_0_0  Sr2_1_0_0_-1 129.28796          0</span></span>
-<span><span class="co">#&gt; 5:         Si1 Sr1_1_0_0_0 Sr2_3_-1_-1_0  69.08689          0</span></span>
-<span><span class="co">#&gt; 6:         Si1 Sr1_1_0_0_0  Sr2_3_-1_0_0  69.08689          0</span></span></code></pre></div>
+<span><span class="co">#&gt;    CentralAtom      Neighbor1     Neighbor2    Angle AngleError</span></span>
+<span><span class="co">#&gt;         &lt;char&gt;         &lt;char&gt;        &lt;char&gt;    &lt;num&gt;      &lt;num&gt;</span></span>
+<span><span class="co">#&gt; 1:         Ge1 Ge1_3_-1_-1_-1 Ge1_3_-1_0_-1 101.5332 0.12841756</span></span>
+<span><span class="co">#&gt; 2:         Yb1    Ge1_1_0_0_0   Ge1_1_0_0_1 138.3540 0.09644671</span></span>
+<span><span class="co">#&gt; 3:         Yb1    Ge1_1_0_0_0  Ge1_2_0_-1_0 107.6689 0.07978724</span></span>
+<span><span class="co">#&gt; 4:         Yb1    Ge1_1_0_0_0   Ge1_2_0_0_0 107.6689 0.07978724</span></span>
+<span><span class="co">#&gt; 5:         Yb1    Ge1_1_0_0_0 Ge1_3_-1_-1_0 105.8268 0.08131349</span></span>
+<span><span class="co">#&gt; 6:         Yb1    Ge1_1_0_0_0  Ge1_3_-1_0_0 105.8268 0.08131349</span></span></code></pre></div>
 </div>
 </div>
 </div>
@@ -751,33 +747,29 @@ based on their specific site symmetry, described by their
 <code><a href="../reference/filter_by_wyckoff_symbol.html">filter_by_wyckoff_symbol()</a></code> function is designed for this
 purpose.</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># 1. In our example, the asymmetric atoms do not have Wyckoff information from the CIF.</span></span>
-<span><span class="co"># We will mock them as "4c" for this demonstration to show how the function works.</span></span>
-<span><span class="va">atomic_coordinates</span><span class="op">[</span>, <span class="va">WyckoffSymbol</span> <span class="op">:=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"c"</span>, <span class="st">"c"</span>, <span class="st">"c"</span><span class="op">)</span><span class="op">]</span></span>
-<span><span class="va">atomic_coordinates</span><span class="op">[</span>, <span class="va">WyckoffMultiplicity</span> <span class="op">:=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">4</span>, <span class="fl">4</span>, <span class="fl">4</span><span class="op">)</span><span class="op">]</span></span>
-<span></span>
+<code class="sourceCode R"><span><span class="co"># 1. Let's look at the Wyckoff information already extracted from the CIF.</span></span>
+<span><span class="co"># All atoms in this structure are on the "a" site with a multiplicity of 4.</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="st">"Atomic coordinates showing Wyckoff information:"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "Atomic coordinates showing Wyckoff information:"</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">atomic_coordinates</span><span class="op">[</span>, <span class="fu">.</span><span class="op">(</span><span class="va">Label</span>, <span class="va">WyckoffSymbol</span>, <span class="va">WyckoffMultiplicity</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
 <span><span class="co">#&gt;     Label WyckoffSymbol WyckoffMultiplicity</span></span>
 <span><span class="co">#&gt;    &lt;char&gt;        &lt;char&gt;               &lt;num&gt;</span></span>
-<span><span class="co">#&gt; 1:    Sr1             c                   4</span></span>
-<span><span class="co">#&gt; 2:    Sr2             c                   4</span></span>
-<span><span class="co">#&gt; 3:    Si1             c                   4</span></span>
+<span><span class="co">#&gt; 1:    Yb1             d                   4</span></span>
+<span><span class="co">#&gt; 2:    Ge1             d                   4</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"\n"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># 2. Filter bonds where the central atom is on the "4c" Wyckoff site.</span></span>
-<span><span class="va">bonds_from_4c_site</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/filter_by_wyckoff_symbol.html">filter_by_wyckoff_symbol</a></span><span class="op">(</span></span>
+<span><span class="co"># 2. Filter bonds where the central atom is on the "4a" Wyckoff site.</span></span>
+<span><span class="va">bonds_from_4a_site</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/filter_by_wyckoff_symbol.html">filter_by_wyckoff_symbol</a></span><span class="op">(</span></span>
 <span>  data_table <span class="op">=</span> <span class="va">bonded_pairs_with_error</span>,</span>
 <span>  atomic_coordinates <span class="op">=</span> <span class="va">atomic_coordinates</span>,</span>
 <span>  atom_col <span class="op">=</span> <span class="st">"Atom1"</span>,</span>
-<span>  wyckoff_symbols <span class="op">=</span> <span class="st">"4c"</span></span>
+<span>  wyckoff_symbols <span class="op">=</span> <span class="st">"4a"</span>  <span class="co"># Note: change to "a" if your package only expects the letter</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"Number of rows in original bond table:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">bonded_pairs_with_error</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "Number of rows in original bond table: 14"</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"Number of rows after filtering for site '4c':"</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">bonds_from_4c_site</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "Number of rows after filtering for site '4c': 14"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "Number of rows in original bond table: 9"</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"Number of rows after filtering for site '4a':"</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">bonds_from_4a_site</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] "Number of rows after filtering for site '4a': 0"</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="filtering-ghost-distances-using-atomic-radii">2.3 Filtering Ghost Distances Using Atomic Radii<a class="anchor" aria-label="anchor" href="#filtering-ghost-distances-using-atomic-radii"></a>
@@ -806,23 +798,23 @@ LONG”.</em></p>
 <span><span class="va">removed_distances</span> <span class="op">&lt;-</span> <span class="va">filtered_result</span><span class="op">$</span><span class="va">removed</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Total distances calculated:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">distances</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Total distances calculated: 969</span></span>
+<span><span class="co">#&gt; Total distances calculated: 430</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Distances kept after filtering:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">kept_distances</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Distances kept after filtering: 24</span></span>
+<span><span class="co">#&gt; Distances kept after filtering: 20</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Unlikely / non-bonded distances removed:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">removed_distances</span><span class="op">)</span>, <span class="st">"\n\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Unlikely / non-bonded distances removed: 945</span></span>
+<span><span class="co">#&gt; Unlikely / non-bonded distances removed: 410</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="st">"Subset of removed distances (showing physically impossible / too long connections):"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "Subset of removed distances (showing physically impossible / too long connections):"</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">removed_distances</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;     Atom1          Atom2  Distance expected_dist lower_bound upper_bound</span></span>
 <span><span class="co">#&gt;    &lt;char&gt;         &lt;char&gt;     &lt;num&gt;         &lt;num&gt;       &lt;num&gt;       &lt;num&gt;</span></span>
-<span><span class="co">#&gt; 1:    Si1 Si1_1_-1_-1_-1  9.395616          2.34       2.106       2.574</span></span>
-<span><span class="co">#&gt; 2:    Si1 Si1_2_-1_-1_-1 13.539062          2.34       2.106       2.574</span></span>
-<span><span class="co">#&gt; 3:    Si1 Si1_3_-1_-1_-1  9.807429          2.34       2.106       2.574</span></span>
-<span><span class="co">#&gt; 4:    Si1 Si1_4_-1_-1_-1  5.238116          2.34       2.106       2.574</span></span>
-<span><span class="co">#&gt; 5:    Si1  Si1_1_0_-1_-1  9.395616          2.34       2.106       2.574</span></span>
-<span><span class="co">#&gt; 6:    Si1  Si1_2_0_-1_-1 10.841314          2.34       2.106       2.574</span></span>
+<span><span class="co">#&gt; 1:    Ge1 Ge1_1_-1_-1_-1 10.587994          2.44       2.196       2.684</span></span>
+<span><span class="co">#&gt; 2:    Ge1 Ge1_2_-1_-1_-1  5.724757          2.44       2.196       2.684</span></span>
+<span><span class="co">#&gt; 3:    Ge1 Ge1_4_-1_-1_-1  7.098444          2.44       2.196       2.684</span></span>
+<span><span class="co">#&gt; 4:    Ge1  Ge1_1_0_-1_-1  7.048839          2.44       2.196       2.684</span></span>
+<span><span class="co">#&gt; 5:    Ge1  Ge1_2_0_-1_-1  4.889711          2.44       2.196       2.684</span></span>
+<span><span class="co">#&gt; 6:    Ge1  Ge1_3_0_-1_-1  7.738707          2.44       2.196       2.684</span></span>
 <span><span class="co">#&gt;                  Reason</span></span>
 <span><span class="co">#&gt;                  &lt;char&gt;</span></span>
 <span><span class="co">#&gt; 1: Distance is TOO LONG</span></span>
@@ -839,18 +831,18 @@ LONG”.</em></p>
 framework without guest atoms), <code><a href="../reference/filter_by_elements.html">filter_by_elements()</a></code> allows
 for the complete removal of bonds involving certain elements.</p>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Let's filter our bond table to exclude any bonds involving Strontium ("Sr").</span></span>
-<span><span class="co"># Since all bonds in this structure are Si-Sr, the result should be an empty table.</span></span>
-<span><span class="va">bonds_without_sr</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/filter_by_elements.html">filter_by_elements</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="co"># Let's filter our bond table to exclude any bonds involving Tin ("Sn").</span></span>
+<span><span class="co"># The resulting table will only contain Cu-Se bonds.</span></span>
+<span><span class="va">bonds_without_sn</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/filter_by_elements.html">filter_by_elements</a></span><span class="op">(</span></span>
 <span>    distances <span class="op">=</span> <span class="va">bonded_pairs_with_error</span>,</span>
 <span>    atomic_coordinates <span class="op">=</span> <span class="va">atomic_coordinates</span>,</span>
-<span>    elements_to_exclude <span class="op">=</span> <span class="st">"Sr"</span></span>
+<span>    elements_to_exclude <span class="op">=</span> <span class="st">"Ge"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Number of bonds in original table:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">bonded_pairs_with_error</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Number of bonds in original table: 14</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Number of bonds after excluding 'Sr':"</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">bonds_without_sr</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Number of bonds after excluding 'Sr': 0</span></span></code></pre></div>
+<span><span class="co">#&gt; Number of bonds in original table: 9</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Number of bonds after excluding 'Ge':"</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">bonds_without_sn</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Number of bonds after excluding 'Ge': 0</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="calculating-weighted-average-network-bond-distance">2.5 Calculating Weighted Average Network Bond Distance<a class="anchor" aria-label="anchor" href="#calculating-weighted-average-network-bond-distance"></a>
@@ -925,25 +917,23 @@ bonds to
 metric is calculated only over actual chemical bonds, preventing
 artifacts from skewing the result.</p>
 <div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Calculate the weighted average BOND distance for the entire Sr2Si network.</span></span>
+<code class="sourceCode R"><span><span class="co"># Calculate the weighted average BOND distance for the network.</span></span>
 <span><span class="co"># First, identify the bonds in the structure. We use the `bonds_min` table</span></span>
 <span><span class="co"># created in section 1.2.6.</span></span>
 <span></span>
-<span><span class="co"># Then, define the Wyckoff sites belonging to the network. Here, it's just "4c".</span></span>
-<span><span class="co"># (We assigned dummy "4c" and "4a" Wyckoff positions to our coordinates in section 2.2).</span></span>
-<span><span class="va">network_wyckoff_sites</span> <span class="op">&lt;-</span> <span class="st">"4c"</span></span>
+<span><span class="co"># Then, define the Wyckoff sites belonging to the network. </span></span>
+<span><span class="co"># For Okruginite, the framework atoms are on the "4a" sites.</span></span>
+<span><span class="va">network_wyckoff_sites</span> <span class="op">&lt;-</span> <span class="st">"4d"</span> <span class="co"># Note: change to "a" if your package only expects the letter</span></span>
 <span></span>
 <span><span class="co"># Apply the function to the table of identified bonds.</span></span>
-<span><span class="co"># For this simple, ordered structure, all occupancies are 1.0, but the function</span></span>
-<span><span class="co"># correctly applies the full formula.</span></span>
 <span><span class="va">weighted_avg_bond_dist</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calculate_weighted_average_network_distance.html">calculate_weighted_average_network_distance</a></span><span class="op">(</span></span>
 <span>    distances <span class="op">=</span> <span class="va">bonds_min</span>, <span class="co"># Use the bond table as input</span></span>
 <span>    atomic_coordinates <span class="op">=</span> <span class="va">atomic_coordinates</span>,</span>
 <span>    wyckoff_symbols <span class="op">=</span> <span class="va">network_wyckoff_sites</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Weighted average network bond distance for the '4c' sites:"</span>, <span class="va">weighted_avg_bond_dist</span>, <span class="st">"Å\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Weighted average network bond distance for the '4c' sites: 3.281382 Å</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Weighted average network bond distance for the '4a' sites:"</span>, <span class="va">weighted_avg_bond_dist</span>, <span class="st">"Å\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Weighted average network bond distance for the '4a' sites: 2.939673 Å</span></span></code></pre></div>
 </div>
 </div>
 </div>
