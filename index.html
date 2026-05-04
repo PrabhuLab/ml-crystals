@@ -98,7 +98,7 @@
 <div class="section level3">
 <h3 id="id_1-choosing-a-bonding-algorithm">1. Choosing a Bonding Algorithm<a class="anchor" aria-label="anchor" href="#id_1-choosing-a-bonding-algorithm"></a>
 </h3>
-<p>When invoking <code>analyze_cif_files(..., bonding_algorithms = c(...))</code>, we recommend choosing your target algorithm based on the chemical makeup of your structure and the electronegativity differences (<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>Δ</mi><mi>E</mi><mi>N</mi></mrow><annotation encoding="application/x-tex">\Delta EN</annotation></semantics></math>) of the expected bonds.</p>
+<p>When invoking <code>analyze_cif_files(..., bonding_algorithms = c(...))</code>, we recommend choosing your target algorithm based on the chemical makeup of your structure and the electronegativity differences (<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">Δ</mi><mi>E</mi><mi>N</mi></mrow><annotation encoding="application/x-tex">\Delta EN</annotation></semantics></math>) of the expected bonds.</p>
 <div align="center">
 <p><img src="reference/figures/bonding_logic.png" width="60%" alt="Bonding Algorithm Selection Logic"></p>
 </div>
@@ -141,12 +141,12 @@
 <col width="25%">
 <col width="25%">
 </colgroup>
-<thead><tr class="header">
+<thead><tr>
 <th align="left">database_code</th>
 <th align="left">chemical_formula</th>
 <th align="left">space_group_name</th>
 </tr></thead>
-<tbody><tr class="odd">
+<tbody><tr>
 <td align="left">depnum_ccdc_archive CCDC 1590946</td>
 <td align="left">Si1 Sr2</td>
 <td align="left">P n m a</td>
@@ -167,7 +167,7 @@
 <col width="16%">
 <col width="16%">
 </colgroup>
-<thead><tr class="header">
+<thead><tr>
 <th align="right">_cell_length_a</th>
 <th align="right">_cell_length_b</th>
 <th align="right">_cell_length_c</th>
@@ -175,7 +175,7 @@
 <th align="right">_cell_angle_beta</th>
 <th align="right">_cell_angle_gamma</th>
 </tr></thead>
-<tbody><tr class="odd">
+<tbody><tr>
 <td align="right">8.11</td>
 <td align="right">5.15</td>
 <td align="right">9.54</td>
@@ -191,7 +191,7 @@
 </h3>
 <p><code>crystract</code> identifies bonded pairs using your chosen algorithms. Below is the output from the <strong>Minimum Distance</strong> algorithm. Notice the rigorous propagation of experimental error (<code>DistanceError</code>).</p>
 <table class="table">
-<thead><tr class="header">
+<thead><tr>
 <th align="left">Atom1</th>
 <th align="left">Atom2</th>
 <th align="right">Distance</th>
@@ -199,42 +199,42 @@
 <th align="right">Weight</th>
 </tr></thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td align="left">Si1</td>
 <td align="left">Sr1_1_0_0_0</td>
 <td align="right">3.163544</td>
 <td align="right">0</td>
 <td align="right">1.0000000</td>
 </tr>
-<tr class="even">
+<tr>
 <td align="left">Si1</td>
 <td align="left">Sr1_2_0_0_0</td>
 <td align="right">3.245310</td>
 <td align="right">0</td>
 <td align="right">0.9748050</td>
 </tr>
-<tr class="odd">
+<tr>
 <td align="left">Si1</td>
 <td align="left">Sr1_4_0_-1_-1</td>
 <td align="right">3.184477</td>
 <td align="right">0</td>
 <td align="right">0.9934267</td>
 </tr>
-<tr class="even">
+<tr>
 <td align="left">Si1</td>
 <td align="left">Sr1_4_0_0_-1</td>
 <td align="right">3.184477</td>
 <td align="right">0</td>
 <td align="right">0.9934267</td>
 </tr>
-<tr class="odd">
+<tr>
 <td align="left">Si1</td>
 <td align="left">Sr2_1_0_0_-1</td>
 <td align="right">3.261366</td>
 <td align="right">0</td>
 <td align="right">0.9700058</td>
 </tr>
-<tr class="even">
+<tr>
 <td align="left">Si1</td>
 <td align="left">Sr2_3_-1_-1_0</td>
 <td align="right">3.465249</td>
@@ -250,7 +250,7 @@
 </h3>
 <p>Using the metric tensor, all connected triplets are evaluated to calculate the exact internal bond angles across the repeating periodic boundaries.</p>
 <table class="table">
-<thead><tr class="header">
+<thead><tr>
 <th align="left">CentralAtom</th>
 <th align="left">Neighbor1</th>
 <th align="left">Neighbor2</th>
@@ -258,42 +258,42 @@
 <th align="right">AngleError</th>
 </tr></thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td align="left">Si1</td>
 <td align="left">Sr1_1_0_0_0</td>
 <td align="left">Sr1_2_0_0_0</td>
 <td align="right">109.37260</td>
 <td align="right">0</td>
 </tr>
-<tr class="even">
+<tr>
 <td align="left">Si1</td>
 <td align="left">Sr1_1_0_0_0</td>
 <td align="left">Sr1_4_0_-1_-1</td>
 <td align="right">125.55190</td>
 <td align="right">0</td>
 </tr>
-<tr class="odd">
+<tr>
 <td align="left">Si1</td>
 <td align="left">Sr1_1_0_0_0</td>
 <td align="left">Sr1_4_0_0_-1</td>
 <td align="right">125.55190</td>
 <td align="right">0</td>
 </tr>
-<tr class="even">
+<tr>
 <td align="left">Si1</td>
 <td align="left">Sr1_1_0_0_0</td>
 <td align="left">Sr2_1_0_0_-1</td>
 <td align="right">129.28796</td>
 <td align="right">0</td>
 </tr>
-<tr class="odd">
+<tr>
 <td align="left">Si1</td>
 <td align="left">Sr1_1_0_0_0</td>
 <td align="left">Sr2_3_-1_-1_0</td>
 <td align="right">69.08689</td>
 <td align="right">0</td>
 </tr>
-<tr class="even">
+<tr>
 <td align="left">Si1</td>
 <td align="left">Sr1_1_0_0_0</td>
 <td align="left">Sr2_3_-1_0_0</td>
@@ -318,83 +318,83 @@
 <col width="33%">
 <col width="33%">
 </colgroup>
-<thead><tr class="header">
+<thead><tr>
 <th align="left">Column Name</th>
 <th align="left">Data Type</th>
 <th align="left">Description</th>
 </tr></thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td align="left"><code>file_name</code></td>
 <td align="left">Character</td>
 <td align="left">The name of the processed CIF file.</td>
 </tr>
-<tr class="even">
+<tr>
 <td align="left"><code>database_code</code></td>
 <td align="left">Character</td>
 <td align="left">The unique identifier from the source database.</td>
 </tr>
-<tr class="odd">
+<tr>
 <td align="left"><code>chemical_formula</code></td>
 <td align="left">Character</td>
 <td align="left">The chemical sum formula extracted from the CIF.</td>
 </tr>
-<tr class="even">
+<tr>
 <td align="left"><code>structure_type</code></td>
 <td align="left">Character</td>
 <td align="left">The name of the structure type.</td>
 </tr>
-<tr class="odd">
+<tr>
 <td align="left"><code>space_group_name</code></td>
 <td align="left">Character</td>
 <td align="left">Hermann-Mauguin space group symbol.</td>
 </tr>
-<tr class="even">
+<tr>
 <td align="left"><code>space_group_number</code></td>
 <td align="left">Character</td>
 <td align="left">International Tables space group number.</td>
 </tr>
-<tr class="odd">
+<tr>
 <td align="left"><code>unit_cell_metrics</code></td>
 <td align="left">List (DT)</td>
 <td align="left">Nested table containing lattice parameters.</td>
 </tr>
-<tr class="even">
+<tr>
 <td align="left"><code>atomic_coordinates</code></td>
 <td align="left">List (DT)</td>
 <td align="left">Nested table of primary asymmetric atoms.</td>
 </tr>
-<tr class="odd">
+<tr>
 <td align="left"><code>symmetry_operations</code></td>
 <td align="left">List (DT)</td>
 <td align="left">Nested table of symmetry operators.</td>
 </tr>
-<tr class="even">
+<tr>
 <td align="left"><code>transformed_coords</code></td>
 <td align="left">List (DT)</td>
 <td align="left">Nested table of the full unit cell atoms.</td>
 </tr>
-<tr class="odd">
+<tr>
 <td align="left"><code>expanded_coords</code></td>
 <td align="left">List (DT)</td>
 <td align="left">Nested table of the supercell (3x3x3) atoms.</td>
 </tr>
-<tr class="even">
+<tr>
 <td align="left"><code>distances</code></td>
 <td align="left">List (DT)</td>
 <td align="left">Nested table of all calculated interatomic distances.</td>
 </tr>
-<tr class="odd">
+<tr>
 <td align="left"><code>bonded_pairs_*</code></td>
 <td align="left">List (DT)</td>
 <td align="left">Nested table of bonds detected via requested methods (e.g. <code>_minimum_distance</code>).</td>
 </tr>
-<tr class="even">
+<tr>
 <td align="left"><code>neighbor_counts_*</code></td>
 <td align="left">List (DT)</td>
 <td align="left">Nested table of coordination numbers for requested methods.</td>
 </tr>
-<tr class="odd">
+<tr>
 <td align="left"><code>bond_angles_*</code></td>
 <td align="left">List (DT)</td>
 <td align="left">Nested table of calculated bond angles for requested methods.</td>
@@ -411,40 +411,40 @@
 <col width="33%">
 <col width="33%">
 </colgroup>
-<thead><tr class="header">
+<thead><tr>
 <th align="left">Column Name</th>
 <th align="left">Data Type</th>
 <th align="left">Description</th>
 </tr></thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td align="left"><code>Label</code></td>
 <td align="left">Character</td>
 <td align="left">Unique atom label (e.g., “Fe1”).</td>
 </tr>
-<tr class="even">
+<tr>
 <td align="left"><code>WyckoffSymbol</code></td>
 <td align="left">Character</td>
 <td align="left">The Wyckoff letter (e.g., “c”).</td>
 </tr>
-<tr class="odd">
+<tr>
 <td align="left"><code>WyckoffMultiplicity</code></td>
 <td align="left">Numeric</td>
 <td align="left">The site multiplicity (e.g., 4).</td>
 </tr>
-<tr class="even">
+<tr>
 <td align="left"><code>Occupancy</code></td>
 <td align="left">Numeric</td>
 <td align="left">Site occupancy factor (0.0 to 1.0).</td>
 </tr>
-<tr class="odd">
+<tr>
 <td align="left">
 <code>x_a</code>, <code>y_b</code>, <code>z_c</code>
 </td>
 <td align="left">Numeric</td>
 <td align="left">Fractional coordinates along axis <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>a</mi><mo>,</mo><mi>b</mi><mo>,</mo><mi>c</mi></mrow><annotation encoding="application/x-tex">a, b, c</annotation></semantics></math>.</td>
 </tr>
-<tr class="even">
+<tr>
 <td align="left"><code>*_error</code></td>
 <td align="left">Numeric</td>
 <td align="left">Standard uncertainties for coordinates.</td>
@@ -461,40 +461,40 @@
 <col width="33%">
 <col width="33%">
 </colgroup>
-<thead><tr class="header">
+<thead><tr>
 <th align="left">Column Name</th>
 <th align="left">Data Type</th>
 <th align="left">Description</th>
 </tr></thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td align="left"><code>Atom1</code></td>
 <td align="left">Character</td>
 <td align="left">Label of the central atom (from the asymmetric unit).</td>
 </tr>
-<tr class="even">
+<tr>
 <td align="left"><code>Atom2</code></td>
 <td align="left">Character</td>
 <td align="left">Label of the neighbor atom (from the expanded supercell).</td>
 </tr>
-<tr class="odd">
+<tr>
 <td align="left"><code>Distance</code></td>
 <td align="left">Numeric</td>
 <td align="left">Calculated Euclidean distance in Angstroms (Å).</td>
 </tr>
-<tr class="even">
+<tr>
 <td align="left"><code>DistanceError</code></td>
 <td align="left">Numeric</td>
 <td align="left">Propagated standard uncertainty of the distance.</td>
 </tr>
-<tr class="odd">
+<tr>
 <td align="left">
 <code>DeltaX</code>, <code>DeltaY</code>, <code>DeltaZ</code>
 </td>
 <td align="left">Numeric</td>
 <td align="left">Difference in fractional coordinates (<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>x</mi><mn>1</mn></msub><mo>−</mo><msub><mi>x</mi><mn>2</mn></msub></mrow><annotation encoding="application/x-tex">x_1 - x_2</annotation></semantics></math>).</td>
 </tr>
-<tr class="even">
+<tr>
 <td align="left"><code>Weight</code></td>
 <td align="left">Numeric</td>
 <td align="left">Calculated bond weight/strength depending on the algorithm.</td>

@@ -67,7 +67,7 @@ radii and choosing the most appropriate bonding algorithm.
 
 When invoking `analyze_cif_files(..., bonding_algorithms = c(...))`, we
 recommend choosing your target algorithm based on the chemical makeup of
-your structure and the electronegativity differences ($\Delta EN$) of
+your structure and the electronegativity differences ($`\Delta EN`$) of
 the expected bonds.
 
 ![Bonding Algorithm Selection
@@ -97,6 +97,7 @@ crystal structure included inside the package itself, demonstrating the
 exact data outputs you can expect.
 
 ``` r
+
 library(crystract)
 library(data.table)
 
@@ -131,8 +132,8 @@ parsed along with their experimental uncertainties (if available in the
 CIF).
 
 | \_cell_length_a | \_cell_length_b | \_cell_length_c | \_cell_angle_alpha | \_cell_angle_beta | \_cell_angle_gamma |
-|----------------:|----------------:|----------------:|-------------------:|------------------:|-------------------:|
-|            8.11 |            5.15 |            9.54 |                 90 |                90 |                 90 |
+|---:|---:|---:|---:|---:|---:|
+| 8.11 | 5.15 | 9.54 | 90 | 90 | 90 |
 
 Extracted Unit Cell Parameters (Å and Degrees)
 
@@ -179,45 +180,45 @@ Analysis Object and its nested tables.
 
 #### 1. Master Analysis Object
 
-| Column Name           | Data Type | Description                                                                      |
-|:----------------------|:----------|:---------------------------------------------------------------------------------|
-| `file_name`           | Character | The name of the processed CIF file.                                              |
-| `database_code`       | Character | The unique identifier from the source database.                                  |
-| `chemical_formula`    | Character | The chemical sum formula extracted from the CIF.                                 |
-| `structure_type`      | Character | The name of the structure type.                                                  |
-| `space_group_name`    | Character | Hermann-Mauguin space group symbol.                                              |
-| `space_group_number`  | Character | International Tables space group number.                                         |
-| `unit_cell_metrics`   | List (DT) | Nested table containing lattice parameters.                                      |
-| `atomic_coordinates`  | List (DT) | Nested table of primary asymmetric atoms.                                        |
-| `symmetry_operations` | List (DT) | Nested table of symmetry operators.                                              |
-| `transformed_coords`  | List (DT) | Nested table of the full unit cell atoms.                                        |
-| `expanded_coords`     | List (DT) | Nested table of the supercell (3x3x3) atoms.                                     |
-| `distances`           | List (DT) | Nested table of all calculated interatomic distances.                            |
-| `bonded_pairs_*`      | List (DT) | Nested table of bonds detected via requested methods (e.g. `_minimum_distance`). |
-| `neighbor_counts_*`   | List (DT) | Nested table of coordination numbers for requested methods.                      |
-| `bond_angles_*`       | List (DT) | Nested table of calculated bond angles for requested methods.                    |
+| Column Name | Data Type | Description |
+|:---|:---|:---|
+| `file_name` | Character | The name of the processed CIF file. |
+| `database_code` | Character | The unique identifier from the source database. |
+| `chemical_formula` | Character | The chemical sum formula extracted from the CIF. |
+| `structure_type` | Character | The name of the structure type. |
+| `space_group_name` | Character | Hermann-Mauguin space group symbol. |
+| `space_group_number` | Character | International Tables space group number. |
+| `unit_cell_metrics` | List (DT) | Nested table containing lattice parameters. |
+| `atomic_coordinates` | List (DT) | Nested table of primary asymmetric atoms. |
+| `symmetry_operations` | List (DT) | Nested table of symmetry operators. |
+| `transformed_coords` | List (DT) | Nested table of the full unit cell atoms. |
+| `expanded_coords` | List (DT) | Nested table of the supercell (3x3x3) atoms. |
+| `distances` | List (DT) | Nested table of all calculated interatomic distances. |
+| `bonded_pairs_*` | List (DT) | Nested table of bonds detected via requested methods (e.g. `_minimum_distance`). |
+| `neighbor_counts_*` | List (DT) | Nested table of coordination numbers for requested methods. |
+| `bond_angles_*` | List (DT) | Nested table of calculated bond angles for requested methods. |
 
 #### 2. Atomic Coordinates (Nested)
 
-| Column Name           | Data Type | Description                                |
-|:----------------------|:----------|:-------------------------------------------|
-| `Label`               | Character | Unique atom label (e.g., “Fe1”).           |
-| `WyckoffSymbol`       | Character | The Wyckoff letter (e.g., “c”).            |
-| `WyckoffMultiplicity` | Numeric   | The site multiplicity (e.g., 4).           |
-| `Occupancy`           | Numeric   | Site occupancy factor (0.0 to 1.0).        |
-| `x_a`, `y_b`, `z_c`   | Numeric   | Fractional coordinates along axis $a,b,c$. |
-| `*_error`             | Numeric   | Standard uncertainties for coordinates.    |
+| Column Name | Data Type | Description |
+|:---|:---|:---|
+| `Label` | Character | Unique atom label (e.g., “Fe1”). |
+| `WyckoffSymbol` | Character | The Wyckoff letter (e.g., “c”). |
+| `WyckoffMultiplicity` | Numeric | The site multiplicity (e.g., 4). |
+| `Occupancy` | Numeric | Site occupancy factor (0.0 to 1.0). |
+| `x_a`, `y_b`, `z_c` | Numeric | Fractional coordinates along axis $`a, b, c`$. |
+| `*_error` | Numeric | Standard uncertainties for coordinates. |
 
 #### 3. Bonded Pairs (Nested)
 
-| Column Name                  | Data Type | Description                                                 |
-|:-----------------------------|:----------|:------------------------------------------------------------|
-| `Atom1`                      | Character | Label of the central atom (from the asymmetric unit).       |
-| `Atom2`                      | Character | Label of the neighbor atom (from the expanded supercell).   |
-| `Distance`                   | Numeric   | Calculated Euclidean distance in Angstroms (Å).             |
-| `DistanceError`              | Numeric   | Propagated standard uncertainty of the distance.            |
-| `DeltaX`, `DeltaY`, `DeltaZ` | Numeric   | Difference in fractional coordinates ($x_{1} - x_{2}$).     |
-| `Weight`                     | Numeric   | Calculated bond weight/strength depending on the algorithm. |
+| Column Name | Data Type | Description |
+|:---|:---|:---|
+| `Atom1` | Character | Label of the central atom (from the asymmetric unit). |
+| `Atom2` | Character | Label of the neighbor atom (from the expanded supercell). |
+| `Distance` | Numeric | Calculated Euclidean distance in Angstroms (Å). |
+| `DistanceError` | Numeric | Propagated standard uncertainty of the distance. |
+| `DeltaX`, `DeltaY`, `DeltaZ` | Numeric | Difference in fractional coordinates ($`x_1 - x_2`$). |
+| `Weight` | Numeric | Calculated bond weight/strength depending on the algorithm. |
 
 ## Licensing
 
@@ -251,6 +252,7 @@ If `crystract` is available on CRAN, this is the simplest and most
 stable method:
 
 ``` r
+
 install.packages("crystract")
 ```
 
@@ -259,6 +261,7 @@ install.packages("crystract")
 To get the most recent updates and features:
 
 ``` r
+
 # Install remotes if not already installed
 install.packages("remotes")
 
@@ -275,6 +278,7 @@ remotes::install_github(
 After installation, load the package:
 
 ``` r
+
 library(crystract)
 ```
 
@@ -296,6 +300,7 @@ You can access it with the following command after you have successfully
 installed the package:
 
 ``` r
+
 # This command opens the detailed package guide
 vignette("crystract")
 ```
