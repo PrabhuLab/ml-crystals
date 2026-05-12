@@ -56,9 +56,9 @@ if (file.exists(cif_path)) {
 #> Starting analysis of 1 files in 1 batches.
 #> 
 #> --- Processing Batch 1 of 1 (Files 1 to 1) ---
-#> Batch 1 complete. Saved 1 results to '/tmp/RtmpvmV5iv/cif_analysis/batch_1.rds'.
+#> Batch 1 complete. Saved 1 results to '/tmp/RtmpTQjdvB/cif_analysis/batch_1.rds'.
 #> ----------------------------------
 #> Analysis Complete!
-#> Batch results have been saved in the '/tmp/RtmpvmV5iv/cif_analysis/' directory.
+#> Batch results have been saved in the '/tmp/RtmpTQjdvB/cif_analysis/' directory.
 # }
 ```
