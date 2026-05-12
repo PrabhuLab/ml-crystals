@@ -9,6 +9,7 @@ authors:
     orcid: 0000-0003-2048-6629
     affiliation: 2
   - name: Marc Spitzner
+    orcid: 0009-0008-4430-3368
     affiliation: 3
   - name: Shaunna M. Morrison
     orcid: 0000-0002-1712-8057
@@ -69,7 +70,7 @@ To our knowledge, no package or software—whether in Python, as GUIs, or within
 
 To address these needs, we have developed "`crystract`", an open-source R package designed to provide a seamless, robust, and statistically-minded workflow for crystallographic analysis. `crystract` provides an end-to-end toolkit that operates entirely within the R environment. Its primary contributions are fourfold.
 
-First, it provides a robust and efficient engine for parsing and processing large batches of CIF files. It is designed from the ground up around R's data-centric paradigm, directly presenting all extracted and calculated data in tidy data frames[@Wickham2014] ready for immediate manipulation and analysis with the wider R ecosystem. `crystract` has been tested to be working on the ICSD[@Bergerhoff1987], AMCSD[@Downs2003], and COD[@Grazulis2009]; however other databases and formats may also be accepted.
+First, it provides a robust and efficient engine for parsing and processing large batches of CIF files. It is designed from the ground up around R's data-centric paradigm, directly presenting all extracted and calculated data in tidy data frames[@Wickham2014] ready for immediate manipulation and analysis with the wider R ecosystem. `crystract` has been tested to be working on the ICSD[Zagorac5024], AMCSD[@Downs2003], and COD[@Grazulis2009]; however other databases and formats may also be accepted.
 
 Second, it offers comprehensive geometric analysis. This output includes the CIF file's core metadata and a rich set of derived attributes essential for crystallographic research. These attributes include: a complete list of atomic coordinates after symmetry operations, all interatomic distances based on predicted bonded pairs (using CrystalNN[@Pan2021], MinimumDistanceNN[@Zimmermann2017; @Zemann1966], BrunnerNN_reciprocal[@Brunner1977], VoronoiNN[@Okeeffe1979], and EconNN[@Hoppe1979] algorithms), and bond angles—a feature not natively available in other command-line batch-processing tools.
 
