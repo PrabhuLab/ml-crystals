@@ -11,6 +11,8 @@ navbar:
     menu:
     - text: Package Guide
       href: articles/crystract.html
+  - text: News
+    href: news/index.html
   right:
   - icon: fa-github
     href: https://github.com/PrabhuLab/ml-crystals
