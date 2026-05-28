@@ -82,7 +82,9 @@ read_cif_files <- function(file_paths) {
 #' @examples
 #' cif_path <- system.file("extdata", "1590946.cif", package = "crystract")
 #' if (file.exists(cif_path)) {
+#'   old_threads <- data.table::setDTthreads(2)
 #'   res <- analyze_single_cif(cif_path, perform_error_propagation = FALSE)
+#'   data.table::setDTthreads(old_threads)
 #' }
 analyze_single_cif <- function(cif_content,
                                file_name = NULL,
@@ -246,7 +248,8 @@ analyze_single_cif <- function(cif_content,
                                              unit_cell_metrics)
 
           if (perform_error_propagation &&
-              !is.null(current_angles) && nrow(current_angles) > 0) {
+              !is.null(current_angles) &&
+              nrow(current_angles) > 0) {
             current_angles <- propagate_angle_error(current_angles,
                                                     ref_coords,
                                                     ref_expanded,
@@ -297,11 +300,13 @@ analyze_single_cif <- function(cif_content,
 #' \donttest{
 #' cif_path <- system.file("extdata", "1590946.cif", package = "crystract")
 #' if (file.exists(cif_path)) {
+#'   old_threads <- data.table::setDTthreads(2)
 #'   out_dir <- file.path(tempdir(), "cif_analysis")
 #'   res <- analyze_cif_files(cif_path, output_dir = out_dir, workers = 1)
 #'
 #'   # Clean up
 #'   unlink(out_dir, recursive = TRUE)
+#'   data.table::setDTthreads(old_threads)
 #' }
 #' }
 analyze_cif_files <- function(file_paths,
@@ -467,12 +472,14 @@ analyze_cif_files <- function(file_paths,
 #' \donttest{
 #' cif_path <- system.file("extdata", "1590946.cif", package = "crystract")
 #' if (file.exists(cif_path)) {
+#'   old_threads <- data.table::setDTthreads(2)
 #'   out_dir <- file.path(tempdir(), "cif_batches")
 #'   analyze_cif_files(cif_path, output_dir = out_dir)
 #'
 #'   aggr <- aggregate_batch_results(out_dir)
 #'
 #'   unlink(out_dir, recursive = TRUE)
+#'   data.table::setDTthreads(old_threads)
 #' }
 #' }
 aggregate_batch_results <- function(input_dir, cols_to_keep = NULL) {
@@ -515,12 +522,14 @@ aggregate_batch_results <- function(input_dir, cols_to_keep = NULL) {
 #' \donttest{
 #' cif_path <- system.file("extdata", "1590946.cif", package = "crystract")
 #' if (file.exists(cif_path)) {
+#'   old_threads <- data.table::setDTthreads(2)
 #'   res <- analyze_single_cif(cif_path)
 #'
 #'   out_dir <- file.path(tempdir(), "cif_csvs")
 #'   export_analysis_to_csv(res, output_dir = out_dir)
 #'
 #'   unlink(out_dir, recursive = TRUE)
+#'   data.table::setDTthreads(old_threads)
 #' }
 #' }
 export_analysis_to_csv <- function(analysis_results, output_dir, overwrite = FALSE) {

@@ -33,6 +33,9 @@ First, we load the `crystract` package.
 ```{r setup, message=FALSE, warning=FALSE}
 library(crystract)
 library(data.table)
+
+# Limit data.table threads
+old_dt_threads <- data.table::setDTthreads(2)
 ```
 
 ## 1. The Core `crystract` Workflow
@@ -582,4 +585,5 @@ The goal of `crystract` is to provide a robust and accessible platform for cryst
 ```{r, include = FALSE}
 # Restore original options as required by CRAN
 options(old_options)
+data.table::setDTthreads(old_dt_threads)
 ```
