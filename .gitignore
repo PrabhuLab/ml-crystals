@@ -20,3 +20,6 @@ packages/crystract_1.0.1.tar.gz
 packages/crystract/.DS_Store
 packages/.DS_Store
 .DS_Store
+.positai
+notebook/natural/crystract_econ_results/batch_1.rds
+notebook/natural/crystract_econ_results/batch_2.rds
