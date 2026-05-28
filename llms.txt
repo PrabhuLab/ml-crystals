@@ -312,16 +312,17 @@ smooth and productive collaboration, we have established guidelines for
 contributing, reporting issues, and seeking support.
 
 All participants in this project are expected to abide by our **[Code of
-Conduct](https://prabhulab.github.io/ml-crystals/CODE_OF_CONDUCT.md)**.
+Conduct](https://prabhulab.github.io/ml-crystals/CODE_OF_CONDUCT.html)**.
 Please read it to understand the standards of behavior we expect.
 
 For detailed instructions on how to contribute to the software, report
 bugs, or suggest new features, please review our **[Contributing
-Guidelines](https://prabhulab.github.io/ml-crystals/CONTRIBUTING.md)**.
+Guidelines](https://prabhulab.github.io/ml-crystals/CONTRIBUTING.html)**.
 
-## Author
+## Authors
 
-**Author and Maintainer:** Don Ngo (`dngo@carnegiescience.edu`)
+**Authors and Maintainers:** Don Ngo (`dngo@carnegiescience.edu`) &
+Anirudh Prabhu (`aprabhu@carnegiescience.edu`)
 
 # Package index
 
