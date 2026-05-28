@@ -32,13 +32,15 @@ Invisibly returns output_dir.
 # \donttest{
 cif_path <- system.file("extdata", "1590946.cif", package = "crystract")
 if (file.exists(cif_path)) {
+  old_threads <- data.table::setDTthreads(2)
   res <- analyze_single_cif(cif_path)
 
   out_dir <- file.path(tempdir(), "cif_csvs")
   export_analysis_to_csv(res, output_dir = out_dir)
 
   unlink(out_dir, recursive = TRUE)
+  data.table::setDTthreads(old_threads)
 }
-#> Analysis successfully exported to: /tmp/Rtmp9bus3q/cif_csvs
+#> Analysis successfully exported to: /tmp/Rtmpa4FXKv/cif_csvs
 # }
 ```

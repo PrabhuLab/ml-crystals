@@ -87,8 +87,10 @@ Other bonding algorithms:
 # \donttest{
 cif_path <- system.file("extdata", "1590946.cif", package = "crystract")
 if (file.exists(cif_path)) {
+  old_threads <- data.table::setDTthreads(2)
   res <- analyze_single_cif(cif_path, bonding_algorithms = "crystal_nn")
   print(head(res$bonds_crystal_nn[[1]]))
+  data.table::setDTthreads(old_threads)
 }
 #> Key: <Atom1, Atom2, Distance>
 #>     Atom1         Atom2 Distance    DeltaX        DeltaY    DeltaZ Weight
