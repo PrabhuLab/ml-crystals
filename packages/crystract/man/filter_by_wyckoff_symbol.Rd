@@ -53,6 +53,7 @@ one of the symbols provided in the \code{wyckoff_symbols} vector.
 \examples{
 cif_file <- system.file("extdata", "1590946.cif", package = "crystract")
 if (file.exists(cif_file)) {
+  old_threads <- data.table::setDTthreads(2)
   # 1. Perform a standard analysis to get bond and coordinate tables
   cif_content <- read_cif_files(cif_file)[[1]]
   atoms <- extract_atomic_coordinates(cif_content)
@@ -79,6 +80,7 @@ if (file.exists(cif_file)) {
 
   cat("\nNumber of bonds in original table:", nrow(bonds), "\n")
   cat("Number of bonds after filtering for '4c' site:", nrow(filtered_bonds), "\n")
+  data.table::setDTthreads(old_threads)
 }
 }
 \seealso{

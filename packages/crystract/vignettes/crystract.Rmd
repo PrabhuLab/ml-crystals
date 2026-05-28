@@ -34,7 +34,7 @@ First, we load the `crystract` package.
 library(crystract)
 library(data.table)
 
-# Limit data.table threads
+# Limit data.table threads to 2 to comply with CRAN policies on CPU time
 old_dt_threads <- data.table::setDTthreads(2)
 ```
 

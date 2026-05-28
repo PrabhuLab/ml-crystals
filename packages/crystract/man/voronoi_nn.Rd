@@ -33,8 +33,10 @@ Performs 3D Voronoi analysis on the supercell.
 \donttest{
 cif_path <- system.file("extdata", "1590946.cif", package = "crystract")
 if (file.exists(cif_path)) {
+  old_threads <- data.table::setDTthreads(2)
   res <- analyze_single_cif(cif_path, bonding_algorithms = "voronoi")
   print(head(res$bonds_voronoi[[1]]))
+  data.table::setDTthreads(old_threads)
 }
 }
 }
