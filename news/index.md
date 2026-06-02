@@ -2,6 +2,8 @@
 
 ## crystract 1.0.1
 
+CRAN release: 2026-05-28
+
 - Refactored internal CIF extraction logic to robustly check for
   multiple alternative CIF tags when parsing chemical formulas,
   structure types, and space group names/numbers.
