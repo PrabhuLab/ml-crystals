@@ -81,83 +81,83 @@ str(analysis_results, max.level = 2)
 #>  $ space_group_number     : chr "62"
 #>  $ unit_cell_metrics      :List of 1
 #>   ..$ :Classes 'data.table' and 'data.frame':    1 obs. of  12 variables:
-#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x561134721110> 
+#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x55e095ad9110> 
 #>  $ atomic_coordinates     :List of 1
 #>   ..$ :Classes 'data.table' and 'data.frame':    2 obs. of  14 variables:
-#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x561134721110> 
+#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x55e095ad9110> 
 #>  $ symmetry_operations    :List of 1
 #>   ..$ :Classes 'data.table' and 'data.frame':    8 obs. of  3 variables:
-#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x561134721110> 
+#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x55e095ad9110> 
 #>  $ transformed_coords     :List of 1
 #>   ..$ :Classes 'data.table' and 'data.frame':    8 obs. of  5 variables:
-#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x561134721110> 
+#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x55e095ad9110> 
 #>  $ expanded_coords        :List of 1
 #>   ..$ :Classes 'data.table' and 'data.frame':    216 obs. of  8 variables:
-#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x561134721110> 
+#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x55e095ad9110> 
 #>  $ distances              :List of 1
 #>   ..$ :Classes 'data.table' and 'data.frame':    430 obs. of  6 variables:
-#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x561134721110> 
+#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x55e095ad9110> 
 #>  $ bonds_minimum_distance :List of 1
 #>   ..$ :Classes 'data.table' and 'data.frame':    9 obs. of  8 variables:
-#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x561134721110> 
+#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x55e095ad9110> 
 #>   .. ..- attr(*, "sorted")= chr [1:3] "Atom1" "Atom2" "Distance"
 #>  $ cn_minimum_distance    :List of 1
 #>   ..$ :Classes 'data.table' and 'data.frame':    2 obs. of  3 variables:
 #>   .. ..- attr(*, "sorted")= chr "Atom"
-#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x561134721110> 
+#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x55e095ad9110> 
 #>  $ angles_minimum_distance:List of 1
 #>   ..$ :Classes 'data.table' and 'data.frame':    22 obs. of  5 variables:
 #>   .. ..- attr(*, "sorted")= chr [1:3] "CentralAtom" "Neighbor1" "Neighbor2"
-#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x561134721110> 
+#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x55e095ad9110> 
 #>  $ bonds_brunner          :List of 1
 #>   ..$ :Classes 'data.table' and 'data.frame':    9 obs. of  8 variables:
-#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x561134721110> 
+#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x55e095ad9110> 
 #>   .. ..- attr(*, "sorted")= chr [1:3] "Atom1" "Atom2" "Distance"
 #>  $ cn_brunner             :List of 1
 #>   ..$ :Classes 'data.table' and 'data.frame':    2 obs. of  3 variables:
 #>   .. ..- attr(*, "sorted")= chr "Atom"
-#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x561134721110> 
+#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x55e095ad9110> 
 #>  $ angles_brunner         :List of 1
 #>   ..$ :Classes 'data.table' and 'data.frame':    22 obs. of  5 variables:
 #>   .. ..- attr(*, "sorted")= chr [1:3] "CentralAtom" "Neighbor1" "Neighbor2"
-#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x561134721110> 
+#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x55e095ad9110> 
 #>  $ bonds_econ             :List of 1
 #>   ..$ :Classes 'data.table' and 'data.frame':    18 obs. of  8 variables:
-#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x561134721110> 
+#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x55e095ad9110> 
 #>   .. ..- attr(*, "sorted")= chr [1:3] "Atom1" "Atom2" "Distance"
 #>  $ cn_econ                :List of 1
 #>   ..$ :Classes 'data.table' and 'data.frame':    2 obs. of  3 variables:
 #>   .. ..- attr(*, "sorted")= chr "Atom"
-#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x561134721110> 
+#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x55e095ad9110> 
 #>  $ angles_econ            :List of 1
 #>   ..$ :Classes 'data.table' and 'data.frame':    72 obs. of  5 variables:
 #>   .. ..- attr(*, "sorted")= chr [1:3] "CentralAtom" "Neighbor1" "Neighbor2"
-#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x561134721110> 
+#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x55e095ad9110> 
 #>  $ bonds_voronoi          :List of 1
 #>   ..$ :Classes 'data.table' and 'data.frame':    30 obs. of  11 variables:
-#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x561134721110> 
+#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x55e095ad9110> 
 #>   .. ..- attr(*, "sorted")= chr [1:3] "Atom1" "Atom2" "Distance"
 #>  $ cn_voronoi             :List of 1
 #>   ..$ :Classes 'data.table' and 'data.frame':    2 obs. of  3 variables:
 #>   .. ..- attr(*, "sorted")= chr "Atom"
-#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x561134721110> 
+#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x55e095ad9110> 
 #>  $ angles_voronoi         :List of 1
 #>   ..$ :Classes 'data.table' and 'data.frame':    0 obs. of  4 variables:
-#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x561134721110> 
+#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x55e095ad9110> 
 #>   .. ..- attr(*, "sorted")= chr "CentralAtom"
 #>  $ bonds_crystal_nn       :List of 1
 #>   ..$ :Classes 'data.table' and 'data.frame':    26 obs. of  8 variables:
-#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x561134721110> 
+#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x55e095ad9110> 
 #>   .. ..- attr(*, "sorted")= chr [1:3] "Atom1" "Atom2" "Distance"
 #>  $ cn_crystal_nn          :List of 1
 #>   ..$ :Classes 'data.table' and 'data.frame':    2 obs. of  3 variables:
 #>   .. ..- attr(*, "sorted")= chr "Atom"
-#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x561134721110> 
+#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x55e095ad9110> 
 #>  $ angles_crystal_nn      :List of 1
 #>   ..$ :Classes 'data.table' and 'data.frame':    0 obs. of  4 variables:
-#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x561134721110> 
+#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x55e095ad9110> 
 #>   .. ..- attr(*, "sorted")= chr "CentralAtom"
-#>  - attr(*, ".internal.selfref")=<pointer: 0x561134721110>
+#>  - attr(*, ".internal.selfref")=<pointer: 0x55e095ad9110>
 ```
 
 As shown in the structure output, the result is a tidy `data.table`
