@@ -19,13 +19,13 @@ authors:
     affiliation: 1
     corresponding: true
 affiliations:
- - name: Earth and Planets Laboratory, Carnegie Institution for Science, Washington, DC, USA
+ - name: Earth and Planets Laboratory, Carnegie Institution for Science, Washington, DC, United States of America
    index: 1
  - name: Technische Universität Dresden, Dresden, Germany
    index: 2
  - name: Independent Scholar Dresden, Germany
    index: 3
- - name: Department of Earth and Planetary Sciences, Rutgers University, Piscataway, NJ, USA
+ - name: Department of Earth and Planetary Sciences, Rutgers University, Piscataway, NJ, United States of America
    index: 4
 date: 15 September 2025
 bibliography: paper.bib
