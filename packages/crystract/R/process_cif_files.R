@@ -111,23 +111,40 @@ analyze_single_cif <- function(cif_content,
     stop("`cif_content` must be a file path or loaded CIF data.")
   }
 
-  # --- Step 1: Data Extraction ---
   if (!perform_extraction)
     return(data.table::data.table(file_name = file_name))
 
-  database_code <- extract_database_code(cif_content)
-  chemical_formula <- extract_chemical_formula(cif_content)
-  structure_type <- extract_structure_type(cif_content)
-  space_group_name <- extract_space_group_name(cif_content)
-  space_group_number <- extract_space_group_number(cif_content)
+  # --- Step 1: FAST PRE-FLIGHT VALIDATION ---
+  # Instantly drops files missing mandatory headers using raw C string matching
+  is_valid <- any(grepl("_cell_length_a", cif_content$V1, fixed = TRUE)) &&
+    (any(grepl(
+      "_atom_site_fract_x", cif_content$V1, fixed = TRUE
+    )) ||
+      any(grepl(
+        "_atom_site_label", cif_content$V1, fixed = TRUE
+      ))) &&
+    (any(
+      grepl("_space_group_symop_operation_xyz", cif_content$V1, fixed = TRUE)
+    ) ||
+      any(
+        grepl("_symmetry_equiv_pos_as_xyz", cif_content$V1, fixed = TRUE)
+      ))
+
+  if (!is_valid) {
+    warning(paste(
+      "Skipping '",
+      file_name,
+      "': failed pre-flight validation.",
+      sep = ""
+    ))
+    return(NULL)
+  }
+
+  # --- Step 2: Extract Mandatory Data ("Fast Fail" Approach) ---
   unit_cell_metrics <- extract_unit_cell_metrics(cif_content)
-  atomic_coordinates <- extract_atomic_coordinates(cif_content, chemical_formula)
   symmetry_operations <- extract_symmetry_operations(cif_content)
 
-  # --- Step 2: Validate Essential Data ---
-  if (is.null(atomic_coordinates) ||
-      is.null(symmetry_operations) ||
-      is.null(unit_cell_metrics)) {
+  if (is.null(unit_cell_metrics) || is.null(symmetry_operations)) {
     warning(paste(
       "Skipping '",
       file_name,
@@ -137,21 +154,42 @@ analyze_single_cif <- function(cif_content,
     return(NULL)
   }
 
-  # --- Step 3: Initialize Result Variables ---
+  # Extract formula right before atoms so atoms can use it for heuristic checks
+  chemical_formula <- extract_chemical_formula(cif_content)
+  atomic_coordinates <- extract_atomic_coordinates(cif_content, chemical_formula)
+
+  if (is.null(atomic_coordinates) ||
+      nrow(atomic_coordinates) == 0) {
+    warning(paste(
+      "Skipping '",
+      file_name,
+      "': missing atomic coordinates.",
+      sep = ""
+    ))
+    return(NULL)
+  }
+
+  # --- Step 3: Extract Optional Metadata (Only executes if file is verified valid) ---
+  database_code <- extract_database_code(cif_content)
+  structure_type <- extract_structure_type(cif_content)
+  space_group_name <- extract_space_group_name(cif_content)
+  space_group_number <- extract_space_group_number(cif_content)
+
+  # --- Step 4: Initialize Result Variables ---
   transformed_coords <- NULL
   expanded_coords <- NULL
   distances <- NULL
   algo_results <- list()
 
-  # --- Step 4: Calculations, Transformations, and Expansions ---
+  # --- Step 5: Calculations, Transformations, and Expansions ---
   if (perform_calcs_and_transforms) {
-    # 4a. Standard Transformation (Keeps partially occupied atoms separate)
+    # 5a. Standard Transformation (Keeps partially occupied atoms separate)
     transformed_coords <- apply_symmetry_operations(atomic_coordinates,
                                                     symmetry_operations,
                                                     unit_cell_metrics,
                                                     tolerance = tolerance)
 
-    # 4b. Identify needs for Geometric (Collapsed) Algorithms
+    # 5b. Identify needs for Geometric (Collapsed) Algorithms
     needs_voronoi <- any(c("voronoi", "crystal_nn") %in% bonding_algorithms)
 
     if (needs_voronoi) {
@@ -166,7 +204,7 @@ analyze_single_cif <- function(cif_content,
       collapsed_expanded_coords <- expand_transformed_coords(collapsed_transformed_coords, voronoi_factors)
     }
 
-    # 4c. Standard Expansion (Used for MinDist, Brunner, EconNN)
+    # 5c. Standard Expansion (Used for MinDist, Brunner, EconNN)
     # Default 3x3x3 image grid (-1 to 1)
     expansion_factors <- c(1, 1, 1)
     expanded_coords <- expand_transformed_coords(transformed_coords, expansion_factors)
@@ -178,7 +216,7 @@ analyze_single_cif <- function(cif_content,
                                      tolerance = tolerance)
   }
 
-  # --- Step 5: Bonding Algorithms & Step 6: Angles & Errors ---
+  # --- Step 6: Bonding Algorithms & Step 7: Angles & Errors ---
   if (!is.null(distances) &&
       length(bonding_algorithms) > 0 &&
       !"none" %in% bonding_algorithms) {
@@ -261,7 +299,7 @@ analyze_single_cif <- function(cif_content,
     }
   }
 
-  # --- Step 7: Construct Return Data Table ---
+  # --- Step 8: Construct Return Data Table ---
   final_dt <- data.table::data.table(
     file_name = file_name,
     database_code = database_code,
@@ -314,6 +352,7 @@ analyze_cif_files <- function(file_paths,
                               output_dir = NULL,
                               batch_size = 1000,
                               ...) {
+  is_paths <- FALSE
   if (is.character(file_paths)) {
     if (length(file_paths) == 1 && dir.exists(file_paths)) {
       message(sprintf(
@@ -332,13 +371,14 @@ analyze_cif_files <- function(file_paths,
       }
       file_paths <- found_files
     }
-    cif_contents_list <- read_cif_files(file_paths)
+    paths_to_process <- file_paths
+    is_paths <- TRUE
   } else if (is.list(file_paths) &&
              (length(file_paths) == 0 ||
               inherits(file_paths[[1]], "data.table"))) {
-    cif_contents_list <- file_paths
-    if (is.null(names(cif_contents_list)))
-      names(cif_contents_list) <- paste0("unnamed_", seq_along(cif_contents_list))
+    paths_to_process <- file_paths
+    if (is.null(names(paths_to_process)))
+      names(paths_to_process) <- paste0("unnamed_", seq_along(paths_to_process))
   } else {
     stop(
       "`file_paths` must be a character vector of paths, a directory path, or a list of data.tables."
@@ -359,7 +399,7 @@ analyze_cif_files <- function(file_paths,
     future::plan(future::multisession, workers = workers)
   }
 
-  total_files <- length(cif_contents_list)
+  total_files <- length(paths_to_process)
   if (total_files == 0) {
     message("No files to process.")
     return(data.table::data.table())
@@ -381,7 +421,16 @@ analyze_cif_files <- function(file_paths,
   for (i in seq_along(batch_starts)) {
     start_index <- batch_starts[i]
     end_index <- min(start_index + batch_size - 1, total_files)
-    cif_batch <- cif_contents_list[start_index:end_index]
+
+    # FIXED: Only load files required for this specific batch to prevent memory explosion
+    if (is_paths) {
+      current_batch_paths <- paths_to_process[start_index:end_index]
+      cif_batch <- read_cif_files(current_batch_paths)
+    } else {
+      cif_batch <- paths_to_process[start_index:end_index]
+      names(cif_batch) <- names(paths_to_process)[start_index:end_index]
+    }
+
     message(
       sprintf(
         "\n--- Processing Batch %d of %d (Files %d to %d) ---",

@@ -685,7 +685,13 @@ extract_atomic_coordinates <- function(cif_content, chemical_formula = NA) {
 extract_symmetry_operations <- function(cif_content) {
   target_tags <- c("_space_group_symop_operation_xyz",
                    "_symmetry_equiv_pos_as_xyz")
-  header_matches <- grep(paste(target_tags, collapse = "|"), cif_content$V1)
+
+  # FIXED: Switch to extremely fast fixed string matching
+  header_matches <- which(
+    grepl("_space_group_symop_operation_xyz", cif_content$V1, fixed = TRUE) |
+      grepl("_symmetry_equiv_pos_as_xyz", cif_content$V1, fixed = TRUE)
+  )
+
   if (length(header_matches) == 0)
     return(NULL)
   first_header_line_idx <- header_matches[1]

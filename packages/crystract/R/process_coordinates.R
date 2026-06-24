@@ -121,12 +121,6 @@ merge_sites_pbc <- function(atomic_coordinates,
 
       for (k in 2:length(indices)) {
         curr_idx <- indices[k]
-        # dx_mat[base, curr] represents (base - curr)
-        # We want curr relative to base, so we subtract (base-curr) from base
-        # No, wait.
-        # base + (curr - base)_wrapped
-        # (curr - base)_wrapped is -dx_mat[base, curr]
-
         avg_x <- avg_x + (coords[base_idx, 1] - dx_mat[base_idx, curr_idx])
         avg_y <- avg_y + (coords[base_idx, 2] - dy_mat[base_idx, curr_idx])
         avg_z <- avg_z + (coords[base_idx, 3] - dz_mat[base_idx, curr_idx])
@@ -189,10 +183,10 @@ apply_symmetry_operations <- function(atomic_coordinates,
     )
   }
 
-  safe_eval <- function(op_str, x, y, z) {
-    expr_str <- gsub("x", sprintf("(%.16f)", x), op_str, fixed = TRUE)
-    expr_str <- gsub("y", sprintf("(%.16f)", y), expr_str, fixed = TRUE)
-    expr_str <- gsub("z", sprintf("(%.16f)", z), expr_str, fixed = TRUE)
+  # FIXED: Compile strings to R functions ONCE to remove parsing overhead in the loop.
+  # The "+ 0 * x" ensures constant outputs (like "1/2") still vectorize to the correct length.
+  compile_op <- function(op_str) {
+    expr_str <- paste0("function(x, y, z) { (", op_str, ") + 0 * x }")
     tryCatch(
       eval(parse(text = expr_str)),
       error = function(e)
@@ -203,30 +197,32 @@ apply_symmetry_operations <- function(atomic_coordinates,
   n_atoms <- nrow(atomic_coordinates)
   n_ops <- nrow(symmetry_operations)
 
-  expanded_list <- lapply(seq_len(n_atoms), function(i) {
-    row <- atomic_coordinates[i, ]
-    lbl <- row$Label
-    val_x <- as.numeric(row$x_a)
-    val_y <- as.numeric(row$y_b)
-    val_z <- as.numeric(row$z_c)
+  op_funcs_x <- lapply(symmetry_operations$x, compile_op)
+  op_funcs_y <- lapply(symmetry_operations$y, compile_op)
+  op_funcs_z <- lapply(symmetry_operations$z, compile_op)
 
-    new_coords <- lapply(seq_len(n_ops), function(j) {
-      op_x <- symmetry_operations$x[j]
-      op_y <- symmetry_operations$y[j]
-      op_z <- symmetry_operations$z[j]
+  # Fully vectorized coordinate arrays
+  val_x <- as.numeric(atomic_coordinates$x_a)
+  val_y <- as.numeric(atomic_coordinates$y_b)
+  val_z <- as.numeric(atomic_coordinates$z_c)
+  lbls <- atomic_coordinates$Label
 
-      data.table(
-        Label = paste(lbl, j, sep = "_"),
-        SymOp = j,
-        x_a = snap_to_fraction(safe_eval(op_x, val_x, val_y, val_z), wrap = TRUE),
-        y_b = snap_to_fraction(safe_eval(op_y, val_x, val_y, val_z), wrap = TRUE),
-        z_c = snap_to_fraction(safe_eval(op_z, val_x, val_y, val_z), wrap = TRUE)
-      )
-    })
-    rbindlist(new_coords)
+  # Generate vectors for all atoms simultaneously per symmetry operation
+  expanded_list <- lapply(seq_len(n_ops), function(j) {
+    fx <- op_funcs_x[[j]]
+    fy <- op_funcs_y[[j]]
+    fz <- op_funcs_z[[j]]
+
+    data.table::data.table(
+      Label = paste(lbls, j, sep = "_"),
+      SymOp = j,
+      x_a = snap_to_fraction(fx(val_x, val_y, val_z), wrap = TRUE),
+      y_b = snap_to_fraction(fy(val_x, val_y, val_z), wrap = TRUE),
+      z_c = snap_to_fraction(fz(val_x, val_y, val_z), wrap = TRUE)
+    )
   })
 
-  transformed_coords <- rbindlist(expanded_list)
+  transformed_coords <- data.table::rbindlist(expanded_list)
   if (nrow(transformed_coords) == 0)
     return(transformed_coords)
 

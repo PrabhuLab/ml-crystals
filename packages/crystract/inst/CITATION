@@ -1,0 +1,19 @@
+bibentry(
+  bibtype = "Article",
+  title = "crystract: A Crystallography Package in R for .cif Data Processing",
+  author = c(
+    person("Don", "Ngo"),
+    person("Julia M.", "Hübner"),
+    person("Marc", "Spitzner"),
+    person("Shaunna M.", "Morrison"),
+    person("Anirudh", "Prabhu")
+  ),
+  journal = "Journal of Open Source Software",
+  year = "2026",
+  volume = "11",
+  number = "122",
+  pages = "9529",
+  doi = "10.21105/joss.09529",
+  url = "https://doi.org/10.21105/joss.09529",
+  publisher = "The Open Journal"
+)
