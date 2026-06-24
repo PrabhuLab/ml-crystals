@@ -1,5 +1,32 @@
 # Changelog
 
+## crystract 1.0.2
+
+### Performance Improvements
+
+- **Massive Speedup in Symmetry Operations:** Symmetry equations are now
+  compiled into vectorized R functions once per structure, eliminating
+  the severe CPU bottleneck caused by repeated string parsing
+  (`eval(parse())`).
+- **“Fast Fail” CIF Validation:** Implemented high-speed pre-flight
+  checks using raw C-level string matching. Invalid or severely
+  malformed CIF files are now rejected in milliseconds, skipping
+  unnecessary and expensive full-table regex scans.
+- **Optimized Extraction:** Replaced multiple heavy regular expression
+  searches with highly optimized exact string matching during the
+  mandatory data extraction phase.
+
+### Bug Fixes
+
+- **Batch Processing Memory Exhaustion Resolved:** Fixed a critical
+  issue in
+  [`analyze_cif_files()`](https://prabhulab.github.io/ml-crystals/reference/analyze_cif_files.md)
+  where large datasets would crash R by attempting to load all
+  structures into system RAM simultaneously. CIF files are now
+  dynamically read from disk strictly within their specified chunk/batch
+  size, ensuring stable memory footprints when processing tens of
+  thousands of files.
+
 ## crystract 1.0.1
 
 CRAN release: 2026-05-28

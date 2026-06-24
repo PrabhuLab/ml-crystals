@@ -81,83 +81,83 @@ str(analysis_results, max.level = 2)
 #>  $ space_group_number     : chr "62"
 #>  $ unit_cell_metrics      :List of 1
 #>   ..$ :Classes 'data.table' and 'data.frame':    1 obs. of  12 variables:
-#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x560af40b0110> 
+#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x5558a13f2110> 
 #>  $ atomic_coordinates     :List of 1
 #>   ..$ :Classes 'data.table' and 'data.frame':    2 obs. of  14 variables:
-#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x560af40b0110> 
+#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x5558a13f2110> 
 #>  $ symmetry_operations    :List of 1
 #>   ..$ :Classes 'data.table' and 'data.frame':    8 obs. of  3 variables:
-#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x560af40b0110> 
+#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x5558a13f2110> 
 #>  $ transformed_coords     :List of 1
 #>   ..$ :Classes 'data.table' and 'data.frame':    8 obs. of  5 variables:
-#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x560af40b0110> 
+#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x5558a13f2110> 
 #>  $ expanded_coords        :List of 1
 #>   ..$ :Classes 'data.table' and 'data.frame':    216 obs. of  8 variables:
-#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x560af40b0110> 
+#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x5558a13f2110> 
 #>  $ distances              :List of 1
 #>   ..$ :Classes 'data.table' and 'data.frame':    430 obs. of  6 variables:
-#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x560af40b0110> 
+#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x5558a13f2110> 
 #>  $ bonds_minimum_distance :List of 1
 #>   ..$ :Classes 'data.table' and 'data.frame':    9 obs. of  8 variables:
-#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x560af40b0110> 
+#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x5558a13f2110> 
 #>   .. ..- attr(*, "sorted")= chr [1:3] "Atom1" "Atom2" "Distance"
 #>  $ cn_minimum_distance    :List of 1
 #>   ..$ :Classes 'data.table' and 'data.frame':    2 obs. of  3 variables:
 #>   .. ..- attr(*, "sorted")= chr "Atom"
-#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x560af40b0110> 
+#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x5558a13f2110> 
 #>  $ angles_minimum_distance:List of 1
 #>   ..$ :Classes 'data.table' and 'data.frame':    22 obs. of  5 variables:
 #>   .. ..- attr(*, "sorted")= chr [1:3] "CentralAtom" "Neighbor1" "Neighbor2"
-#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x560af40b0110> 
+#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x5558a13f2110> 
 #>  $ bonds_brunner          :List of 1
 #>   ..$ :Classes 'data.table' and 'data.frame':    9 obs. of  8 variables:
-#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x560af40b0110> 
+#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x5558a13f2110> 
 #>   .. ..- attr(*, "sorted")= chr [1:3] "Atom1" "Atom2" "Distance"
 #>  $ cn_brunner             :List of 1
 #>   ..$ :Classes 'data.table' and 'data.frame':    2 obs. of  3 variables:
 #>   .. ..- attr(*, "sorted")= chr "Atom"
-#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x560af40b0110> 
+#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x5558a13f2110> 
 #>  $ angles_brunner         :List of 1
 #>   ..$ :Classes 'data.table' and 'data.frame':    22 obs. of  5 variables:
 #>   .. ..- attr(*, "sorted")= chr [1:3] "CentralAtom" "Neighbor1" "Neighbor2"
-#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x560af40b0110> 
+#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x5558a13f2110> 
 #>  $ bonds_econ             :List of 1
 #>   ..$ :Classes 'data.table' and 'data.frame':    18 obs. of  8 variables:
-#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x560af40b0110> 
+#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x5558a13f2110> 
 #>   .. ..- attr(*, "sorted")= chr [1:3] "Atom1" "Atom2" "Distance"
 #>  $ cn_econ                :List of 1
 #>   ..$ :Classes 'data.table' and 'data.frame':    2 obs. of  3 variables:
 #>   .. ..- attr(*, "sorted")= chr "Atom"
-#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x560af40b0110> 
+#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x5558a13f2110> 
 #>  $ angles_econ            :List of 1
 #>   ..$ :Classes 'data.table' and 'data.frame':    72 obs. of  5 variables:
 #>   .. ..- attr(*, "sorted")= chr [1:3] "CentralAtom" "Neighbor1" "Neighbor2"
-#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x560af40b0110> 
+#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x5558a13f2110> 
 #>  $ bonds_voronoi          :List of 1
 #>   ..$ :Classes 'data.table' and 'data.frame':    30 obs. of  11 variables:
-#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x560af40b0110> 
+#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x5558a13f2110> 
 #>   .. ..- attr(*, "sorted")= chr [1:3] "Atom1" "Atom2" "Distance"
 #>  $ cn_voronoi             :List of 1
 #>   ..$ :Classes 'data.table' and 'data.frame':    2 obs. of  3 variables:
 #>   .. ..- attr(*, "sorted")= chr "Atom"
-#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x560af40b0110> 
+#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x5558a13f2110> 
 #>  $ angles_voronoi         :List of 1
 #>   ..$ :Classes 'data.table' and 'data.frame':    0 obs. of  4 variables:
-#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x560af40b0110> 
+#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x5558a13f2110> 
 #>   .. ..- attr(*, "sorted")= chr "CentralAtom"
 #>  $ bonds_crystal_nn       :List of 1
 #>   ..$ :Classes 'data.table' and 'data.frame':    26 obs. of  8 variables:
-#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x560af40b0110> 
+#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x5558a13f2110> 
 #>   .. ..- attr(*, "sorted")= chr [1:3] "Atom1" "Atom2" "Distance"
 #>  $ cn_crystal_nn          :List of 1
 #>   ..$ :Classes 'data.table' and 'data.frame':    2 obs. of  3 variables:
 #>   .. ..- attr(*, "sorted")= chr "Atom"
-#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x560af40b0110> 
+#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x5558a13f2110> 
 #>  $ angles_crystal_nn      :List of 1
 #>   ..$ :Classes 'data.table' and 'data.frame':    0 obs. of  4 variables:
-#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x560af40b0110> 
+#>   .. ..- attr(*, ".internal.selfref")=<pointer: 0x5558a13f2110> 
 #>   .. ..- attr(*, "sorted")= chr "CentralAtom"
-#>  - attr(*, ".internal.selfref")=<pointer: 0x560af40b0110>
+#>  - attr(*, ".internal.selfref")=<pointer: 0x5558a13f2110>
 ```
 
 As shown in the structure output, the result is a tidy `data.table`
@@ -352,11 +352,11 @@ print(head(transformed_coords))
 #>     Label SymOp     x_a   y_b    z_c
 #>    <char> <int>   <num> <num>  <num>
 #> 1:  Yb1_1     1 0.17675  0.25 0.6121
-#> 2:  Yb1_2     2 0.32325  0.75 0.1121
-#> 3:  Yb1_3     3 0.82325  0.75 0.3879
-#> 4:  Yb1_4     4 0.67675  0.25 0.8879
-#> 5:  Ge1_1     1 0.03550  0.25 0.1268
-#> 6:  Ge1_2     2 0.46450  0.75 0.6268
+#> 2:  Ge1_1     1 0.03550  0.25 0.1268
+#> 3:  Yb1_2     2 0.32325  0.75 0.1121
+#> 4:  Ge1_2     2 0.46450  0.75 0.6268
+#> 5:  Yb1_3     3 0.82325  0.75 0.3879
+#> 6:  Ge1_3     3 0.96450  0.75 0.8732
 
 # Expand into a supercell for neighbor calculations
 expanded_coords <- expand_transformed_coords(transformed_coords)
@@ -366,11 +366,11 @@ print(head(expanded_coords))
 #>             Label SymOp      x_a   y_b     z_c    Tx    Ty    Tz
 #>            <char> <int>    <num> <num>   <num> <int> <int> <int>
 #> 1: Yb1_1_-1_-1_-1     1 -0.82325 -0.75 -0.3879    -1    -1    -1
-#> 2: Yb1_2_-1_-1_-1     2 -0.67675 -0.25 -0.8879    -1    -1    -1
-#> 3: Yb1_3_-1_-1_-1     3 -0.17675 -0.25 -0.6121    -1    -1    -1
-#> 4: Yb1_4_-1_-1_-1     4 -0.32325 -0.75 -0.1121    -1    -1    -1
-#> 5: Ge1_1_-1_-1_-1     1 -0.96450 -0.75 -0.8732    -1    -1    -1
-#> 6: Ge1_2_-1_-1_-1     2 -0.53550 -0.25 -0.3732    -1    -1    -1
+#> 2: Ge1_1_-1_-1_-1     1 -0.96450 -0.75 -0.8732    -1    -1    -1
+#> 3: Yb1_2_-1_-1_-1     2 -0.67675 -0.25 -0.8879    -1    -1    -1
+#> 4: Ge1_2_-1_-1_-1     2 -0.53550 -0.25 -0.3732    -1    -1    -1
+#> 5: Yb1_3_-1_-1_-1     3 -0.17675 -0.25 -0.6121    -1    -1    -1
+#> 6: Ge1_3_-1_-1_-1     3 -0.03550 -0.25 -0.1268    -1    -1    -1
 ```
 
 #### 1.2.5 Calculating Interatomic Distances

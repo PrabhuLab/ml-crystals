@@ -35,6 +35,23 @@
     </div>
 
     <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.0.2" id="crystract-102">crystract 1.0.2<a class="anchor" aria-label="anchor" href="#crystract-102"></a></h2>
+<div class="section level3">
+<h3 id="performance-improvements-1-0-2">Performance Improvements<a class="anchor" aria-label="anchor" href="#performance-improvements-1-0-2"></a></h3>
+<ul><li>
+<strong>Massive Speedup in Symmetry Operations:</strong> Symmetry equations are now compiled into vectorized R functions once per structure, eliminating the severe CPU bottleneck caused by repeated string parsing (<code>eval(parse())</code>).</li>
+<li>
+<strong>“Fast Fail” CIF Validation:</strong> Implemented high-speed pre-flight checks using raw C-level string matching. Invalid or severely malformed CIF files are now rejected in milliseconds, skipping unnecessary and expensive full-table regex scans.</li>
+<li>
+<strong>Optimized Extraction:</strong> Replaced multiple heavy regular expression searches with highly optimized exact string matching during the mandatory data extraction phase.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="bug-fixes-1-0-2">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-0-2"></a></h3>
+<ul><li>
+<strong>Batch Processing Memory Exhaustion Resolved:</strong> Fixed a critical issue in <code><a href="../reference/analyze_cif_files.html">analyze_cif_files()</a></code> where large datasets would crash R by attempting to load all structures into system RAM simultaneously. CIF files are now dynamically read from disk strictly within their specified chunk/batch size, ensuring stable memory footprints when processing tens of thousands of files.</li>
+</ul></div>
+</div>
+    <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.0.1" id="crystract-101">crystract 1.0.1<a class="anchor" aria-label="anchor" href="#crystract-101"></a></h2><p class="text-muted">CRAN release: 2026-05-28</p>
 <ul><li>Refactored internal CIF extraction logic to robustly check for multiple alternative CIF tags when parsing chemical formulas, structure types, and space group names/numbers.</li>
 <li>Updated <code>README</code> installation instructions to include options for both stable (CRAN) and development (GitHub) releases.</li>

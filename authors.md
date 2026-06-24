@@ -12,14 +12,21 @@
 
 ## Citation
 
-Ngo D, Prabhu A, Hubner J (2026). *crystract: Crystallographic
-Information File (CIF) Data Processing Tools*. R package version 1.0.1,
-<https://prabhulab.github.io/ml-crystals/>.
+Ngo D, Hübner J, Spitzner M, Morrison S, Prabhu A (2026). “crystract: A
+Crystallography Package in R for .cif Data Processing.” *Journal of Open
+Source Software*, **11**(122), 9529.
+[doi:10.21105/joss.09529](https://doi.org/10.21105/joss.09529).
+<https://doi.org/10.21105/joss.09529>.
 
-    @Manual{,
-      title = {crystract: Crystallographic Information File (CIF) Data Processing Tools},
-      author = {Don Ngo and Anirudh Prabhu and Julia-Maria Hubner},
+    @Article{,
+      title = {crystract: A Crystallography Package in R for .cif Data Processing},
+      author = {Don Ngo and Julia M. Hübner and Marc Spitzner and Shaunna M. Morrison and Anirudh Prabhu},
+      journal = {Journal of Open Source Software},
       year = {2026},
-      note = {R package version 1.0.1},
-      url = {https://prabhulab.github.io/ml-crystals/},
+      volume = {11},
+      number = {122},
+      pages = {9529},
+      doi = {10.21105/joss.09529},
+      url = {https://doi.org/10.21105/joss.09529},
+      publisher = {The Open Journal},
     }
