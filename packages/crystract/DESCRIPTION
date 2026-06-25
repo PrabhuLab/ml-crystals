@@ -1,7 +1,7 @@
 Package: crystract
 Type: Package
 Title: Crystallographic Information File (CIF) Data Processing Tools
-Version: 1.0.1
+Version: 1.0.2
 Authors@R: c(person(given = "Don", 
                   family = "Ngo", 
                   email = "dngo@carnegiescience.edu", 
