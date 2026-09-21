@@ -37,7 +37,7 @@ This report documents the final, robust workflow for analyzing a curated dataset
 The curated dataset is organized into subdirectories defining the specific filtering rules for the files within (e.g., `6c-16i-24k`). The script recursively finds all CIF files and maps each one to its structural category.
 
 ```{r load-files, echo=TRUE}
-cif_root_dir <- "/Users/donngo/Documents/ml-crystals/notebook/workflow/Verified"
+cif_root_dir <- "/Users/donngo/Documents/clathrates/Clathrate I/Verified "
 
 if (!dir.exists(cif_root_dir)) stop(paste("CRITICAL ERROR: Root directory not found:", cif_root_dir))
 
@@ -67,7 +67,9 @@ analysis_results <- analyze_cif_files(
   perform_calcs_and_transforms = TRUE,
   bonding_algorithms = "none", # Disable default bonding to use our custom method
   calculate_bond_angles = FALSE,
-  perform_error_propagation = FALSE
+  perform_error_propagation = FALSE,
+  workers = 4,
+  batch_size = 100
 )
 cat("Optimized analysis complete. Raw results table has", nrow(analysis_results), "rows.\n")
 ```
@@ -242,4 +244,64 @@ cat(paste0("Interactive plot data table saved to '", plot_table_filename, "'\n")
 detailed_export_path <- file.path(export_dir, "detailed_analysis_csvs")
 export_analysis_to_csv(analysis_results = analysis_results, output_dir = detailed_export_path, overwrite = TRUE)
 cat("...Done. Check the '", export_dir, "' folder for all outputs.\n")
+```
+
+## 7. Database Code Extraction and Metadata Export
+
+This section iterates through the loaded files to extract their official Database IDs using `crystract`, maps them to their respective structural categories (derived from their folder names), and exports the combined metadata for record-keeping.
+
+```{r extract-metadata, echo=TRUE}
+# --- 1. Helper function for extraction ---
+extract_db_code_crystract <- function(file_path) {
+  tryCatch({
+    cif_list <- read_cif_files(file_path)
+    if (length(cif_list) == 0) return(NA_character_)
+    
+    # Extract db code from the parsed CIF content
+    db_code <- extract_database_code(cif_list[[1]])
+    return(db_code)
+  }, error = function(e) {
+    return("Read Error")
+  })
+}
+
+cat("Extracting database codes for", nrow(file_map), "files...\n")
+
+# --- 2. Extract Codes ---
+# (Using sapply as it's straightforward for ~700 files. If you add the 'future.apply' 
+# package to your setup chunk, you can swap this for future_sapply to multithread).
+file_map$database_code <- sapply(file_map$file_path, extract_db_code_crystract)
+
+# --- 3. Format the final output table ---
+metadata_export <- file_map[, .(
+  File = file_name, 
+  Database_Code = database_code, 
+  Category = category
+)]
+
+# --- 4. Export to CSV ---
+metadata_csv_path <- file.path(export_dir, "clathrate_metadata_categories.csv")
+fwrite(metadata_export, metadata_csv_path)
+cat("Metadata CSV successfully saved to:", metadata_csv_path, "\n")
+
+# --- 5. Generate Interactive Table & Export to HTML ---
+metadata_dt <- datatable(
+  metadata_export,
+  caption = "Clathrate CIF Files: Database Codes and Categories",
+  filter = 'top',
+  extensions = 'Buttons',
+  options = list(
+    pageLength = 15, 
+    autoWidth = TRUE, 
+    dom = 'Bfrtip', 
+    buttons = c('copy', 'csv', 'excel')
+  )
+)
+
+metadata_html_path <- file.path(export_dir, "clathrate_metadata_table.html")
+saveWidget(metadata_dt, file = metadata_html_path, selfcontained = TRUE)
+cat("Interactive metadata HTML widget saved to:", metadata_html_path, "\n\n")
+
+# Display in the knitted Markdown document
+metadata_dt
 ```

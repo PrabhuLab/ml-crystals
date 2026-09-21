@@ -54,7 +54,7 @@ library(scales)  # For plot scales and breaks
 
 # --- Initialize Time Tracking ---
 timing_log <- data.frame(
-  Step = character(), 
+  Step = character(),
   Duration_Mins = numeric(),
   stringsAsFactors = FALSE
 )
@@ -68,52 +68,320 @@ global_start <- Sys.time()
 
 # --- ATOMIC NUMBER LOOKUP (For Sorting) ---
 ptable <- data.table(
-  Symbol = c("H","He","Li","Be","B","C","N","O","F","Ne",
-             "Na","Mg","Al","Si","P","S","Cl","Ar","K","Ca",
-             "Sc","Ti","V","Cr","Mn","Fe","Co","Ni","Cu","Zn",
-             "Ga","Ge","As","Se","Br","Kr","Rb","Sr","Y","Zr",
-             "Nb","Mo","Tc","Ru","Rh","Pd","Ag","Cd","In","Sn",
-             "Sb","Te","I","Xe","Cs","Ba","La","Ce","Pr","Nd",
-             "Pm","Sm","Eu","Gd","Tb","Dy","Ho","Er","Tm","Yb",
-             "Lu","Hf","Ta","W","Re","Os","Ir","Pt","Au","Hg",
-             "Tl","Pb","Bi","Po","At","Rn","Fr","Ra","Ac","Th",
-             "Pa","U","Np","Pu","Am","Cm","Bk","Cf","Es","Fm"),
+  Symbol = c(
+    "H",
+    "He",
+    "Li",
+    "Be",
+    "B",
+    "C",
+    "N",
+    "O",
+    "F",
+    "Ne",
+    "Na",
+    "Mg",
+    "Al",
+    "Si",
+    "P",
+    "S",
+    "Cl",
+    "Ar",
+    "K",
+    "Ca",
+    "Sc",
+    "Ti",
+    "V",
+    "Cr",
+    "Mn",
+    "Fe",
+    "Co",
+    "Ni",
+    "Cu",
+    "Zn",
+    "Ga",
+    "Ge",
+    "As",
+    "Se",
+    "Br",
+    "Kr",
+    "Rb",
+    "Sr",
+    "Y",
+    "Zr",
+    "Nb",
+    "Mo",
+    "Tc",
+    "Ru",
+    "Rh",
+    "Pd",
+    "Ag",
+    "Cd",
+    "In",
+    "Sn",
+    "Sb",
+    "Te",
+    "I",
+    "Xe",
+    "Cs",
+    "Ba",
+    "La",
+    "Ce",
+    "Pr",
+    "Nd",
+    "Pm",
+    "Sm",
+    "Eu",
+    "Gd",
+    "Tb",
+    "Dy",
+    "Ho",
+    "Er",
+    "Tm",
+    "Yb",
+    "Lu",
+    "Hf",
+    "Ta",
+    "W",
+    "Re",
+    "Os",
+    "Ir",
+    "Pt",
+    "Au",
+    "Hg",
+    "Tl",
+    "Pb",
+    "Bi",
+    "Po",
+    "At",
+    "Rn",
+    "Fr",
+    "Ra",
+    "Ac",
+    "Th",
+    "Pa",
+    "U",
+    "Np",
+    "Pu",
+    "Am",
+    "Cm",
+    "Bk",
+    "Cf",
+    "Es",
+    "Fm"
+  ),
   Z = 1:100
 )
 
 # --- Define Custom Radii Table ---
 custom_radii_values <- data.table(
-  Symbol = c("Ac", "Ag", "Al", "Am", "Ar", "As", "At", "Au", "B", "Ba", 
-             "Be", "Bi", "Br", "C", "Ca", "Cd", "Ce", "Cl", "Cm", "Co", 
-             "Cr", "Cs", "Cu", "Dy", "Er", "Eu", "F", "Fe", "Fr", "Ga", 
-             "Gd", "Ge", "H", "He", "Hf", "Hg", "Ho", "I", "In", "Ir", 
-             "K", "Kr", "La", "Li", "Lu", "Mg", "Mn", "Mo", "N", "Na", 
-             "Nb", "Nd", "Ne", "Ni", "Np", "O", "Os", "P", "Pa", "Pb", 
-             "Pd", "Pm", "Po", "Pr", "Pt", "Pu", "Ra", "Rb", "Re", "Rh", 
-             "Rn", "Ru", "S", "Sb", "Sc", "Se", "Si", "Sm", "Sn", "Sr", 
-             "Ta", "Tb", "Tc", "Te", "Th", "Ti", "Tl", "Tm", "U", "V", 
-             "W", "Xe", "Y", "Yb", "Zn", "Zr"),
-  Radius = c(2.15, 1.45, 1.21, 1.8, 1.06, 1.19, 1.5, 1.36, 0.84, 2.15, 
-             0.96, 1.48, 1.2, 0.73, 1.76, 1.44, 2.04, 1.02, 1.69, 1.38, 
-             1.39, 2.44, 1.32, 1.92, 1.89, 1.98, 0.57, 1.42, 2.6, 1.22, 
-             1.96, 1.2, 0.31, 0.28, 1.75, 1.32, 1.92, 1.39, 1.42, 1.41, 
-             2.03, 1.16, 2.07, 1.28, 1.87, 1.41, 1.5, 1.54, 0.71, 1.66, 
-             1.64, 2.01, 0.58, 1.24, 1.9, 0.66, 1.44, 1.07, 2, 1.46, 
-             1.39, 1.99, 1.4, 2.03, 1.36, 1.87, 2.21, 2.2, 1.51, 1.42, 
-             1.5, 1.46, 1.05, 1.39, 1.7, 1.2, 1.11, 1.98, 1.39, 1.95, 
-             1.7, 1.94, 1.47, 1.38, 2.06, 1.6, 1.45, 1.9, 1.96, 1.53, 
-             1.62, 1.4, 1.9, 1.87, 1.22, 1.75),
-  Type = "covalent" 
+  Symbol = c(
+    "Ac",
+    "Ag",
+    "Al",
+    "Am",
+    "Ar",
+    "As",
+    "At",
+    "Au",
+    "B",
+    "Ba",
+    "Be",
+    "Bi",
+    "Br",
+    "C",
+    "Ca",
+    "Cd",
+    "Ce",
+    "Cl",
+    "Cm",
+    "Co",
+    "Cr",
+    "Cs",
+    "Cu",
+    "Dy",
+    "Er",
+    "Eu",
+    "F",
+    "Fe",
+    "Fr",
+    "Ga",
+    "Gd",
+    "Ge",
+    "H",
+    "He",
+    "Hf",
+    "Hg",
+    "Ho",
+    "I",
+    "In",
+    "Ir",
+    "K",
+    "Kr",
+    "La",
+    "Li",
+    "Lu",
+    "Mg",
+    "Mn",
+    "Mo",
+    "N",
+    "Na",
+    "Nb",
+    "Nd",
+    "Ne",
+    "Ni",
+    "Np",
+    "O",
+    "Os",
+    "P",
+    "Pa",
+    "Pb",
+    "Pd",
+    "Pm",
+    "Po",
+    "Pr",
+    "Pt",
+    "Pu",
+    "Ra",
+    "Rb",
+    "Re",
+    "Rh",
+    "Rn",
+    "Ru",
+    "S",
+    "Sb",
+    "Sc",
+    "Se",
+    "Si",
+    "Sm",
+    "Sn",
+    "Sr",
+    "Ta",
+    "Tb",
+    "Tc",
+    "Te",
+    "Th",
+    "Ti",
+    "Tl",
+    "Tm",
+    "U",
+    "V",
+    "W",
+    "Xe",
+    "Y",
+    "Yb",
+    "Zn",
+    "Zr"
+  ),
+  Radius = c(
+    2.15,
+    1.45,
+    1.21,
+    1.8,
+    1.06,
+    1.19,
+    1.5,
+    1.36,
+    0.84,
+    2.15,
+    0.96,
+    1.48,
+    1.2,
+    0.73,
+    1.76,
+    1.44,
+    2.04,
+    1.02,
+    1.69,
+    1.38,
+    1.39,
+    2.44,
+    1.32,
+    1.92,
+    1.89,
+    1.98,
+    0.57,
+    1.42,
+    2.6,
+    1.22,
+    1.96,
+    1.2,
+    0.31,
+    0.28,
+    1.75,
+    1.32,
+    1.92,
+    1.39,
+    1.42,
+    1.41,
+    2.03,
+    1.16,
+    2.07,
+    1.28,
+    1.87,
+    1.41,
+    1.5,
+    1.54,
+    0.71,
+    1.66,
+    1.64,
+    2.01,
+    0.58,
+    1.24,
+    1.9,
+    0.66,
+    1.44,
+    1.07,
+    2,
+    1.46,
+    1.39,
+    1.99,
+    1.4,
+    2.03,
+    1.36,
+    1.87,
+    2.21,
+    2.2,
+    1.51,
+    1.42,
+    1.5,
+    1.46,
+    1.05,
+    1.39,
+    1.7,
+    1.2,
+    1.11,
+    1.98,
+    1.39,
+    1.95,
+    1.7,
+    1.94,
+    1.47,
+    1.38,
+    2.06,
+    1.6,
+    1.45,
+    1.9,
+    1.96,
+    1.53,
+    1.62,
+    1.4,
+    1.9,
+    1.87,
+    1.22,
+    1.75
+  ),
+  Type = "covalent"
 )
 ```
 
 ## 3. Data Discovery and Chemistry Filtering
 
-To analyze Chalcogenides strictly, our filtering logic is: **(Contains S OR Se OR Te) AND (Does NOT contain O)**. Excluding oxygen prevents the inclusion of sulfates, selenites, and tellurates, isolating the data strictly to sulfides, selenides, and tellurides.
+To analyze Chalcogenides only, our filtering logic is: **(Contains S OR Se OR Te) AND (Does NOT contain O)**.
 
 ```{r filter-by-chemistry}
 # --- Configuration ---
-cif_directory <- "/Users/donngo/Documents/cif" 
+cif_directory <- "/Users/donngo/Documents/cif"
 
 step_start <- Sys.time()
 
@@ -125,36 +393,303 @@ if (!dir.exists(cif_directory)) {
   all_cif_files <- list.files(cif_directory, pattern = "\\.cif$", full.names = TRUE)
 }
 
-if(length(all_cif_files) == 0) stop("No .cif files found.")
+if (length(all_cif_files) == 0)
+  stop("No .cif files found.")
 
-cat(sprintf("Found %d CIF files. Checking chemistry...\n", length(all_cif_files)))
+cat(sprintf(
+  "Found %d CIF files. Checking  coordinate chemistry...\n",
+  length(all_cif_files)
+))
 
-# --- 2. Define Chemistry Filter Logic ---
+# --- 2. Define  Chemistry Filter Logic ---
 check_chemistry <- function(file_path) {
   tryCatch({
     cif_content <- read_cif_files(file_path)[[1]]
     formula_str <- extract_chemical_formula(cif_content)
-    if (is.na(formula_str)) return(FALSE)
     
-    # Extract elements
-    elements <- unique(stringr::str_extract_all(formula_str, "[A-Z][a-z]?")[[1]])
+    # Check actual atomic coordinates in files
+    atoms <- extract_atomic_coordinates(cif_content, formula_str)
+    if (is.null(atoms) || nrow(atoms) == 0) {
+      return(
+        data.table(
+          File = basename(file_path),
+          Path = file_path,
+          Keep = FALSE,
+          Elements = NA_character_
+        )
+      )
+    }
+    
+    # Extract letters at the start of the atom labels (e.g., 'Fe1' -> 'Fe')
+    site_labels <- atoms$Label
+    site_syms <- stringr::str_extract(site_labels, "^[A-Za-z]+")
+    site_elements <- unique(stringr::str_to_title(site_syms))
+    
+    # Validate only against the Periodic Table (ignores random artifact labels)
+    valid_elements <- intersect(site_elements, ptable$Symbol)
     
     # Criteria: Has S/Se/Te AND No Oxygen
-    has_target <- any(c("S", "Se", "Te") %in% elements)
-    has_oxygen <- "O" %in% elements
+    has_target <- any(c("S", "Se", "Te") %in% valid_elements)
+    has_oxygen <- "O" %in% valid_elements
     
-    return(has_target && !has_oxygen)
-  }, error = function(e) return(FALSE))
+    keep <- has_target && !has_oxygen
+    
+    return(data.table(
+      File = basename(file_path),
+      Path = file_path,
+      Keep = keep,
+      Elements = paste(sort(valid_elements), collapse = ", ")
+    ))
+  }, error = function(e) {
+    return(data.table(
+      File = basename(file_path),
+      Path = file_path,
+      Keep = FALSE,
+      Elements = "Error"
+    ))
+  })
 }
 
 # --- 3. Run Filter (Parallelized) ---
 plan(multisession, workers = 5)
-matches_mask <- future_sapply(all_cif_files, check_chemistry)
-target_files <- all_cif_files[matches_mask]
+filter_results <- rbindlist(future_lapply(all_cif_files, check_chemistry, future.seed = TRUE))
 plan(sequential)
+
+# Extract only the target files that passed the logic
+target_files <- filter_results[Keep == TRUE]$Path
 
 timing_log <- rbind(timing_log, log_time("1. Filtering", step_start))
 cat(sprintf("Filtering complete. Kept: %d files.\n", length(target_files)))
+```
+
+### 3.1 Included Chalcogenide Files Summary
+
+This table displays every file that successfully bypassed the filter, alongside a comma-separated list of the exact physical elements discovered at its coordinate sites to guarantee validity.
+
+```{r included-files-table}
+if(nrow(filter_results[Keep == TRUE]) > 0) {
+  included_files_dt <- filter_results[Keep == TRUE, .(File, Elements)]
+  
+  datatable(
+    included_files_dt,
+    filter = 'top',
+    extensions = 'Buttons',
+    options = list(
+      pageLength = 10,
+      autoWidth = TRUE,
+      dom = 'Bfrtip',
+      buttons = c('copy', 'csv', 'excel')
+    ),
+    caption = "Successfully Filtered Chalcogenide Files (Contains S/Se/Te, No O)"
+  )
+} else {
+  cat("No files passed the  coordinate chemistry filter.\n")
+}
+```
+### 3.2 Validation Against the IMA Mineral List via OpenMindat
+
+We validate the chemical formulas of naturally occurring minerals against the official International Mineralogical Association (IMA) list prior to geometric analysis. 
+
+Using the `OpenMindat` package, we dynamically pull the most up-to-date IMA-approved mineral list. **This workflow ly evaluates natural minerals and discards synthetics.** Any CIF file that does not report a mineral name, or reports a name not found in the IMA database, is dropped. 
+
+Furthermore, because real CIFs report *empirical* analytical formulas (which include trace substitutions) and the IMA reports *ideal* formulas, an exact string match is impossible. Instead, we perform an **Essential Element Check**: the script extracts the elements from both formulas and drops any CIF that is missing a core elemental component required by the IMA (e.g., catching a Celestine CIF missing its Oxygen).
+
+**Note:** You must have a registered API token from Mindat.org to establish the connection.
+
+```{r filter-ima}
+# Load required libraries
+library(OpenMindat)
+library(httr)
+library(jsonlite)
+library(data.table)
+
+# -------------------------------------------------------------------
+# Establish the API connection using your Mindat API token.
+# Replace "YOUR_API_TOKEN" with your actual token string.
+# -------------------------------------------------------------------
+# API_TOKEN <- "YOUR_API_TOKEN"
+API_TOKEN <- "048be448cf75cc60cfef50b0f1fb4068"
+mindat_connection(API_TOKEN)
+
+step_start <- Sys.time()
+cat("Fetching ALL IMA minerals from Mindat.org API (handling pagination)...\n")
+
+# 1. Fetch IMA list robustly using a pagination loop (OpenMindat package only grabs first page)
+base_url <- "https://api.mindat.org/v1/minerals-ima/?page_size=1000"
+all_ima_minerals <- list()
+current_url <- base_url
+
+while (!is.null(current_url)) {
+  req <- httr::GET(url = current_url, httr::add_headers(Authorization = paste("Token", API_TOKEN)))
+  
+  parsed <- jsonlite::fromJSON(httr::content(req, "text", encoding = "UTF-8"),
+                               simplifyVector = TRUE)
+  
+  if (!is.null(parsed$results) && is.data.frame(parsed$results)) {
+    all_ima_minerals[[length(all_ima_minerals) + 1]] <- as.data.table(parsed$results)
+  }
+  
+  current_url <- parsed$`next`
+}
+
+ima_database <- rbindlist(all_ima_minerals, fill = TRUE)
+cat(sprintf(
+  "Successfully flattened %d IMA minerals into a database.\n",
+  nrow(ima_database)
+))
+
+# Helper function to extract mineral name safely from raw text lines
+extract_mineral_name <- function(raw_lines) {
+  match_line <- grep(
+    "^_chemical_name_mineral|^_mineral_name",
+    raw_lines,
+    value = TRUE,
+    ignore.case = TRUE
+  )
+  if (length(match_line) > 0) {
+    # Remove the tag itself
+    name <- sub("^\\S+\\s+", "", match_line[1])
+    # Strip any quotes
+    name <- gsub("['\"]", "", name)
+    return(trimws(name))
+  }
+  return(NA_character_)
+}
+
+# Helper function to extract unique chemical elements from a formula string
+get_elements <- function(form_str) {
+  if (is.na(form_str) || form_str == "")
+    return(character(0))
+  # Remove HTML tags (e.g., <sub>31</sub> -> 31)
+  clean_str <- gsub("<[^>]+>", "", form_str)
+  # Extract elements (Capital letter followed by optional lowercase letter)
+  elems <- unlist(regmatches(clean_str, gregexpr("[A-Z][a-z]?", clean_str)))
+  return(unique(elems))
+}
+
+# 2. Define validation function for our filtered targets
+check_ima <- function(file_path) {
+  tryCatch({
+    # A. Read raw text to safely parse the mineral name
+    raw_lines <- readLines(file_path, warn = FALSE)
+    mineral_str <- extract_mineral_name(raw_lines)
+    
+    # B. Read with crystract to parse the chemical formula
+    cif_list <- read_cif_files(file_path)
+    if (length(cif_list) == 0)
+      stop("crystract returned empty list")
+    formula_str <- extract_chemical_formula(cif_list[[1]])
+    
+    # Handle missing, empty, or placeholder mineral names
+    if (is.null(mineral_str) ||
+        trimws(mineral_str) == "" || mineral_str == "?") {
+      mineral_str <- NA_character_
+    }
+    
+    #  Filtering Logic
+    if (is.na(mineral_str)) {
+      keep_file <- FALSE
+      reason <- "Discarded: Synthetic or Unnamed (No mineral name reported)"
+    } else {
+      # Match against the IMA database (case insensitive)
+      match_idx <- match(tolower(mineral_str), tolower(ima_database$name))
+      
+      if (is.na(match_idx)) {
+        keep_file <- FALSE
+        reason <- sprintf("Discarded: Mineral name '%s' not found in official IMA list",
+                          mineral_str)
+      } else {
+        ima_form <- ima_database$ima_formula[match_idx]
+        
+        # Element Validation
+        ima_elems <- get_elements(ima_form)
+        cif_elems <- get_elements(formula_str)
+        
+        # Check if any required elements from the IMA formula are missing in the CIF
+        missing_elems <- setdiff(ima_elems, cif_elems)
+        
+        if (length(missing_elems) > 0) {
+          keep_file <- FALSE
+          clean_ima_form <- gsub("<[^>]+>", "", ima_form)
+          reason <- sprintf(
+            "Discarded: Missing essential IMA elements (%s). CIF: %s | IMA: %s",
+            paste(missing_elems, collapse = ","),
+            formula_str,
+            clean_ima_form
+          )
+        } else {
+          keep_file <- TRUE
+          reason <- "IMA Validated (Name & Essential Elements Match)"
+        }
+      }
+    }
+    
+    return(
+      data.table(
+        Path = file_path,
+        Mineral = mineral_str,
+        Formula = formula_str,
+        Keep_IMA = keep_file,
+        Reason = reason
+      )
+    )
+  }, error = function(e) {
+    # Print exact error message if something genuinely fails
+    return(
+      data.table(
+        Path = file_path,
+        Mineral = NA_character_,
+        Formula = NA_character_,
+        Keep_IMA = FALSE,
+        Reason = paste("Read Error:", e$message)
+      )
+    )
+  })
+}
+
+# 3. Run validation on the target files
+cat(sprintf(
+  "Validating %d files against the IMA database...\n",
+  length(target_files)
+))
+
+plan(multisession, workers = 5)
+ima_results <- rbindlist(future_lapply(target_files, check_ima, future.seed = TRUE))
+plan(sequential)
+
+# 4. Update target_files for Section 4
+target_files <- ima_results[Keep_IMA == TRUE]$Path
+
+timing_log <- rbind(timing_log, log_time("1.5 IMA Validation", step_start))
+cat(
+  sprintf(
+    "IMA Validation complete. Kept: %d naturally occurring, formula-verified files.\n",
+    length(target_files)
+  )
+)
+```
+
+### 3.3 IMA Validation Summary
+
+This table shows the result of the OpenMindat IMA check. You can use the search bar to find specific formulas or sort by `Keep_IMA` to review files that were dropped due to formula mismatches (e.g., missing oxygen).
+
+```{r ima-summary-table}
+if(nrow(ima_results) > 0) {
+  datatable(
+    ima_results[, .(File = basename(Path), Mineral, Formula, Keep_IMA, Reason)],
+    filter = 'top',
+    extensions = 'Buttons',
+    options = list(
+      pageLength = 10,
+      autoWidth = TRUE,
+      dom = 'Bfrtip',
+      buttons = c('copy', 'csv', 'excel')
+    ),
+    caption = "OpenMindat IMA Validation Results ( Filtering)"
+  )
+} else {
+  cat("No files available for IMA validation.\n")
+}
 ```
 
 ## 4. Parallel Analysis (ECon Algorithm)
@@ -166,7 +701,7 @@ set_radii_data(custom_radii_values)
 cat("Custom radii table successfully loaded for filtering.\n")
 
 analysis_output_dir <- "~/repos/ml-crystals/notebook/natural/crystract_econ_results"
-num_workers <- parallel::detectCores() - 1 
+num_workers <- parallel::detectCores() - 1
 
 # --- Robust Worker Function ---
 process_structure_robust <- function(file_path) {
@@ -175,7 +710,8 @@ process_structure_robust <- function(file_path) {
   tryCatch({
     # 1. Read and Extract
     cif_list <- read_cif_files(file_path)
-    if(length(cif_list) == 0) return(NULL)
+    if (length(cif_list) == 0)
+      return(NULL)
     cif_data <- cif_list[[1]]
     
     formula <- extract_chemical_formula(cif_data)
@@ -183,7 +719,9 @@ process_structure_robust <- function(file_path) {
     metrics <- extract_unit_cell_metrics(cif_data)
     sym_ops <- extract_symmetry_operations(cif_data)
     
-    if (is.null(atoms) || is.null(metrics) || is.null(sym_ops)) return(NULL)
+    if (is.null(atoms) ||
+        is.null(metrics) || is.null(sym_ops))
+      return(NULL)
     
     # 2. Transform and Expand (3x3x3 Supercell)
     full_cell <- apply_symmetry_operations(atoms, sym_ops, metrics, tolerance = 1e-4)
@@ -191,20 +729,23 @@ process_structure_robust <- function(file_path) {
     
     # 3. Calculate Raw Distances
     dists <- calculate_distances(atoms, expanded, metrics, tolerance = 1e-4)
-    if (nrow(dists) == 0) return(NULL) 
+    if (nrow(dists) == 0)
+      return(NULL)
     
     # --- 4. Attempt Ghost Filtering ---
     filter_status <- "applied"
     
     ghost_res <- tryCatch({
       filter_ghost_distances(dists, atoms, margin = 0.15, radii_type = "covalent")
-    }, error = function(e) list(kept = data.table()))
+    }, error = function(e)
+      list(kept = data.table()))
     
     clean_dists <- ghost_res$kept
     
     # 5. Determine Bonds using ECon
     bonds <- econ(clean_dists)
-    if (nrow(bonds) == 0) return(NULL)
+    if (nrow(bonds) == 0)
+      return(NULL)
     
     # 6. Calculate Properties
     cn_table <- calculate_neighbor_counts(bonds)
@@ -214,7 +755,8 @@ process_structure_robust <- function(file_path) {
     data.table(
       file_name = fname,
       chemical_formula = formula,
-      filter_status = filter_status, # Log status for diagnosis
+      filter_status = filter_status,
+      # Log status for diagnosis
       atomic_coordinates = list(atoms),
       expanded_coords = list(expanded),
       bonds_econ = list(bonds),
@@ -231,7 +773,8 @@ process_structure_robust <- function(file_path) {
 step_start <- Sys.time()
 
 if (length(target_files) > 0) {
-  if (!dir.exists(analysis_output_dir)) dir.create(analysis_output_dir, recursive = TRUE)
+  if (!dir.exists(analysis_output_dir))
+    dir.create(analysis_output_dir, recursive = TRUE)
   batch_size  <- 500
   num_batches <- ceiling(length(target_files) / batch_size)
   
@@ -242,7 +785,12 @@ if (length(target_files) > 0) {
     idx_end   <- min(b * batch_size, length(target_files))
     batch_files <- target_files[idx_start:idx_end]
     
-    cat(sprintf("Processing Batch %d of %d (%d files)...\n", b, num_batches, length(batch_files)))
+    cat(sprintf(
+      "Processing Batch %d of %d (%d files)...\n",
+      b,
+      num_batches,
+      length(batch_files)
+    ))
     results_list <- future_lapply(batch_files, process_structure_robust, future.seed = TRUE)
     batch_dt <- rbindlist(results_list, fill = TRUE)
     
@@ -252,9 +800,17 @@ if (length(target_files) > 0) {
       
       # Print filter stats for this batch
       stats <- table(batch_dt$filter_status)
-      cat("  Filter Status:", paste(names(stats), stats, sep="=", collapse=", "), "\n")
+      cat("  Filter Status:",
+          paste(
+            names(stats),
+            stats,
+            sep = "=",
+            collapse = ", "
+          ),
+          "\n")
     }
-    rm(results_list, batch_dt); gc()
+    rm(results_list, batch_dt)
+    gc()
   }
   plan(sequential)
   timing_log <- rbind(timing_log, log_time("2. Analysis (Robust)", step_start))
@@ -276,14 +832,18 @@ high_cn_debug_log <- list()
 
 if (dir.exists(analysis_output_dir)) {
   cat("Reading batch files and aggregating results...\n")
-  batch_files <- list.files(analysis_output_dir, pattern = "^batch_\\d+\\.rds$", full.names = TRUE)
+  batch_files <- list.files(analysis_output_dir,
+                            pattern = "^batch_\\d+\\.rds$",
+                            full.names = TRUE)
   
   for (bf in batch_files) {
     batch_dt <- readRDS(bf)
     
     for (i in 1:nrow(batch_dt)) {
       current_file <- batch_dt$file_name[i]
-      if (is.null(batch_dt$bonds_econ) || length(batch_dt$bonds_econ) < i) next
+      if (is.null(batch_dt$bonds_econ) ||
+          length(batch_dt$bonds_econ) < i)
+        next
       
       bonded_pairs <- batch_dt$bonds_econ[[i]]
       angles       <- batch_dt$angles_econ[[i]]
@@ -291,16 +851,31 @@ if (dir.exists(analysis_output_dir)) {
       cn_table     <- batch_dt$cn_econ[[i]]
       expanded_coords <- batch_dt$expanded_coords[[i]]
       
-      if (is.null(bonded_pairs) || nrow(bonded_pairs) == 0 || is.null(coords)) next
+      if (is.null(bonded_pairs) ||
+          nrow(bonded_pairs) == 0 || is.null(coords))
+        next
       coords <- unique(coords, by = "Label")
-
+      
       # --- DIAGNOSE HIGH GEOMETRIC CN ---
       high_cn_atoms <- cn_table[CoordinationNumber > 12]
       if (nrow(high_cn_atoms) > 0) {
         bad_bonds <- bonded_pairs[Atom1 %in% high_cn_atoms$Atom]
-        exp_coords_ref <- unique(expanded_coords[, .(Label, x2=x_a, y2=y_b, z2=z_c)], by = "Label")
-        bad_bonds <- merge(bad_bonds, exp_coords_ref, by.x = "Atom2", by.y = "Label", all.x = TRUE)
-        bad_bonds[, `:=`(x1 = x2 + DeltaX, y1 = y2 + DeltaY, z1 = z2 + DeltaZ)]
+        exp_coords_ref <- unique(expanded_coords[, .(Label,
+                                                     x2 = x_a,
+                                                     y2 = y_b,
+                                                     z2 = z_c)], by = "Label")
+        bad_bonds <- merge(
+          bad_bonds,
+          exp_coords_ref,
+          by.x = "Atom2",
+          by.y = "Label",
+          all.x = TRUE
+        )
+        bad_bonds[, `:=`(
+          x1 = x2 + DeltaX,
+          y1 = y2 + DeltaY,
+          z1 = z2 + DeltaZ
+        )]
         bad_bonds[, `:=`(File = current_file, Total_CN = cn_table[match(Atom1, Atom), CoordinationNumber])]
         high_cn_debug_log[[length(high_cn_debug_log) + 1]] <- bad_bonds
       }
@@ -314,14 +889,25 @@ if (dir.exists(analysis_output_dir)) {
       # --- CALCULATE WEIGHTED CN ---
       bonded_pairs[, NeighborSite := sub("_.*", "", Atom2)]
       site_counts <- bonded_pairs[, .(m_i = .N), by = .(Atom1, NeighborSite)]
-      site_counts <- merge(site_counts, coords[, .(Label, Occupancy)], 
-                           by.x = "NeighborSite", by.y = "Label", all.x = TRUE)
+      site_counts <- merge(
+        site_counts,
+        coords[, .(Label, Occupancy)],
+        by.x = "NeighborSite",
+        by.y = "Label",
+        all.x = TRUE
+      )
       site_counts[is.na(Occupancy), Occupancy := 1.0]
       w_cn <- site_counts[, .(CN_Weighted = sum(m_i * Occupancy)), by = .(Atom1)]
       
       # --- ASSEMBLE DATA ---
       # Merge Exact Neighbor Occupancies into final dataset for Specific WCN plots
-      bonded_pairs <- merge(bonded_pairs, coords[, .(Label, Occupancy)], by.x = "NeighborSite", by.y = "Label", all.x = TRUE)
+      bonded_pairs <- merge(
+        bonded_pairs,
+        coords[, .(Label, Occupancy)],
+        by.x = "NeighborSite",
+        by.y = "Label",
+        all.x = TRUE
+      )
       bonded_pairs[is.na(Occupancy), Occupancy := 1.0]
       
       bonded_pairs <- merge(bonded_pairs, w_cn, by = "Atom1")
@@ -341,33 +927,70 @@ if (dir.exists(analysis_output_dir)) {
   high_cn_diagnosis <- rbindlist(high_cn_debug_log, fill = TRUE)
   
   # Merge Atomic Numbers
-  final_bonds_data <- merge(final_bonds_data, ptable, by.x="Element1", by.y="Symbol", all.x=TRUE)
+  final_bonds_data <- merge(
+    final_bonds_data,
+    ptable,
+    by.x = "Element1",
+    by.y = "Symbol",
+    all.x = TRUE
+  )
   setnames(final_bonds_data, "Z", "Z1")
-  final_bonds_data <- merge(final_bonds_data, ptable, by.x="Element2", by.y="Symbol", all.x=TRUE)
+  final_bonds_data <- merge(
+    final_bonds_data,
+    ptable,
+    by.x = "Element2",
+    by.y = "Symbol",
+    all.x = TRUE
+  )
   setnames(final_bonds_data, "Z", "Z2")
   
   # Merge Custom Radii for Normalized Distance Calculation
-  final_bonds_data <- merge(final_bonds_data, custom_radii_values[, .(Symbol, Radius)], by.x="Element1", by.y="Symbol", all.x=TRUE)
+  final_bonds_data <- merge(
+    final_bonds_data,
+    custom_radii_values[, .(Symbol, Radius)],
+    by.x = "Element1",
+    by.y = "Symbol",
+    all.x = TRUE
+  )
   setnames(final_bonds_data, "Radius", "Radius1")
-  final_bonds_data <- merge(final_bonds_data, custom_radii_values[, .(Symbol, Radius)], by.x="Element2", by.y="Symbol", all.x=TRUE)
+  final_bonds_data <- merge(
+    final_bonds_data,
+    custom_radii_values[, .(Symbol, Radius)],
+    by.x = "Element2",
+    by.y = "Symbol",
+    all.x = TRUE
+  )
   setnames(final_bonds_data, "Radius", "Radius2")
   
   # Calculate Normalized Distance = Distance / (Radius1 + Radius2)
   final_bonds_data[, NormalizedDistance := Distance / (Radius1 + Radius2)]
   
-  if(nrow(all_angles_data) > 0) {
+  if (nrow(all_angles_data) > 0) {
     all_angles_data[, Element1 := str_extract(CentralAtom, "^[A-Za-z]+")]
     all_angles_data[, Element2 := str_extract(Neighbor1, "^[A-Za-z]+")]
-    all_angles_data <- merge(all_angles_data, ptable, by.x="Element1", by.y="Symbol", all.x=TRUE)
+    all_angles_data <- merge(
+      all_angles_data,
+      ptable,
+      by.x = "Element1",
+      by.y = "Symbol",
+      all.x = TRUE
+    )
     setnames(all_angles_data, "Z", "Z1")
-    all_angles_data <- merge(all_angles_data, ptable, by.x="Element2", by.y="Symbol", all.x=TRUE)
+    all_angles_data <- merge(
+      all_angles_data,
+      ptable,
+      by.x = "Element2",
+      by.y = "Symbol",
+      all.x = TRUE
+    )
     setnames(all_angles_data, "Z", "Z2")
   }
-
+  
   timing_log <- rbind(timing_log, log_time("3. Process & Diagnose", step_start))
   
   final_bonds_data <- final_bonds_data[!is.na(Z1) & !is.na(Z2)]
-  if(nrow(all_angles_data) > 0) all_angles_data <- all_angles_data[!is.na(Z1) & !is.na(Z2)]
+  if (nrow(all_angles_data) > 0)
+    all_angles_data <- all_angles_data[!is.na(Z1) & !is.na(Z2)]
   cat("Processing Complete.\n")
 }
 ```
@@ -377,8 +1000,9 @@ if (dir.exists(analysis_output_dir)) {
 This table allows us to peek into files where elements exhibited mathematically massive coordination numbers. Extremely high ECon CNs (> 12) usually indicate deeply disordered structures, overlapping atomic positions, or parsing errors.
 
 ```{r show-diagnosis}
-if (exists("high_cn_diagnosis") && nrow(high_cn_diagnosis) > 0) {
-  datatable(head(high_cn_diagnosis[order(-Total_CN)], 500), 
+if (exists("high_cn_diagnosis") &&
+    nrow(high_cn_diagnosis) > 0) {
+  datatable(head(high_cn_diagnosis[order(-Total_CN)], 500),
             options = list(scrollX = TRUE, pageLength = 5))
 } else {
   cat("No ECon CN > 12 found.\n")
@@ -390,7 +1014,8 @@ if (exists("high_cn_diagnosis") && nrow(high_cn_diagnosis) > 0) {
 This table provides a site-by-site breakdown of the **ECon Coordination Number** alongside the occupancy-corrected **Weighted CN**. Use the search box to find specific files or the column filters to isolate specific elements.
 
 ```{r cn-file-table}
-if (exists("final_bonds_data") && nrow(final_bonds_data) > 0) {
+if (exists("final_bonds_data") &&
+    nrow(final_bonds_data) > 0) {
   # Aggregate the bond data to the atom-site level
   cn_summary <- unique(final_bonds_data[, .(
     File = file_name,
@@ -399,10 +1024,10 @@ if (exists("final_bonds_data") && nrow(final_bonds_data) > 0) {
     `ECon CN` = round(CoordinationNumber, 3),
     `Weighted CN` = round(CN_Weighted, 3)
   )])
-
+  
   # Sort by file name for easier navigation
   cn_summary <- cn_summary[order(File, Site)]
-
+  
   # Display as interactive table
   datatable(
     cn_summary,
@@ -413,7 +1038,9 @@ if (exists("final_bonds_data") && nrow(final_bonds_data) > 0) {
       autoWidth = TRUE,
       dom = 'Bfrtip',
       buttons = c('copy', 'csv', 'excel'),
-      columnDefs = list(list(className = 'dt-center', targets = "_all"))
+      columnDefs = list(list(
+        className = 'dt-center', targets = "_all"
+      ))
     ),
     caption = "Summary of ECon and Weighted Coordination Numbers per Atomic Site"
   )
@@ -438,22 +1065,42 @@ This plot correlates the central atom against all possible neighbor atoms found 
 * **Bubble Size:** Indicates the total number of distinct observations for that pairing.
 
 ```{r viz-pairwise-length, fig.width=10, fig.height=10}
-pair_len_agg <- final_bonds_data[, .(MeanLength = mean(Distance), Count = .N), 
-                                 by = .(Element1, Z1, Element2, Z2)]
+pair_len_agg <- final_bonds_data[, .(MeanLength = mean(Distance), Count = .N), by = .(Element1, Z1, Element2, Z2)]
 pair_len_agg <- pair_len_agg[Count >= 5]
 pair_len_agg[, Element1 := fct_reorder(Element1, Z1)]
 pair_len_agg[, Element2 := fct_reorder(Element2, Z2)]
 
-p71 <- ggplot(pair_len_agg, aes(x = Element2, y = Element1, 
-                                text = paste("Center:", Element1, "<br>Neighbor:", Element2, 
-                                             "<br>Avg Dist:", round(MeanLength, 3), "Å",
-                                             "<br>Count:", Count))) +
+p71 <- ggplot(pair_len_agg, aes(
+  x = Element2,
+  y = Element1,
+  text = paste(
+    "Center:",
+    Element1,
+    "<br>Neighbor:",
+    Element2,
+    "<br>Avg Dist:",
+    round(MeanLength, 3),
+    "Å",
+    "<br>Count:",
+    Count
+  )
+)) +
   geom_point(aes(size = Count, color = MeanLength)) +
-  scale_color_viridis_c(option = "magma", direction = -1, name = "Length (Å)") +
-  scale_size_continuous(range = c(2, 9), breaks = scales::breaks_pretty(n = 5), name = "Count (Observations)") +
+  scale_color_viridis_c(option = "magma",
+                        direction = -1,
+                        name = "Length (Å)") +
+  scale_size_continuous(
+    range = c(2, 9),
+    breaks = scales::breaks_pretty(n = 5),
+    name = "# Observations"
+  ) +
   labs(title = "Pairwise Bond Lengths (All Elements)", x = "Neighbor Element", y = "Central Element") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+  theme_minimal(base_size=15) +
+  theme(axis.text.x = element_text(
+    angle = 90,
+    vjust = 0.5,
+    hjust = 1
+  ))
 
 # 1. Static output for export (Preserves legend)
 print(p71)
@@ -465,29 +1112,48 @@ ggplotly(p71, tooltip = "text")
 ### 7.2 Pairwise Bond Angles
 
 ```{r viz-pairwise-angle, fig.width=10, fig.height=10}
-if (exists("all_angles_data") && nrow(all_angles_data) > 0) {
+if (exists("all_angles_data") &&
+    nrow(all_angles_data) > 0) {
   df_angles <- copy(all_angles_data)
   
-  pair_ang_agg <- df_angles[, .(MeanAngle = mean(Angle), Count = .N), 
-                            by = .(Element1, Z1, Element2, Z2)]
+  pair_ang_agg <- df_angles[, .(MeanAngle = mean(Angle), Count = .N), by = .(Element1, Z1, Element2, Z2)]
   pair_ang_agg <- pair_ang_agg[Count >= 5]
   pair_ang_agg[, Element1 := fct_reorder(Element1, Z1)]
   pair_ang_agg[, Element2 := fct_reorder(Element2, Z2)]
-
-  p72 <- ggplot(pair_ang_agg, aes(x = Element2, y = Element1,
-                                  text = paste("Center:", Element1, "<br>Neighbor:", Element2,
-                                               "<br>Avg Angle:", round(MeanAngle, 1), "°",
-                                               "<br>Count:", Count))) +
+  
+  p72 <- ggplot(pair_ang_agg, aes(
+    x = Element2,
+    y = Element1,
+    text = paste(
+      "Center:",
+      Element1,
+      "<br>Neighbor:",
+      Element2,
+      "<br>Avg Angle:",
+      round(MeanAngle, 1),
+      "°",
+      "<br>Count:",
+      Count
+    )
+  )) +
     geom_point(aes(size = Count, color = MeanAngle)) +
     scale_color_viridis_c(option = "magma", name = "Angle (°)") +
-    scale_size_continuous(range = c(2, 9), breaks = scales::breaks_pretty(n = 5), name = "Count (Observations)") +
+    scale_size_continuous(
+      range = c(2, 9),
+      breaks = scales::breaks_pretty(n = 5),
+      name = "# Observations"
+    ) +
     labs(title = "Pairwise Bond Angles", x = "Neighbor Element", y = "Central Element") +
-    theme_minimal() +
-    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
-
+    theme_minimal(base_size=15) +
+    theme(axis.text.x = element_text(
+      angle = 90,
+      vjust = 0.5,
+      hjust = 1
+    ))
+  
   # 1. Static output for export (Preserves legend)
   print(p72)
-
+  
   # 2. Interactive output for exploration
   ggplotly(p72, tooltip = "text")
 } else {
@@ -502,20 +1168,36 @@ if (exists("all_angles_data") && nrow(all_angles_data) > 0) {
 Continuous CN output directly by the ECon algorithm without additional occupancy weights.
 
 ```{r viz-regular-cn, fig.width=10, fig.height=10}
-reg_cn_agg <- final_bonds_data[, .(MeanLength = mean(Distance), Count = .N), 
-                               by = .(Element1, Z1, CoordinationNumber)]
+reg_cn_agg <- final_bonds_data[, .(MeanLength = mean(Distance), Count = .N), by = .(Element1, Z1, CoordinationNumber)]
 reg_cn_agg <- reg_cn_agg[Count >= 10]
 reg_cn_agg[, Element1 := fct_reorder(Element1, Z1)]
 
-p81 <- ggplot(reg_cn_agg, aes(x = factor(round(CoordinationNumber, 1)), y = Element1,
-                              text = paste("Element:", Element1, "<br>ECon CN:", round(CoordinationNumber, 1),
-                                           "<br>Avg Dist:", round(MeanLength, 3), "Å",
-                                           "<br>Count:", Count))) +
+p81 <- ggplot(reg_cn_agg, aes(
+  x = factor(round(CoordinationNumber, 1)),
+  y = Element1,
+  text = paste(
+    "Element:",
+    Element1,
+    "<br>ECon CN:",
+    round(CoordinationNumber, 1),
+    "<br>Avg Dist:",
+    round(MeanLength, 3),
+    "Å",
+    "<br>Count:",
+    Count
+  )
+)) +
   geom_point(aes(size = Count, color = MeanLength)) +
-  scale_color_viridis_c(option = "magma", direction = -1, name = "Mean Length (Å)") +
-  scale_size_continuous(range = c(2, 8), breaks = scales::breaks_pretty(n = 5), name = "Count (Observations)") +
+  scale_color_viridis_c(option = "magma",
+                        direction = -1,
+                        name = "Mean Length (Å)") +
+  scale_size_continuous(
+    range = c(2, 8),
+    breaks = scales::breaks_pretty(n = 5),
+    name = "# Observations"
+  ) +
   labs(title = "Bond Length vs ECon CN", x = "ECon CN (Rounded for Grouping)", y = "Central Element") +
-  theme_minimal() +
+  theme_minimal(base_size=15) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 # 1. Static
@@ -530,20 +1212,36 @@ ggplotly(p81, tooltip = "text")
 This view re-analyzes the data by adjusting for crystallographic site occupancies. High Geometric environments often condense down into standard structural motifs.
 
 ```{r viz-weighted-cn-z, fig.width=10, fig.height=10}
-wcn_agg <- final_bonds_data[, .(MeanLength = mean(Distance), Count = .N), 
-                            by = .(Element1, Z1, RoundedWeightedCN)]
+wcn_agg <- final_bonds_data[, .(MeanLength = mean(Distance), Count = .N), by = .(Element1, Z1, RoundedWeightedCN)]
 wcn_agg <- wcn_agg[Count >= 10 & RoundedWeightedCN > 0]
 wcn_agg[, Element1 := fct_reorder(Element1, Z1)]
 
-p82 <- ggplot(wcn_agg, aes(x = factor(RoundedWeightedCN), y = Element1,
-                           text = paste("Element:", Element1, "<br>W-CN:", RoundedWeightedCN,
-                                        "<br>Avg Dist:", round(MeanLength, 3), "Å",
-                                        "<br>Count:", Count))) +
+p82 <- ggplot(wcn_agg, aes(
+  x = factor(RoundedWeightedCN),
+  y = Element1,
+  text = paste(
+    "Element:",
+    Element1,
+    "<br>W-CN:",
+    RoundedWeightedCN,
+    "<br>Avg Dist:",
+    round(MeanLength, 3),
+    "Å",
+    "<br>Count:",
+    Count
+  )
+)) +
   geom_point(aes(size = Count, color = MeanLength)) +
-  scale_color_viridis_c(option = "magma", direction = -1, name = "Mean Length (Å)") +
-  scale_size_continuous(range = c(2, 8), breaks = scales::breaks_pretty(n = 5), name = "Count (Observations)") +
+  scale_color_viridis_c(option = "magma",
+                        direction = -1,
+                        name = "Mean Length (Å)") +
+  scale_size_continuous(
+    range = c(2, 8),
+    breaks = scales::breaks_pretty(n = 5),
+    name = "# Observations"
+  ) +
   labs(title = "Bond Length vs Weighted CN", x = "Weighted CN", y = "Central Element") +
-  theme_minimal()
+  theme_minimal(base_size=15)
 
 # 1. Static
 print(p82)
@@ -559,17 +1257,33 @@ Re-ordering the Y-axis by the overall median bond length of the element helps ra
 ```{r viz-weighted-cn-len, fig.width=10, fig.height=10}
 wcn_agg_len <- copy(wcn_agg)
 elem_means <- wcn_agg_len[, .(GlobalMean = mean(MeanLength)), by = Element1]
-wcn_agg_len <- merge(wcn_agg_len, elem_means, by="Element1")
+wcn_agg_len <- merge(wcn_agg_len, elem_means, by = "Element1")
 wcn_agg_len[, Element1 := fct_reorder(Element1, GlobalMean)]
 
-p83 <- ggplot(wcn_agg_len, aes(x = factor(RoundedWeightedCN), y = Element1,
-                               text = paste("Element:", Element1, "<br>W-CN:", RoundedWeightedCN,
-                                            "<br>Avg Dist:", round(MeanLength, 3), "Å"))) +
+p83 <- ggplot(wcn_agg_len, aes(
+  x = factor(RoundedWeightedCN),
+  y = Element1,
+  text = paste(
+    "Element:",
+    Element1,
+    "<br>W-CN:",
+    RoundedWeightedCN,
+    "<br>Avg Dist:",
+    round(MeanLength, 3),
+    "Å"
+  )
+)) +
   geom_point(aes(size = Count, color = MeanLength)) +
-  scale_color_viridis_c(option = "magma", direction = -1, name = "Mean Length (Å)") +
-  scale_size_continuous(range = c(2, 10), breaks = scales::breaks_pretty(n = 5), name = "Count (Observations)") +
-  labs(title = "Length vs W-CN (Elements Sorted by Avg Global Length)", x = "Weighted CN", y = "Central Element") +
-  theme_minimal()
+  scale_color_viridis_c(option = "magma",
+                        direction = -1,
+                        name = "Mean Length (Å)") +
+  scale_size_continuous(
+    range = c(2, 10),
+    breaks = scales::breaks_pretty(n = 5),
+    name = "# Observations"
+  ) +
+  labs(title = "Average Bond Lengths vs. Coordination Environments around Central Atoms", x = "Occ.-Weighted Effective Coordination Number", y = "Central Element") +
+  theme_minimal(base_size=15)
 
 # 1. Static
 print(p83)
@@ -580,7 +1294,7 @@ ggplotly(p83, tooltip = "text")
 
 ## 9. Chalcogen-Specific Analysis
 
-Filtering the entire dataset to place the Chalcogens (Sulfur, Selenium, Tellurium) strictly at the center of the geometric queries. In this section, we review Raw Bond Lengths, Normalized Bond Lengths, ECon Coordination Numbers, Weighted CNs, and Bond Angles.
+Filtering the entire dataset to place the Chalcogens (Sulfur, Selenium, Tellurium) ly at the center of the geometric queries. In this section, we review Raw Bond Lengths, Normalized Bond Lengths, ECon Coordination Numbers, Weighted CNs, and Bond Angles.
 
 ```{r chalcogen-setup}
 targets <- c("S", "Se", "Te")
@@ -590,21 +1304,43 @@ df_center_chalc <- final_bonds_data[Element1 %in% targets]
 ### 9.1 S, Se, Te: Bond Lengths
 
 ```{r chalc-center-len, fig.width=15, fig.height=5}
-agg_center <- df_center_chalc[, .(MeanDist = mean(Distance), N=.N), by=.(Element1, Z1, Element2, Z2)]
+agg_center <- df_center_chalc[, .(MeanDist = mean(Distance), N = .N), by =
+                                .(Element1, Z1, Element2, Z2)]
 agg_center <- agg_center[N >= 3]
 agg_center[, Element1 := fct_reorder(Element1, Z1)]
 agg_center[, Element2 := fct_reorder(Element2, Z2)]
 
-p91 <- ggplot(agg_center, aes(x = Element2, y = Element1,
-                              text = paste("Center:", Element1, "<br>Neighbor:", Element2,
-                                           "<br>Dist:", round(MeanDist, 3), "Å",
-                                           "<br>Obs:", N))) +
+p91 <- ggplot(agg_center, aes(
+  x = Element2,
+  y = Element1,
+  text = paste(
+    "Center:",
+    Element1,
+    "<br>Neighbor:",
+    Element2,
+    "<br>Dist:",
+    round(MeanDist, 3),
+    "Å",
+    "<br>Obs:",
+    N
+  )
+)) +
   geom_point(aes(size = N, color = MeanDist)) +
-  scale_color_viridis_c(option = "magma", direction = -1, name = "Dist (Å)") +
-  scale_size_continuous(range = c(3, 10), breaks = scales::breaks_pretty(n = 5), name = "Count (Observations)") +
-  labs(title = "Bond Lengths: S, Se, Te Centers", x = "Neighbor Element", y = "Central Chalcogen") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+  scale_color_viridis_c(option = "magma",
+                        direction = -1,
+                        name = "Dist (Å)") +
+  scale_size_continuous(
+    range = c(3, 10),
+    breaks = scales::breaks_pretty(n = 5),
+    name = "# Observations"
+  ) +
+  labs(title = "Average Bond Lengths around S, Se, or Te Central Atoms", x = "Neighbor Element", y = "Central Chalcogen") +
+  theme_minimal(base_size=15) +
+  theme(axis.text.x = element_text(
+    angle = 90,
+    vjust = 0.5,
+    hjust = 1
+  ))
 
 # 1. Static
 print(p91)
@@ -615,32 +1351,58 @@ ggplotly(p91, tooltip = "text")
 # 3. Heatmap
 ggplot(agg_center, aes(x = Element2, y = Element1, fill = MeanDist)) +
   geom_tile(color = "white") +
-  scale_fill_viridis_c(option = "magma", direction = -1, name = "Dist (Å)") +
-  labs(title = "Bond Lengths: S, Se, Te Centers (Heatmap)", 
-       subtitle = "Sorted by Atomic Number",
-       x = "Neighbor Element", y = "Central Chalcogen") +
-  theme_minimal() +
+  scale_fill_viridis_c(option = "magma",
+                       direction = -1,
+                       name = "Dist (Å)") +
+  labs(
+    title = "Average Bond Lengths around S, Se, or Te Central Atoms",
+    subtitle = "Sorted by Atomic Number",
+    x = "Neighbor Element",
+    y = "Central Chalcogen"
+  ) +
+  theme_minimal(base_size=15) +
   coord_fixed()
 ```
 
 ### 9.2 S, Se, Te: Normalized Bond Lengths (Distance / Sum of Radii)
 
 ```{r chalc-center-norm-len, fig.width=15, fig.height=5}
-agg_center_norm <- df_center_chalc[!is.na(NormalizedDistance), .(MeanNormDist = mean(NormalizedDistance), N=.N), by=.(Element1, Z1, Element2, Z2)]
+agg_center_norm <- df_center_chalc[!is.na(NormalizedDistance), .(MeanNormDist = mean(NormalizedDistance), N =
+                                                                   .N), by = .(Element1, Z1, Element2, Z2)]
 agg_center_norm <- agg_center_norm[N >= 3]
 agg_center_norm[, Element1 := fct_reorder(Element1, Z1)]
 agg_center_norm[, Element2 := fct_reorder(Element2, Z2)]
 
-p92 <- ggplot(agg_center_norm, aes(x = Element2, y = Element1,
-                              text = paste("Center:", Element1, "<br>Neighbor:", Element2,
-                                           "<br>Norm Dist:", round(MeanNormDist, 3),
-                                           "<br>Obs:", N))) +
+p92 <- ggplot(agg_center_norm, aes(
+  x = Element2,
+  y = Element1,
+  text = paste(
+    "Center:",
+    Element1,
+    "<br>Neighbor:",
+    Element2,
+    "<br>Norm Dist:",
+    round(MeanNormDist, 3),
+    "<br>Obs:",
+    N
+  )
+)) +
   geom_point(aes(size = N, color = MeanNormDist)) +
-  scale_color_viridis_c(option = "magma", direction = -1, name = "Norm Dist") +
-  scale_size_continuous(range = c(3, 10), breaks = scales::breaks_pretty(n = 5), name = "Count (Observations)") +
-  labs(title = "Normalized Bond Lengths (Distance / Sum of Radii): S, Se, Te Centers", x = "Neighbor Element", y = "Central Chalcogen") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+  scale_color_viridis_c(option = "magma",
+                        direction = -1,
+                        name = "Norm. Dist.") +
+  scale_size_continuous(
+    range = c(3, 10),
+    breaks = scales::breaks_pretty(n = 5),
+    name = "# Observations"
+  ) +
+  labs(title = "Normalized Bond Lengths around S, Se, or Te Central Atoms", x = "Neighbor Element", y = "Central Chalcogen") +
+  theme_minimal(base_size=15) +
+  theme(axis.text.x = element_text(
+    angle = 90,
+    vjust = 0.5,
+    hjust = 1
+  ))
 
 # 1. Static
 print(p92)
@@ -649,35 +1411,61 @@ print(p92)
 ggplotly(p92, tooltip = "text")
 
 # 3. Heatmap
-ggplot(agg_center_norm, aes(x = Element2, y = Element1, fill = MeanNormDist)) +
+ggplot(agg_center_norm,
+       aes(x = Element2, y = Element1, fill = MeanNormDist)) +
   geom_tile(color = "white") +
-  scale_fill_viridis_c(option = "magma", direction = -1, name = "Norm Dist") +
-  labs(title = "Normalized Bond Lengths: S, Se, Te Centers (Heatmap)", 
-       subtitle = "Distance divided by sum of covalent radii",
-       x = "Neighbor Element", y = "Central Chalcogen") +
-  theme_minimal() +
+  scale_fill_viridis_c(option = "magma",
+                       direction = -1,
+                       name = "Norm. Dist.") +
+  labs(
+    title = "Normalized Bond Lengths around S, Se, or Te Central Atoms",
+    subtitle = "Distance divided by sum of covalent radii",
+    x = "Neighbor Element",
+    y = "Central Chalcogen"
+  ) +
+  theme_minimal(base_size=15) +
   coord_fixed()
 ```
 
 ### 9.3 S, Se, Te: ECon Coordination Number
 
 ```{r chalc-center-cn, fig.width=15, fig.height=5}
-agg_center_cn <- df_center_chalc[, .(MeanCN = mean(CoordinationNumber), N=.N), 
-                                 by=.(Element1, Z1, Element2, Z2)]
+agg_center_cn <- df_center_chalc[, .(MeanCN = mean(CoordinationNumber), N =
+                                       .N), by = .(Element1, Z1, Element2, Z2)]
 agg_center_cn <- agg_center_cn[N >= 3]
 agg_center_cn[, Element1 := fct_reorder(Element1, Z1)]
 agg_center_cn[, Element2 := fct_reorder(Element2, Z2)]
 
-p93 <- ggplot(agg_center_cn, aes(x = Element2, y = Element1,
-                                 text = paste("Center:", Element1, "<br>Neighbor:", Element2,
-                                              "<br>Avg ECon CN:", round(MeanCN, 2),
-                                              "<br>Obs:", N))) +
+p93 <- ggplot(agg_center_cn, aes(
+  x = Element2,
+  y = Element1,
+  text = paste(
+    "Center:",
+    Element1,
+    "<br>Neighbor:",
+    Element2,
+    "<br>Avg ECon CN:",
+    round(MeanCN, 2),
+    "<br>Obs:",
+    N
+  )
+)) +
   geom_point(aes(size = N, color = MeanCN)) +
-  scale_color_viridis_c(option = "magma", direction = -1, name = "Avg CN") +
-  scale_size_continuous(range = c(3, 10), breaks = scales::breaks_pretty(n = 5), name = "Count (Observations)") +
+  scale_color_viridis_c(option = "magma",
+                        direction = -1,
+                        name = "Avg CN") +
+  scale_size_continuous(
+    range = c(3, 10),
+    breaks = scales::breaks_pretty(n = 5),
+    name = "# Observations"
+  ) +
   labs(title = "ECon CN: S, Se, Te Centers", x = "Neighbor Element", y = "Central Chalcogen") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+  theme_minimal(base_size=15) +
+  theme(axis.text.x = element_text(
+    angle = 90,
+    vjust = 0.5,
+    hjust = 1
+  ))
 
 # 1. Static
 print(p93)
@@ -688,35 +1476,38 @@ ggplotly(p93, tooltip = "text")
 # 3. Heatmap
 ggplot(agg_center_cn, aes(x = Element2, y = Element1, fill = MeanCN)) +
   geom_tile(color = "white") +
-  scale_fill_viridis_c(option = "magma", direction = -1, name = "Avg CN") +
-  labs(title = "ECon Coordination Number: S, Se, Te Centers", 
-       subtitle = "Sorted by Atomic Number",
-       x = "Neighbor Element", y = "Central Chalcogen") +
-  theme_minimal() +
+  scale_fill_viridis_c(option = "magma",
+                       direction = -1,
+                       name = "Avg CN") +
+  labs(
+    title = "ECon Coordination Number: S, Se, Te Centers",
+    subtitle = "Sorted by Atomic Number",
+    x = "Neighbor Element",
+    y = "Central Chalcogen"
+  ) +
+  theme_minimal(base_size=15) +
   coord_fixed()
 ```
 
 ### 9.4 S, Se, Te: Weighted CN (Special Aggregation)
 
-In this visualization, we map **Specific WCN** (the fraction of the coordination environment contributed strictly by the specific element pairing) and **Total WCN** (the complete occupancy-corrected size of the environment).
+In this visualization, we map **Specific WCN** (the fraction of the coordination environment contributed ly by the specific element pairing) and **Total WCN** (the complete occupancy-corrected size of the environment).
 * **Color:** The average specific element-element Weighted CN.
 * **Size:** The average Total Weighted CN for the site.
 
 ```{r chalc-center-wcn, fig.width=15, fig.height=5}
 # 1. Extract the actual Total WCN per central site
-atom_totals <- final_bonds_data[, .(
-  Total_WCN = first(CN_Weighted)
-), by = .(file_name, Atom1, Element1, Z1)]
+atom_totals <- final_bonds_data[, .(Total_WCN = first(CN_Weighted)), by = .(file_name, Atom1, Element1, Z1)]
 
 # 2. Extract Exact Specific WCN (Summing the true occupancies of the bonded neighbors)
-atom_specifics <- final_bonds_data[, .(
-  Specific_WCN = sum(Occupancy)
-), by = .(file_name, Atom1, Element1, Z1, Element2, Z2)]
+atom_specifics <- final_bonds_data[, .(Specific_WCN = sum(Occupancy)), by = .(file_name, Atom1, Element1, Z1, Element2, Z2)]
 
 # 3. Merge Specific WCN with Total WCN for plotting
-df_plot_wcn <- merge(atom_specifics, atom_totals, by = c("file_name", "Atom1", "Element1", "Z1"))
+df_plot_wcn <- merge(atom_specifics,
+                     atom_totals,
+                     by = c("file_name", "Atom1", "Element1", "Z1"))
 
-# 4. Filter down to strictly Chalcogen centers
+# 4. Filter down to ly Chalcogen centers
 targets <- c("S", "Se", "Te")
 df_plot_chalc <- df_plot_wcn[Element1 %in% targets]
 
@@ -724,8 +1515,7 @@ df_plot_chalc <- df_plot_wcn[Element1 %in% targets]
 df_plot_chalc[, Element1 := fct_reorder(Element1, Z1)]
 df_plot_chalc[, Element2 := fct_reorder(Element2, Z2)]
 
-# --- CRITICAL FIXES FOR SIZING ---
-# Sort data so LARGEST bubbles are plotted FIRST (background), 
+# Sort data so LARGEST bubbles are plotted FIRST (background),
 # and SMALLEST bubbles are plotted LAST (foreground)
 df_plot_chalc <- df_plot_chalc[order(-Total_WCN)]
 
@@ -733,28 +1523,56 @@ df_plot_chalc <- df_plot_chalc[order(-Total_WCN)]
 max_tot <- ceiling(max(df_plot_chalc$Total_WCN, na.rm = TRUE))
 max_spec <- ceiling(max(df_plot_chalc$Specific_WCN, na.rm = TRUE))
 
-p94 <- ggplot(df_plot_chalc, aes(x = Element2, y = Element1,
-                                 text = paste("File:", file_name,
-                                              "<br>Center:", Element1, "(Site:", Atom1, ")",
-                                              "<br>Neighbor:", Element2,
-                                              "<br>Specific WCN (Color):", round(Specific_WCN, 2),
-                                              "<br>Total Env Size (Size):", round(Total_WCN, 2)))) +
+p94 <- ggplot(df_plot_chalc, aes(
+  x = Element2,
+  y = Element1,
+  text = paste(
+    "File:",
+    file_name,
+    "<br>Center:",
+    Element1,
+    "(Site:",
+    Atom1,
+    ")",
+    "<br>Neighbor:",
+    Element2,
+    "<br>Specific WCN (Color):",
+    round(Specific_WCN, 2),
+    "<br>Total Env Size (Size):",
+    round(Total_WCN, 2)
+  )
+)) +
   # Apply vertical jitter (offset)
-  geom_jitter(aes(size = Total_WCN, color = Specific_WCN), 
-              width = 0.15, height = 0.25, alpha = 0.7) +
-  scale_color_viridis_c(option = "magma", direction = -1, 
-                        name = "Specific WCN",
-                        limits = c(0, max_spec)) +
-  # DRASTICALLY WIDEN THE SIZE RANGE so differences are visually obvious
-  scale_size_continuous(range = c(1, 7), 
-                        name = "Total WCN Env Size",
-                        breaks = seq(2, max_tot, by = 2),
-                        limits = c(0, max_tot)) +
-  labs(title = "Weighted CN Analysis: Specific vs Total Environment Size", 
-       subtitle = "Individual Coordination Environments (Largest Values Plotted in Background)",
-       x = "Neighbor Element", y = "Central Chalcogen") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+  geom_jitter(
+    aes(size = Total_WCN, color = Specific_WCN),
+    width = 0.15,
+    height = 0.25,
+    alpha = 0.7
+  ) +
+  scale_color_viridis_c(
+    option = "magma",
+    direction = -1,
+    name = "Specific WCN",
+    limits = c(0, max_spec)
+  ) +
+  scale_size_continuous(
+    range = c(1, 7),
+    name = "Total WCN Env Size",
+    breaks = seq(2, max_tot, by = 2),
+    limits = c(0, max_tot)
+  ) +
+  labs(
+    title = "Coordination Environments around S, Se, or Te",
+    subtitle = "Individual Coordination Environments (Largest Values Plotted in Background)",
+    x = "Neighbor Element",
+    y = "Central Chalcogen"
+  ) +
+  theme_minimal(base_size=15) +
+  theme(axis.text.x = element_text(
+    angle = 90,
+    vjust = 0.5,
+    hjust = 1
+  ))
 
 # 1. Static
 print(p94)
@@ -762,18 +1580,24 @@ print(p94)
 # 2. Interactive
 ggplotly(p94, tooltip = "text")
 
-# 3. Aggregate Heatmap 
-agg_center_wcn <- df_plot_chalc[, .(MeanSpecificWCN = mean(Specific_WCN), N=.N), 
-                                  by=.(Element1, Z1, Element2, Z2)]
+# 3. Aggregate Heatmap
+agg_center_wcn <- df_plot_chalc[, .(MeanSpecificWCN = mean(Specific_WCN), N =
+                                      .N), by = .(Element1, Z1, Element2, Z2)]
 agg_center_wcn <- agg_center_wcn[N >= 3]
 
-ggplot(agg_center_wcn, aes(x = Element2, y = Element1, fill = MeanSpecificWCN)) +
+ggplot(agg_center_wcn,
+       aes(x = Element2, y = Element1, fill = MeanSpecificWCN)) +
   geom_tile(color = "white") +
-  scale_fill_viridis_c(option = "magma", direction = -1, name = "Mean Specific WCN") +
-  labs(title = "Mean Specific Weighted CN: S, Se, Te Centers", 
-       subtitle = "Sorted by Atomic Number (Disorder Corrected)",
-       x = "Neighbor Element", y = "Central Chalcogen") +
-  theme_minimal() +
+  scale_fill_viridis_c(option = "magma",
+                       direction = -1,
+                       name = "Mean Specific WCN") +
+  labs(
+    title = "Mean Specific Weighted CN: S, Se, Te Centers",
+    subtitle = "Sorted by Atomic Number (Disorder Corrected)",
+    x = "Neighbor Element",
+    y = "Central Chalcogen"
+  ) +
+  theme_minimal(base_size=15) +
   coord_fixed()
 ```
 
@@ -785,19 +1609,44 @@ To eliminate the vertical overlap here is a split analysis, with the above chart
 # Filter for S only
 df_s <- df_plot_chalc[Element1 == "S"]
 
-p_s <- ggplot(df_s, aes(x = Element2, y = Element1,
-                        text = paste("File:", file_name,
-                                     "<br>Site:", Atom1,
-                                     "<br>Neighbor:", Element2,
-                                     "<br>Specific WCN:", round(Specific_WCN, 2),
-                                     "<br>Total Site WCN:", round(Total_WCN, 2)))) +
-  geom_jitter(aes(size = Total_WCN, color = Specific_WCN), 
-              width = 0.2, height = 0.5, alpha = 0.6) +
-  scale_color_viridis_c(option = "magma", direction = -1, name = "Specific WCN", limits = c(0, max_spec)) +
-  scale_size_continuous(range = c(1, 8), name = "Total WCN", limits = c(1, max_tot)) +
+p_s <- ggplot(df_s, aes(
+  x = Element2,
+  y = Element1,
+  text = paste(
+    "File:",
+    file_name,
+    "<br>Site:",
+    Atom1,
+    "<br>Neighbor:",
+    Element2,
+    "<br>Specific WCN:",
+    round(Specific_WCN, 2),
+    "<br>Total Site WCN:",
+    round(Total_WCN, 2)
+  )
+)) +
+  geom_jitter(
+    aes(size = Total_WCN, color = Specific_WCN),
+    width = 0.2,
+    height = 0.5,
+    alpha = 0.6
+  ) +
+  scale_color_viridis_c(
+    option = "magma",
+    direction = -1,
+    name = "Specific WCN",
+    limits = c(0, max_spec)
+  ) +
+  scale_size_continuous(range = c(1, 8),
+                        name = "Total WCN",
+                        limits = c(1, max_tot)) +
   labs(title = "Sulfur Coordination Environments", x = "Neighbor Element", y = "Central S") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+  theme_minimal(base_size=15) +
+  theme(axis.text.x = element_text(
+    angle = 90,
+    vjust = 0.5,
+    hjust = 1
+  ))
 
 print(p_s)
 ggplotly(p_s, tooltip = "text")
@@ -809,19 +1658,44 @@ ggplotly(p_s, tooltip = "text")
 # Filter for Se only
 df_se <- df_plot_chalc[Element1 == "Se"]
 
-p_se <- ggplot(df_se, aes(x = Element2, y = Element1,
-                          text = paste("File:", file_name,
-                                       "<br>Site:", Atom1,
-                                       "<br>Neighbor:", Element2,
-                                       "<br>Specific WCN:", round(Specific_WCN, 2),
-                                       "<br>Total Site WCN:", round(Total_WCN, 2)))) +
-  geom_jitter(aes(size = Total_WCN, color = Specific_WCN), 
-              width = 0.2, height = 0.5, alpha = 0.6) +
-  scale_color_viridis_c(option = "magma", direction = -1, name = "Specific WCN", limits = c(0, max_spec)) +
-  scale_size_continuous(range = c(1, 8), name = "Total WCN", limits = c(1, max_tot)) +
+p_se <- ggplot(df_se, aes(
+  x = Element2,
+  y = Element1,
+  text = paste(
+    "File:",
+    file_name,
+    "<br>Site:",
+    Atom1,
+    "<br>Neighbor:",
+    Element2,
+    "<br>Specific WCN:",
+    round(Specific_WCN, 2),
+    "<br>Total Site WCN:",
+    round(Total_WCN, 2)
+  )
+)) +
+  geom_jitter(
+    aes(size = Total_WCN, color = Specific_WCN),
+    width = 0.2,
+    height = 0.5,
+    alpha = 0.6
+  ) +
+  scale_color_viridis_c(
+    option = "magma",
+    direction = -1,
+    name = "Specific WCN",
+    limits = c(0, max_spec)
+  ) +
+  scale_size_continuous(range = c(1, 8),
+                        name = "Total WCN",
+                        limits = c(1, max_tot)) +
   labs(title = "Selenium Coordination Environments", x = "Neighbor Element", y = "Central Se") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+  theme_minimal(base_size=15) +
+  theme(axis.text.x = element_text(
+    angle = 90,
+    vjust = 0.5,
+    hjust = 1
+  ))
 
 print(p_se)
 ggplotly(p_se, tooltip = "text")
@@ -833,19 +1707,44 @@ ggplotly(p_se, tooltip = "text")
 # Filter for Te only
 df_te <- df_plot_chalc[Element1 == "Te"]
 
-p_te <- ggplot(df_te, aes(x = Element2, y = Element1,
-                          text = paste("File:", file_name,
-                                       "<br>Site:", Atom1,
-                                       "<br>Neighbor:", Element2,
-                                       "<br>Specific WCN:", round(Specific_WCN, 2),
-                                       "<br>Total Site WCN:", round(Total_WCN, 2)))) +
-  geom_jitter(aes(size = Total_WCN, color = Specific_WCN), 
-              width = 0.2, height = 0.5, alpha = 0.6) +
-  scale_color_viridis_c(option = "magma", direction = -1, name = "Specific WCN", limits = c(0, max_spec)) +
-  scale_size_continuous(range = c(1, 8), name = "Total WCN", limits = c(1, max_tot)) +
+p_te <- ggplot(df_te, aes(
+  x = Element2,
+  y = Element1,
+  text = paste(
+    "File:",
+    file_name,
+    "<br>Site:",
+    Atom1,
+    "<br>Neighbor:",
+    Element2,
+    "<br>Specific WCN:",
+    round(Specific_WCN, 2),
+    "<br>Total Site WCN:",
+    round(Total_WCN, 2)
+  )
+)) +
+  geom_jitter(
+    aes(size = Total_WCN, color = Specific_WCN),
+    width = 0.2,
+    height = 0.5,
+    alpha = 0.6
+  ) +
+  scale_color_viridis_c(
+    option = "magma",
+    direction = -1,
+    name = "Specific WCN",
+    limits = c(0, max_spec)
+  ) +
+  scale_size_continuous(range = c(1, 8),
+                        name = "Total WCN",
+                        limits = c(1, max_tot)) +
   labs(title = "Tellurium Coordination Environments", x = "Neighbor Element", y = "Central Te") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+  theme_minimal(base_size=15) +
+  theme(axis.text.x = element_text(
+    angle = 90,
+    vjust = 0.5,
+    hjust = 1
+  ))
 
 print(p_te)
 ggplotly(p_te, tooltip = "text")
@@ -854,25 +1753,46 @@ ggplotly(p_te, tooltip = "text")
 ### 9.5 S, Se, Te: Bond Angles
 
 ```{r chalc-center-angles, fig.width=15, fig.height=5}
-if (exists("all_angles_data") && nrow(all_angles_data) > 0) {
+if (exists("all_angles_data") &&
+    nrow(all_angles_data) > 0) {
   df_angles_sub <- all_angles_data[Element1 %in% targets]
   
-  agg_angles_chalc <- df_angles_sub[, .(MeanAngle = mean(Angle), N=.N), by=.(Element1, Z1, Element2, Z2)]
+  agg_angles_chalc <- df_angles_sub[, .(MeanAngle = mean(Angle), N = .N), by =
+                                      .(Element1, Z1, Element2, Z2)]
   agg_angles_chalc <- agg_angles_chalc[N >= 3]
   agg_angles_chalc[, Element1 := fct_reorder(Element1, Z1)]
   agg_angles_chalc[, Element2 := fct_reorder(Element2, Z2)]
   
-  p95 <- ggplot(agg_angles_chalc, aes(x = Element2, y = Element1,
-                                 text = paste("Center:", Element1, "<br>Neighbor:", Element2,
-                                              "<br>Avg Angle:", round(MeanAngle, 1), "°",
-                                              "<br>Obs:", N))) +
+  p95 <- ggplot(agg_angles_chalc, aes(
+    x = Element2,
+    y = Element1,
+    text = paste(
+      "Center:",
+      Element1,
+      "<br>Neighbor:",
+      Element2,
+      "<br>Avg Angle:",
+      round(MeanAngle, 1),
+      "°",
+      "<br>Obs:",
+      N
+    )
+  )) +
     geom_point(aes(size = N, color = MeanAngle)) +
     scale_color_viridis_c(option = "magma", name = "Avg Angle (°)") +
-    scale_size_continuous(range = c(3, 10), breaks = scales::breaks_pretty(n = 5), name = "Count (Observations)") +
+    scale_size_continuous(
+      range = c(3, 10),
+      breaks = scales::breaks_pretty(n = 5),
+      name = "# Observations"
+    ) +
     labs(title = "Bond Angles: S, Se, Te Centers", x = "Neighbor Element", y = "Central Chalcogen") +
-    theme_minimal() +
-    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
-    
+    theme_minimal(base_size=15) +
+    theme(axis.text.x = element_text(
+      angle = 90,
+      vjust = 0.5,
+      hjust = 1
+    ))
+  
   # 1. Static
   print(p95)
   
@@ -880,12 +1800,12 @@ if (exists("all_angles_data") && nrow(all_angles_data) > 0) {
   ggplotly(p95, tooltip = "text")
   
   # 3. Heatmap
-  ggplot(agg_angles_chalc, aes(x = Element2, y = Element1, fill = MeanAngle)) +
+  ggplot(agg_angles_chalc,
+         aes(x = Element2, y = Element1, fill = MeanAngle)) +
     geom_tile(color = "white") +
     scale_fill_viridis_c(option = "magma", name = "Avg Angle (°)") +
-    labs(title = "Bond Angles: S, Se, Te Centers (Heatmap)", 
-         x = "Neighbor Element", y = "Central Chalcogen") +
-    theme_minimal() +
+    labs(title = "Bond Angles: S, Se, Te Centers (Heatmap)", x = "Neighbor Element", y = "Central Chalcogen") +
+    theme_minimal(base_size=15) +
     coord_fixed()
 } else {
   cat("No angle data available.\n")
@@ -894,7 +1814,7 @@ if (exists("all_angles_data") && nrow(all_angles_data) > 0) {
 
 ## 10. Distribution Analysis
 
-This visualization compares the distribution of bond lengths for the most common coordination numbers (e.g., 4 and 6), allowing us to see the “spread” of bond distances for specific elements. Because ECon generates continuous decimal values, we round them to the nearest integer strictly for visualization grouping.
+This visualization compares the distribution of bond lengths for the most common coordination numbers (e.g., 4 and 6), allowing us to see the “spread” of bond distances for specific elements. Because ECon generates continuous decimal values, we round them to the nearest integer ly for visualization grouping.
 
 ```{r viz-distributions, fig.width=12, fig.height=6}
 # --- Distribution Analysis (Violin Plot) ---
@@ -911,15 +1831,27 @@ violin_data <- violin_data[Element1 %in% top_elements]
 
 # 3. Plot
 ggplot(violin_data, aes(x = reorder(Element1, Distance), y = Distance)) +
-  geom_violin(aes(fill = factor(RoundedCN)), scale = "width", alpha = 0.7, position = position_dodge(width = 0.8)) +
-  geom_boxplot(aes(group = interaction(Element1, RoundedCN)), 
-               width = 0.1, outlier.shape = NA, fill="white", position = position_dodge(width = 0.8)) +
+  geom_violin(
+    aes(fill = factor(RoundedCN)),
+    scale = "width",
+    alpha = 0.7,
+    position = position_dodge(width = 0.8)
+  ) +
+  geom_boxplot(
+    aes(group = interaction(Element1, RoundedCN)),
+    width = 0.1,
+    outlier.shape = NA,
+    fill = "white",
+    position = position_dodge(width = 0.8)
+  ) +
   scale_fill_brewer(palette = "Dark2", name = "Rounded ECon CN") +
-  labs(title = "Distribution of Bond Lengths",
-       subtitle = "Comparing Coordination Numbers ~4 and ~6 for Top Elements",
-       x = "Element (Sorted by Median Distance)",
-       y = "Bond Distance (Å)") +
-  theme_minimal() +
+  labs(
+    title = "Distribution of Bond Lengths",
+    subtitle = "Comparing Coordination Numbers ~4 and ~6 for Top Elements",
+    x = "Element (Sorted by Median Distance)",
+    y = "Bond Distance (Å)"
+  ) +
+  theme_minimal(base_size=15) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
@@ -935,37 +1867,144 @@ Faceted by S, Se, Te. Neighbors are colored by **standard IUPAC periodic table g
 extended_groups <- data.table(
   Symbol = c(
     # Alkali metals
-    "Li", "Na", "K", "Rb", "Cs", "Fr",
+    "Li",
+    "Na",
+    "K",
+    "Rb",
+    "Cs",
+    "Fr",
     
     # Alkaline earth metals
-    "Be", "Mg", "Ca", "Sr", "Ba", "Ra",
+    "Be",
+    "Mg",
+    "Ca",
+    "Sr",
+    "Ba",
+    "Ra",
     
     # Early TMs (Now includes up to Group 7: Mn, Tc, Re)
-    "Sc", "Y", "Ti", "Zr", "Hf", "V", "Nb", "Ta", "Cr", "Mo", "W", "Mn", "Tc", "Re",
+    "Sc",
+    "Y",
+    "Ti",
+    "Zr",
+    "Hf",
+    "V",
+    "Nb",
+    "Ta",
+    "Cr",
+    "Mo",
+    "W",
+    "Mn",
+    "Tc",
+    "Re",
     
     # Late TMs (Groups 8-12)
-    "Fe", "Ru", "Os", "Co", "Rh", "Ir", "Ni", "Pd", "Pt", "Cu", "Ag", "Au", "Zn", "Cd", "Hg",
+    "Fe",
+    "Ru",
+    "Os",
+    "Co",
+    "Rh",
+    "Ir",
+    "Ni",
+    "Pd",
+    "Pt",
+    "Cu",
+    "Ag",
+    "Au",
+    "Zn",
+    "Cd",
+    "Hg",
     
     # Post-transition metals
-    "Al", "Ga", "In", "Tl", "Sn", "Pb", "Bi", "Po",
+    "Al",
+    "Ga",
+    "In",
+    "Tl",
+    "Sn",
+    "Pb",
+    "Bi",
+    "Po",
     
     # Metalloids
-    "B", "Si", "Ge", "As", "Sb", "Te", "At",
+    "B",
+    "Si",
+    "Ge",
+    "As",
+    "Sb",
+    "Te",
+    "At",
     
     # Reactive nonmetals
-    "H", "C", "N", "P", "O", "S", "Se", "F", "Cl", "Br", "I",
+    "H",
+    "C",
+    "N",
+    "P",
+    "O",
+    "S",
+    "Se",
+    "F",
+    "Cl",
+    "Br",
+    "I",
     
     # Noble gases
-    "He", "Ne", "Ar", "Kr", "Xe", "Rn",
+    "He",
+    "Ne",
+    "Ar",
+    "Kr",
+    "Xe",
+    "Rn",
     
     # Lanthanides
-    "La", "Ce", "Pr", "Nd", "Pm", "Sm", "Eu", "Gd", "Tb", "Dy", "Ho", "Er", "Tm", "Yb", "Lu",
+    "La",
+    "Ce",
+    "Pr",
+    "Nd",
+    "Pm",
+    "Sm",
+    "Eu",
+    "Gd",
+    "Tb",
+    "Dy",
+    "Ho",
+    "Er",
+    "Tm",
+    "Yb",
+    "Lu",
     
     # Actinides
-    "Ac", "Th", "Pa", "U", "Np", "Pu", "Am", "Cm", "Bk", "Cf", "Es", "Fm", "Md", "No", "Lr",
+    "Ac",
+    "Th",
+    "Pa",
+    "U",
+    "Np",
+    "Pu",
+    "Am",
+    "Cm",
+    "Bk",
+    "Cf",
+    "Es",
+    "Fm",
+    "Md",
+    "No",
+    "Lr",
     
     # Unknown properties
-    "Rf", "Db", "Sg", "Bh", "Hs", "Mt", "Ds", "Rg", "Cn", "Nh", "Fl", "Mc", "Lv", "Ts", "Og"
+    "Rf",
+    "Db",
+    "Sg",
+    "Bh",
+    "Hs",
+    "Mt",
+    "Ds",
+    "Rg",
+    "Cn",
+    "Nh",
+    "Fl",
+    "Mc",
+    "Lv",
+    "Ts",
+    "Og"
   ),
   GroupLabel = c(
     rep("Alkali metals", 6),
@@ -992,7 +2031,7 @@ if (exists("all_angles_data") && nrow(all_angles_data) > 0) {
   df_angles_sub[, NeighborSym1 := str_extract(Neighbor1, "^[A-Za-z]+")]
   df_angles_sub[, NeighborSym2 := str_extract(Neighbor2, "^[A-Za-z]+")]
   
-  # Strict filter to keep only S, Se, Te
+  #  filter to keep only S, Se, Te
   df_angles_sub <- df_angles_sub[CenterSym %in% target_centers]
   
   # B. Prepare Raw ECon Bonds List for Distance Fetching
@@ -1094,7 +2133,7 @@ if (exists("all_angles_data") && nrow(all_angles_data) > 0) {
     )
   )) +
     geom_point(aes(color = GroupLabel), alpha = 0.4, size = 1) +
-    facet_wrap(~ CenterSym, scales = "free", ncol = 3) +
+    facet_wrap( ~ CenterSym, scales = "free", ncol = 3) +
     scale_color_viridis_d(option = "turbo", name = "Neighbor Family") +
     labs(
       title = "Bond Length vs Angle Correlation",
@@ -1102,7 +2141,7 @@ if (exists("all_angles_data") && nrow(all_angles_data) > 0) {
       x = "Bond Length (Å)",
       y = "Bond Angle (°)"
     ) +
-    theme_minimal() +
+    theme_minimal(base_size=15) +
     theme(legend.position = "bottom") +
     guides(color = guide_legend(override.aes = list(alpha = 1, size = 3)))
   
@@ -1150,9 +2189,11 @@ if (!dir.exists(dest_dir)) {
 num_to_sample <- min(50, length(target_files))
 selected_files <- sample(target_files, num_to_sample)
 
-# Copy selected files to destination folder explicitly 
+# Copy selected files to destination folder explicitly
 dest_files <- file.path(dest_dir, basename(selected_files))
-file.copy(from = selected_files, to = dest_files, overwrite = TRUE)
+file.copy(from = selected_files,
+          to = dest_files,
+          overwrite = TRUE)
 
 # --- 3. Run the batch analysis ---
 cat("\nStarting multi-algorithm batch analysis on CIF files...\n")
@@ -1160,14 +2201,15 @@ results <- analyze_cif_files(
   file_paths = dest_dir,
   tolerance = 1e-4,
   bonding_algorithms = c("minimum_distance", "brunner", "econ", "voronoi", "crystal_nn"),
-  calculate_bond_angles = FALSE,       
-  perform_error_propagation = FALSE,   
-  workers = 9                          
+  calculate_bond_angles = FALSE,
+  perform_error_propagation = FALSE,
+  workers = 9
 )
 
 # --- 4. Extract and Combine Geometric Coordination Numbers ---
 output_dir <- "/Users/donngo/Documents/cif_results"
-if (!dir.exists(output_dir)) dir.create(output_dir, recursive = TRUE)
+if (!dir.exists(output_dir))
+  dir.create(output_dir, recursive = TRUE)
 
 # Find all data tables that start with "cn_" (i.e. coordination number results)
 cn_columns <- grep("^cn_", names(results), value = TRUE)
@@ -1180,9 +2222,11 @@ combined_dt <- data.table(file = results$file_name)
 # Loop over each algorithm column
 for (col in cn_columns) {
   combined_dt[[col]] <- sapply(results[[col]], function(dt) {
-    if (is.data.frame(dt) && nrow(dt) > 0 && "CoordinationNumber" %in% names(dt)) {
+    if (is.data.frame(dt) &&
+        nrow(dt) > 0 && "CoordinationNumber" %in% names(dt)) {
       # Sort alphabetically by Atom so the sequence matches across algorithms
-      if ("Atom" %in% names(dt)) dt <- dt[order(Atom)]
+      if ("Atom" %in% names(dt))
+        dt <- dt[order(Atom)]
       
       # Round output to handle decimals provided by continuous algorithms like ECon
       cn_rounded <- round(dt$CoordinationNumber, 3)
@@ -1196,7 +2240,11 @@ for (col in cn_columns) {
 # Save the final combined CN table
 combined_file_path <- file.path(output_dir, "combined_cn_crystract.csv")
 fwrite(combined_dt, combined_file_path)
-cat(sprintf("Saved multi-algorithm CN table with %d rows to: %s\n", nrow(combined_dt), basename(combined_file_path)))
+cat(sprintf(
+  "Saved multi-algorithm CN table with %d rows to: %s\n",
+  nrow(combined_dt),
+  basename(combined_file_path)
+))
 
 
 # --- 5. Extract and Combine Weighted Coordination Numbers (WCN) ---
@@ -1208,9 +2256,11 @@ combined_wcn_dt <- data.table(file = results$file_name)
 # Loop over each algorithm column
 for (col in cn_columns) {
   combined_wcn_dt[[col]] <- sapply(results[[col]], function(dt) {
-    if (is.data.frame(dt) && nrow(dt) > 0 && "WeightedCoordinationNumber" %in% names(dt)) {
+    if (is.data.frame(dt) &&
+        nrow(dt) > 0 && "WeightedCoordinationNumber" %in% names(dt)) {
       # Sort alphabetically by Atom to maintain identical ordering to the geometric CN list
-      if ("Atom" %in% names(dt)) dt <- dt[order(Atom)]
+      if ("Atom" %in% names(dt))
+        dt <- dt[order(Atom)]
       
       # Round to 3 decimal places to keep the comma-separated strings readable
       wcn_rounded <- round(dt$WeightedCoordinationNumber, 3)
@@ -1225,7 +2275,11 @@ for (col in cn_columns) {
 # Save the final combined WCN table
 combined_wcn_file_path <- file.path(output_dir, "combined_wcn_crystract.csv")
 fwrite(combined_wcn_dt, combined_wcn_file_path)
-cat(sprintf("Saved WCN table with %d rows to: %s\n", nrow(combined_wcn_dt), basename(combined_wcn_file_path)))
+cat(sprintf(
+  "Saved WCN table with %d rows to: %s\n",
+  nrow(combined_wcn_dt),
+  basename(combined_wcn_file_path)
+))
 
 
 cat("\nAll operations finished successfully!\n")
@@ -1234,11 +2288,11 @@ cat("\nAll operations finished successfully!\n")
 
 ## 13. High Coordination Number Diagnostics (WCN > 12)
 
-To address the request to double-check structural validity, this section isolates the specific `.cif` files that yielded a Weighted Coordination Number (WCN) strictly greater than 12. It displays the sites and automatically copies the underlying `.cif` files to an export directory for easy sharing.
+To address the request to double-check structural validity, this section isolates the specific `.cif` files that yielded a Weighted Coordination Number (WCN) ly greater than 12. It displays the sites and automatically copies the underlying `.cif` files to an export directory for easy sharing.
 
 ```{r extract-high-wcn-files, message=FALSE, warning=FALSE}
-if (exists("final_bonds_data") && nrow(final_bonds_data) > 0) {
-  
+if (exists("final_bonds_data") &&
+    nrow(final_bonds_data) > 0) {
   # Filter for sites with Weighted CN > 12
   high_wcn_data <- unique(final_bonds_data[CN_Weighted > 12, .(
     File = file_name,
@@ -1253,16 +2307,19 @@ if (exists("final_bonds_data") && nrow(final_bonds_data) > 0) {
   
   unique_high_wcn_files <- unique(high_wcn_data$File)
   
-  cat(sprintf("Found %d atomic sites across %d unique files where WCN > 12.\n", 
-              nrow(high_wcn_data), length(unique_high_wcn_files)))
+  cat(sprintf(
+    "Found %d atomic sites across %d unique files where WCN > 12.\n",
+    nrow(high_wcn_data),
+    length(unique_high_wcn_files)
+  ))
   
   # 1. Display the table interactively for the HTML report
-  if(nrow(high_wcn_data) > 0) {
+  if (nrow(high_wcn_data) > 0) {
     p_high_wcn <- datatable(
-      high_wcn_data, 
+      high_wcn_data,
       extensions = 'Buttons',
       options = list(
-        pageLength = 10, 
+        pageLength = 10,
         scrollX = TRUE,
         dom = 'Bfrtip',
         buttons = c('csv', 'excel')
@@ -1274,17 +2331,25 @@ if (exists("final_bonds_data") && nrow(final_bonds_data) > 0) {
     # 2. Export the physical CIF files for review
     # The baseline cif_directory is set in Section 3
     export_dir <- "/Users/donngo/Documents/high_wcn_cifs"
-    if(!dir.exists(export_dir)) dir.create(export_dir, recursive = TRUE)
+    if (!dir.exists(export_dir))
+      dir.create(export_dir, recursive = TRUE)
     
     files_to_copy <- file.path(cif_directory, unique_high_wcn_files)
     existing_files <- files_to_copy[file.exists(files_to_copy)]
     
-    if(length(existing_files) > 0) {
-      file.copy(from = existing_files, to = export_dir, overwrite = TRUE)
-      cat(sprintf("\nSuccessfully copied %d CIF files to %s.", 
-                  length(existing_files), export_dir))
+    if (length(existing_files) > 0) {
+      file.copy(from = existing_files,
+                to = export_dir,
+                overwrite = TRUE)
+      cat(sprintf(
+        "\nSuccessfully copied %d CIF files to %s.",
+        length(existing_files),
+        export_dir
+      ))
     } else {
-      cat("\nWarning: Could not locate the original .cif files to copy. Check 'cif_directory' path.\n")
+      cat(
+        "\nWarning: Could not locate the original .cif files to copy. Check 'cif_directory' path.\n"
+      )
     }
   }
   
