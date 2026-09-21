@@ -1,9 +1,9 @@
 pandoc: 3.8.3
-pkgdown: 2.2.0
+pkgdown: 2.2.1
 pkgdown_sha: ~
 articles:
   crystract: crystract.html
-last_built: 2026-06-25T16:04Z
+last_built: 2026-09-21T16:52Z
 urls:
   reference: https://prabhulab.github.io/ml-crystals/reference
   article: https://prabhulab.github.io/ml-crystals/articles

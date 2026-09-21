@@ -2,6 +2,8 @@
 
 ## crystract 1.0.2
 
+CRAN release: 2026-06-25
+
 ### Performance Improvements
 
 - **Massive Speedup in Symmetry Operations:** Symmetry equations are now
