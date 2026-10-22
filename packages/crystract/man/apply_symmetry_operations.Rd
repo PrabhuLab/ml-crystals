@@ -27,6 +27,14 @@ A \code{data.table} containing all unique atomic positions in the unit cell.
 \description{
 Generates all symmetry-equivalent atomic positions within the unit cell.
 }
+\details{
+A generated fractional position is written as
+\deqn{\mathbf{f}_k=\mathbf{W}_k\mathbf{A}_{j(k)}+\mathbf{t}_k.}
+The fixed translation contributes no uncertainty. Uncertainty propagation
+requires \eqn{\boldsymbol{\Sigma}_{\mathbf{f}_k}=
+\mathbf{W}_k\boldsymbol{\Sigma}_{\mathbf{A}_{j(k)}}\mathbf{W}_k^{\mathsf T}}
+and shared-parent derivatives. \code{ParentJacobian} retains that mapping.
+}
 \examples{
 ac <- data.table::data.table(Label = "A", x_a = 0, y_b = 0, z_c = 0)
 ops <- data.table::data.table(x = c("x", "-x"), y = c("y", "-y"), z = c("z", "-z"))

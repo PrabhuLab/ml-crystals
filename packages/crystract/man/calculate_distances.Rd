@@ -29,6 +29,15 @@ A \code{data.table} of all non-zero distances.
 Computes the distances between a central set of atoms and an
 expanded set, using the metric tensor for accuracy.
 }
+\details{
+With \eqn{\Delta x=x_{f1}-x_{f2}}, \eqn{\Delta y=y_{f1}-y_{f2}} and
+\eqn{\Delta z=z_{f1}-z_{f2}}, the interatomic distance is
+\deqn{d=\left[a^2\Delta x^2+b^2\Delta y^2+c^2\Delta z^2+
+2ab\Delta x\Delta y\cos\gamma+2ac\Delta x\Delta z\cos\beta+
+2bc\Delta y\Delta z\cos\alpha\right]^{1/2}.}
+The columns \code{x_a}, \code{y_b}, \code{z_c} contain fractional coordinates
+\eqn{x_f,y_f,z_f}; \code{z_c} is not a Cartesian coordinate here.
+}
 \examples{
 ac <- data.table::data.table(Label = "Si1", x_a = 0, y_b = 0, z_c = 0)
 ec <- data.table::data.table(Label = "O1_1", x_a = 0.5, y_b = 0.5, z_c = 0.5)

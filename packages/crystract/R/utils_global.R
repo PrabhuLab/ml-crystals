@@ -32,6 +32,7 @@ utils::globalVariables(
     "Parent1",
     "Parent2",
     "ParentLabel",
+    "ParentJacobian",
     "Radius",
     "Radius1",
     "Radius2",

@@ -1,6 +1,14 @@
 #' @title Calculate Interatomic Distances
 #' @description Computes the distances between a central set of atoms and an
 #'   expanded set, using the metric tensor for accuracy.
+#' @details
+#' With \eqn{\Delta x=x_{f1}-x_{f2}}, \eqn{\Delta y=y_{f1}-y_{f2}} and
+#' \eqn{\Delta z=z_{f1}-z_{f2}}, the interatomic distance is
+#' \deqn{d=\left[a^2\Delta x^2+b^2\Delta y^2+c^2\Delta z^2+
+#' 2ab\Delta x\Delta y\cos\gamma+2ac\Delta x\Delta z\cos\beta+
+#' 2bc\Delta y\Delta z\cos\alpha\right]^{1/2}.}
+#' The columns `x_a`, `y_b`, `z_c` contain fractional coordinates
+#' \eqn{x_f,y_f,z_f}; `z_c` is not a Cartesian coordinate here.
 #' @param atomic_coordinates A `data.table` of the primary (asymmetric) atom set.
 #' @param expanded_coords A `data.table` of atoms in the expanded supercell.
 #' @param unit_cell_metrics A `data.table` with cell parameters.
@@ -105,6 +113,12 @@ calculate_neighbor_counts <- function(bonded_pairs_table) {
 #'   this indicates an invalid or physically impossible structure; the function will throw a
 #'   warning and return `NULL` so the file can be discarded by the analysis pipeline.
 #'
+#' @details
+#' The occupancy-corrected coordination number is
+#' \deqn{\mathrm{CN}_{\mathrm{occ}}=\sum_{i\in\mathrm{neighbour\ sites}}m_i\,\mathrm{occ}_i.}
+#' Here \eqn{m_i} is the local number of appearances of asymmetric neighbour
+#' site \eqn{i} in the central atom's coordination sphere, not its unit-cell
+#' Wyckoff multiplicity, and \eqn{\mathrm{occ}_i} is its site occupancy.
 #' @param bonded_pairs_table A `data.table` of bonded pairs (e.g., from `minimum_distance`).
 #' @param atomic_coordinates A `data.table` of asymmetric atoms from `extract_atomic_coordinates`.
 #' @return A `data.table` with columns 'Atom', 'CoordinationNumber', and 'WeightedCoordinationNumber'.
@@ -196,6 +210,17 @@ calculate_weighted_neighbor_counts <- function(bonded_pairs_table, atomic_coordi
 #' @title Calculate Bond Angles
 #' @description Calculates all bond angles centered on each atom, formed by pairs
 #'   of its bonded neighbors.
+#' @details
+#' Atom \eqn{A_1} is central and
+#' \eqn{\mathbf{c}_k=(x_{ck},y_{ck},z_{ck})^{\mathsf T}=\mathbf{M}\mathbf{f}_k}.
+#' Set \eqn{\mathbf{a}=\mathbf{c}_2-\mathbf{c}_1} and
+#' \eqn{\mathbf{b}=\mathbf{c}_3-\mathbf{c}_1}. Then
+#' \deqn{C=\frac{\mathbf{a}\cdot\mathbf{b}}{\lVert\mathbf{a}\rVert\lVert\mathbf{b}\rVert},
+#' \qquad \theta=\arccos C.}
+#' Bold \eqn{\mathbf{a},\mathbf{b}} are bond vectors; scalar \eqn{a,b,c}
+#' are cell lengths. The implementation uses the equivalent fractional-coordinate
+#' metric product, with \eqn{\mathbf{G}=\mathbf{M}^{\mathsf T}\mathbf{M}},
+#' and returns \eqn{\theta} in degrees.
 #' @param bonded_pairs Data.table of bonded atoms.
 #' @param atomic_coordinates Data.table of asymmetric atom coordinates.
 #' @param expanded_coords Data.table of supercell atom coordinates.
@@ -332,18 +357,147 @@ calculate_angles <- function(bonded_pairs,
   return(result_angles[order(CentralAtom, Neighbor1, Neighbor2)])
 }
 
+# Internal geometry for both uncertainty propagators. The cell angles are radians.
+# Sources: IUCr Cartesian coordinates; Angel et al.
+# (2025), doi:10.1107/S2053273325002682; JCGM 100:2008.
+uncertainty_cell <- function(unit_cell_metrics) {
+  cell <- c(a = unit_cell_metrics$`_cell_length_a`,
+            b = unit_cell_metrics$`_cell_length_b`,
+            c = unit_cell_metrics$`_cell_length_c`,
+            alpha = unit_cell_metrics$`_cell_angle_alpha` * pi / 180,
+            beta = unit_cell_metrics$`_cell_angle_beta` * pi / 180,
+            gamma = unit_cell_metrics$`_cell_angle_gamma` * pi / 180)
+  with(as.list(cell), {
+    ca <- cos(alpha); cb <- cos(beta); cg <- cos(gamma)
+    sa <- sin(alpha); sb <- sin(beta); sg <- sin(gamma)
+    D <- 1 - ca^2 - cb^2 - cg^2 + 2 * ca * cb * cg
+    if (any(!is.finite(cell)) || D <= 0 || abs(sg) < 1e-12)
+      stop("Invalid unit cell for uncertainty propagation")
+    v <- sqrt(D)
+    # Stage 1: convert fractional position f to Cartesian c = M f.
+    M <- rbind(c(a, b * cg, c * cb),
+               c(0, b * sg, c * (ca - cb * cg) / sg),
+               c(0, 0, c * v / sg))
+    # Stage 2: differentiate M in each independent cell parameter. In
+    # particular, dz_c/dalpha and dz_c/dbeta include their sine factors.
+    dM <- list(
+      a = rbind(c(1, 0, 0), c(0, 0, 0), c(0, 0, 0)),
+      b = rbind(c(0, cg, 0), c(0, sg, 0), c(0, 0, 0)),
+      c = rbind(c(0, 0, cb), c(0, 0, (ca - cb * cg) / sg), c(0, 0, v / sg)),
+      alpha = rbind(c(0, 0, 0), c(0, 0, -c * sa / sg),
+                    c(0, 0, c * sa * (ca - cb * cg) / (v * sg))),
+      beta = rbind(c(0, 0, -c * sb), c(0, 0, c * sb * cg / sg),
+                   c(0, 0, c * sb * (cb - ca * cg) / (v * sg))),
+      gamma = rbind(c(0, -b * sg, 0),
+                    c(0, b * cg, c * (cb - ca * cg) / sg^2),
+                    c(0, 0, c * (sg^2 * (cg - ca * cb) - D * cg) / (v * sg^2)))
+    )
+    list(M = M, dM = dM)
+  })
+}
+
+# A site stores df/dA_j for every original asymmetric-site parent A_j.
+uncertainty_site <- function(label, atomic_coordinates, expanded_coords = NULL) {
+  i <- match(label, atomic_coordinates$Label)
+  source <- atomic_coordinates
+  if (is.na(i) && !is.null(expanded_coords)) {
+    i <- match(label, expanded_coords$Label)
+    source <- expanded_coords
+  }
+  if (is.na(i)) return(NULL)
+  map <- if ("ParentJacobian" %in% names(source)) source$ParentJacobian[[i]] else NULL
+  if (is.null(map) && identical(source, atomic_coordinates))
+    map <- stats::setNames(list(diag(3)), label)
+  if (is.null(map)) return(NULL) # A generated label alone cannot reveal W.
+  list(f = as.numeric(source[i, .(x_a, y_b, z_c)]), map = map)
+}
+
+uncertainty_add_parent <- function(gradient, site, fractional_gradient) {
+  # Stage 3: apply the chain rule and add shared-parent terms before squaring.
+  for (parent in names(site$map)) {
+    contribution <- as.numeric(t(site$map[[parent]]) %*% fractional_gradient)
+    for (axis in seq_along(contribution)) {
+      key <- paste0(parent, ":", c("x", "y", "z")[axis])
+      gradient[key] <- if (key %in% names(gradient)) gradient[key] + contribution[axis] else contribution[axis]
+    }
+  }
+  gradient
+}
+
+uncertainty_variance <- function(gradient, unit_cell_metrics,
+                                 independent_coordinates, covariance = NULL) {
+  # Stage 4: keep one entry per independent input p. A full named Sigma_p
+  # may be supplied; otherwise use reported CIF variances on the diagonal.
+  if (any(!is.finite(gradient))) return(NA_real_)
+  gradient <- gradient[abs(gradient) > 1e-12]
+  if (!length(gradient)) return(0)
+  if (!is.null(covariance)) {
+    if (is.null(rownames(covariance)) || is.null(colnames(covariance)) ||
+        !all(names(gradient) %in% rownames(covariance)) ||
+        !all(names(gradient) %in% colnames(covariance)))
+      stop("covariance must name every independent input with a nonzero gradient")
+    Sigma <- covariance[names(gradient), names(gradient), drop = FALSE]
+    if (any(!is.finite(Sigma))) return(NA_real_)
+    return(as.numeric(t(gradient) %*% Sigma %*% gradient))
+  }
+  cell_su <- vapply(c("a", "b", "c", "alpha", "beta", "gamma"), function(name) {
+    field <- paste0(if (name %in% c("a", "b", "c"))
+      "_cell_length_" else "_cell_angle_", name, "_error")
+    value <- unit_cell_metrics[[field]]
+    if (!length(value)) return(NA_real_)
+    as.numeric(value[[1]]) * if (name %in% c("a", "b", "c")) 1 else pi / 180
+  }, numeric(1))
+  names(cell_su) <- paste0("cell_", names(cell_su))
+  atom_su <- unlist(lapply(seq_len(nrow(independent_coordinates)), function(i) {
+    x <- unlist(independent_coordinates[i, .(x_error, y_error, z_error)], use.names = FALSE)
+    stats::setNames(x, paste0(independent_coordinates$Label[i], ":", c("x", "y", "z")))
+  }))
+  su <- c(cell_su, atom_su)[names(gradient)]
+  if (anyNA(su) || any(!is.finite(su)) || any(su < 0)) return(NA_real_)
+  sum((gradient * su)^2)
+}
+
 #' @title Propagate Distance Error
 #' @description Calculates the standard uncertainty for each interatomic distance.
+#' @details
+#' The uncertainty is calculated using each independently refined
+#' input once in \eqn{\mathbf{p}}:
+#' \deqn{\sigma_d^2=(\nabla_{\mathbf{p}}d)^{\mathsf T}
+#' \boldsymbol{\Sigma}_{\mathbf{p}}(\nabla_{\mathbf{p}}d).}
+#' If only individual standard uncertainties are available, unavailable input
+#' covariances are approximated as zero, giving
+#' \eqn{\sigma_d^2=\sum_i(\partial d/\partial p_i)^2\sigma_{p_i}^2}
+#' only after known constraints have been mapped to independent inputs.
+#' For \eqn{\mathbf{f}_k=\mathbf{W}_k\mathbf{A}_{j(k)}+\mathbf{t}_k},
+#' \deqn{\nabla_{\mathbf{A}_j}d=\sum_{k:j(k)=j}\mathbf{W}_k^{\mathsf T}
+#' \nabla_{\mathbf{f}_k}d.}
+#' Here \eqn{\mathbf{A}_j} is the parent fractional-coordinate vector,
+#' \eqn{\mathbf{W}_k} is the symmetry matrix and \eqn{\mathbf{t}_k} is fixed.
+#' With the fractional-coordinate differences defined above, the cell derivative is
+#' \deqn{\frac{\partial d}{\partial c}=
+#' \frac{c\Delta z^2+a\Delta x\Delta z\cos\beta+b\Delta y\Delta z\cos\alpha}{d}.}
+#' Cell angles and their standard uncertainties are converted to radians.
+#'
+#' Shared generated-site parents are combined before evaluating this variance.
+#' Missing standard uncertainties yield `NA` unless a named covariance is supplied.
+#' @references Angel et al. (2025), doi:10.1107/S2053273325002682;
+#' JCGM 100:2008, doi:10.59161/JCGM100-2008E; IUCr, "Matrices, Mappings
+#' and Crystallographic Symmetry" (2002). The package vignette, "Error
+#' Propagation", gives the derivative equations.
 #' @param bonded_pairs Data.table of bonded atoms with their distances.
 #' @param atomic_coordinates Data.table with fractional coordinates and errors.
 #' @param unit_cell_metrics Data.table with unit cell parameters and errors.
+#' @param expanded_coords Generated sites with `ParentJacobian` provenance.
+#' @param independent_coordinates Original asymmetric sites and their uncertainties.
+#' @param covariance Optional named covariance matrix for independent inputs.
 #' @return The input `bonded_pairs` data.table with a new 'DistanceError' column.
 #' @family error propagators
 #' @export
 #' @examples
-#' bp <- data.table::data.table(Atom1 = "Si1", Atom2 = "O1_1", Distance = 1.6,
+#' bp <- data.table::data.table(Atom1 = "Si1", Atom2 = "O1", Distance = sqrt(2),
 #'                              DeltaX = 0.1, DeltaY = 0.1, DeltaZ = 0)
 #' ac <- data.table::data.table(Label = c("Si1", "O1"),
+#'                              x_a = c(0, 0.1), y_b = c(0, 0.1), z_c = c(0, 0),
 #'                              x_error = c(0.01, 0.01),
 #'                              y_error = c(0.01, 0.01),
 #'                              z_error = c(0.01, 0.01))
@@ -356,122 +510,93 @@ calculate_angles <- function(bonded_pairs,
 #' propagate_distance_error(bp, ac, uc)
 propagate_distance_error <- function(bonded_pairs,
                                      atomic_coordinates,
-                                     unit_cell_metrics) {
-  if (is.null(bonded_pairs) ||
-      nrow(bonded_pairs) == 0) {
-    return(bonded_pairs[, DistanceError := NA_real_])
-  }
-
-  a <- unit_cell_metrics$`_cell_length_a`
-  s_a <- unit_cell_metrics$`_cell_length_a_error`
-  b <- unit_cell_metrics$`_cell_length_b`
-  s_b <- unit_cell_metrics$`_cell_length_b_error`
-  c <- unit_cell_metrics$`_cell_length_c`
-  s_c <- unit_cell_metrics$`_cell_length_c_error`
-  alpha_rad <- unit_cell_metrics$`_cell_angle_alpha` * pi / 180
-  s_alpha_rad <- unit_cell_metrics$`_cell_angle_alpha_error` * pi / 180
-  beta_rad <- unit_cell_metrics$`_cell_angle_beta` * pi / 180
-  s_beta_rad <- unit_cell_metrics$`_cell_angle_beta_error` * pi / 180
-  gamma_rad <- unit_cell_metrics$`_cell_angle_gamma` * pi / 180
-  s_gamma_rad <- unit_cell_metrics$`_cell_angle_gamma_error` * pi / 180
-
-  cos_a <- cos(alpha_rad)
-  sin_a <- sin(alpha_rad)
-  cos_b <- cos(beta_rad)
-  sin_b <- sin(beta_rad)
-  cos_g <- cos(gamma_rad)
-  sin_g <- sin(gamma_rad)
-
-  s_a <- ifelse(is.na(s_a), 0, s_a)
-  s_b <- ifelse(is.na(s_b), 0, s_b)
-  s_c <- ifelse(is.na(s_c), 0, s_c)
-  s_alpha_rad <- ifelse(is.na(s_alpha_rad), 0, s_alpha_rad)
-  s_beta_rad <- ifelse(is.na(s_beta_rad), 0, s_beta_rad)
-  s_gamma_rad <- ifelse(is.na(s_gamma_rad), 0, s_gamma_rad)
-
-  work_dt <- copy(bonded_pairs)
-  setnames(work_dt, c("DeltaX", "DeltaY", "DeltaZ"), c("dx", "dy", "dz"))
-  atom_errors <- atomic_coordinates[, .(Label,
-                                        s_xf = x_error,
-                                        s_yf = y_error,
-                                        s_zf = z_error)]
-
-  work_dt <- merge(
-    work_dt,
-    atom_errors,
-    by.x = "Atom1",
-    by.y = "Label",
-    all.x = TRUE
-  )
-  setnames(work_dt,
-           c("s_xf", "s_yf", "s_zf"),
-           c("s_xf1", "s_yf1", "s_zf1"))
-  work_dt[, Original_Atom2 := sub("_.*", "", Atom2)]
-  work_dt <- merge(
-    work_dt,
-    atom_errors,
-    by.x = "Original_Atom2",
-    by.y = "Label",
-    all.x = TRUE
-  )
-  setnames(work_dt,
-           c("s_xf", "s_yf", "s_zf"),
-           c("s_xf2", "s_yf2", "s_zf2"))
-  work_dt[, Original_Atom2 := NULL]
-
-  coord_err_cols <- c("s_xf1", "s_yf1", "s_zf1", "s_xf2", "s_yf2", "s_zf2")
-  for (col in coord_err_cols)
-    set(work_dt, which(is.na(work_dt[[col]])), col, 0)
-
-  work_dt[, term_common := 1 / (2 * Distance)]
-  work_dt[, `:=`(
-    pd_a = (term_common * (
-      2 * a * dx^2 + 2 * b * dx * dy * cos_g + 2 * c * dx * dz * cos_b
-    )),
-    pd_b = (term_common * (
-      2 * b * dy^2 + 2 * a * dx * dy * cos_g + 2 * c * dy * dz * cos_a
-    )),
-    pd_c = (term_common * (
-      2 * c * dz^2 + 2 * a * dx * dz * cos_b + 2 * b * dy * dz * cos_a
-    )),
-    pd_alpha = (term_common * (-2 * b * c * dy * dz * sin_a)),
-    pd_beta = (term_common * (-2 * a * c * dx * dz * sin_b)),
-    pd_gamma = (term_common * (-2 * a * b * dx * dy * sin_g))
-  )]
-  work_dt[, `:=`(
-    pd_xf1 = (term_common * (
-      2 * a^2 * dx + 2 * a * b * dy * cos_g + 2 * a * c * dz * cos_b
-    )),
-    pd_yf1 = (term_common * (
-      2 * b^2 * dy + 2 * a * b * dx * cos_g + 2 * b * c * dz * cos_a
-    )),
-    pd_zf1 = (term_common * (
-      2 * c^2 * dz + 2 * a * c * dx * cos_b + 2 * b * c * dy * cos_a
-    ))
-  )][, `:=`(
-    pd_xf2 = -pd_xf1,
-    pd_yf2 = -pd_yf1,
-    pd_zf2 = -pd_zf1
-  )]
-  work_dt[, variance := (pd_a * s_a)^2 + (pd_b * s_b)^2 + (pd_c * s_c)^2 + (pd_alpha *
-                                                                              s_alpha_rad)^2 + (pd_beta * s_beta_rad)^2 + (pd_gamma * s_gamma_rad)^2 + (pd_xf1 *
-                                                                                                                                                          s_xf1)^2 + (pd_yf1 * s_yf1)^2 + (pd_zf1 * s_zf1)^2 + (pd_xf2 * s_xf2)^2 + (pd_yf2 *
-                                                                                                                                                                                                                                       s_yf2)^2 + (pd_zf2 * s_zf2)^2]
-  work_dt[, DistanceError := sqrt(variance)]
-  return(merge(
-    bonded_pairs,
-    work_dt[, .(Atom1, Atom2, Distance, DistanceError)],
-    by = c("Atom1", "Atom2", "Distance"),
-    all.x = TRUE
-  ))
+                                     unit_cell_metrics,
+                                     expanded_coords = NULL,
+                                     independent_coordinates = atomic_coordinates,
+                                     covariance = NULL) {
+  if (is.null(bonded_pairs)) return(NULL)
+  result <- copy(bonded_pairs)
+  result[, DistanceError := NA_real_]
+  if (!nrow(result)) return(result)
+  geometry <- uncertainty_cell(unit_cell_metrics)
+  M <- geometry$M
+  G <- t(M) %*% M
+  errors <- vapply(seq_len(nrow(result)), function(i) {
+    first <- uncertainty_site(result$Atom1[i], atomic_coordinates, expanded_coords)
+    second <- uncertainty_site(result$Atom2[i], atomic_coordinates, expanded_coords)
+    if (is.null(first) || is.null(second)) return(NA_real_)
+    # Stage 1: fractional displacement gives d^2 = Delta_f^T G Delta_f.
+    delta <- first$f - second$f
+    d <- sqrt(as.numeric(t(delta) %*% G %*% delta))
+    if (!is.finite(d) || d <= 1e-12) return(NA_real_)
+    # Stage 2: differentiate the metric distance in all six cell inputs.
+    # This is the vignette's explicit dd/da, dd/db, dd/dc and angle formulas.
+    cart_delta <- as.numeric(M %*% delta)
+    gradient <- stats::setNames(vapply(geometry$dM, function(dMs)
+      sum(cart_delta * as.numeric(dMs %*% delta)) / d, numeric(1)),
+      paste0("cell_", names(geometry$dM)))
+    # Stage 3: h_1 = G Delta_f/d, h_2 = -h_1. Shared parents cancel or
+    # reinforce through W^T h before calculating their variance.
+    h <- as.numeric(G %*% delta) / d
+    gradient <- uncertainty_add_parent(gradient, first, h)
+    gradient <- uncertainty_add_parent(gradient, second, -h)
+    variance <- uncertainty_variance(gradient, unit_cell_metrics,
+                                     independent_coordinates, covariance)
+    if (is.na(variance) || variance < -1e-10) NA_real_ else sqrt(max(0, variance))
+  }, numeric(1))
+  result[, DistanceError := errors]
+  if (anyNA(errors)) warning("Distance uncertainty unavailable for rows with missing input uncertainty or provenance")
+  result
 }
 
 #' @title Propagate Angle Error
 #' @description Calculates the standard uncertainty for each bond angle.
+#' @details
+#' Use the notation \eqn{\mathbf{c}_k=\mathbf{M}\mathbf{f}_k},
+#' \eqn{\mathbf{a}=\mathbf{c}_2-\mathbf{c}_1},
+#' \eqn{\mathbf{b}=\mathbf{c}_3-\mathbf{c}_1} and
+#' \eqn{C=\mathbf{a}\cdot\mathbf{b}/(\lVert\mathbf{a}\rVert\lVert\mathbf{b}\rVert)}.
+#' The Cartesian gradients are
+#' \deqn{\nabla_{\mathbf{c}_2}C=\frac{\mathbf{b}}{\lVert\mathbf{a}\rVert\lVert\mathbf{b}\rVert}
+#' -\frac{C\mathbf{a}}{\lVert\mathbf{a}\rVert^2},\qquad
+#' \nabla_{\mathbf{c}_3}C=\frac{\mathbf{a}}{\lVert\mathbf{a}\rVert\lVert\mathbf{b}\rVert}
+#' -\frac{C\mathbf{b}}{\lVert\mathbf{b}\rVert^2}.}
+#' \deqn{\nabla_{\mathbf{c}_1}C=-\nabla_{\mathbf{c}_2}C-\nabla_{\mathbf{c}_3}C,
+#' \qquad \mathbf{g}_k=\nabla_{\mathbf{c}_k}\theta=-\frac{\nabla_{\mathbf{c}_k}C}{\sqrt{1-C^2}}.}
+#' For each cell parameter \eqn{s\in\{a,b,c,\alpha,\beta,\gamma\}} and
+#' parent \eqn{\mathbf{A}_j}, accumulate contributions before forming the variance:
+#' \deqn{\frac{\partial\theta}{\partial s}=\sum_{k=1}^3\mathbf{g}_k^{\mathsf T}
+#' \frac{\partial\mathbf{M}}{\partial s}\mathbf{f}_k,\qquad
+#' \nabla_{\mathbf{A}_j}\theta=\sum_{k:j(k)=j}\mathbf{W}_k^{\mathsf T}
+#' \mathbf{M}^{\mathsf T}\mathbf{g}_k.}
+#' After mapping any further known constraints to independent inputs \eqn{\mathbf{p}},
+#' \deqn{\sigma_\theta^2=(\nabla_{\mathbf{p}}\theta)^{\mathsf T}
+#' \boldsymbol{\Sigma}_{\mathbf{p}}(\nabla_{\mathbf{p}}\theta).}
+#' A diagonal approximation applies only to independent inputs. Equivalently,
+#' retain \eqn{\boldsymbol{\Sigma}_{\mathbf{q}}=\mathbf{J}\boldsymbol{\Sigma}_{\mathbf{p}}\mathbf{J}^{\mathsf T}}
+#' for all nine Cartesian coordinates, including off-diagonal entries.
+#' With \eqn{D=1-\cos^2\alpha-\cos^2\beta-\cos^2\gamma+2\cos\alpha\cos\beta\cos\gamma},
+#' the corrected transformation derivatives include
+#' \deqn{\frac{\partial z_c}{\partial\alpha}=
+#' \frac{cz_f\sin\alpha(\cos\alpha-\cos\beta\cos\gamma)}{\sqrt{D}\sin\gamma},\qquad
+#' \frac{\partial z_c}{\partial\beta}=
+#' \frac{cz_f\sin\beta(\cos\beta-\cos\alpha\cos\gamma)}{\sqrt{D}\sin\gamma}.}
+#' Differentiate in radians and return \eqn{\sigma_{\theta,\mathrm{deg}}=
+#' \sigma_{\theta,\mathrm{rad}}180/\pi}. These first-order gradients require
+#' nonzero bond lengths and \eqn{|C|<1}; they are singular at 0 and 180 degrees.
+#'
+#' Shared generated-site parents are combined before evaluating this variance.
+#' Singular angles and missing input uncertainty yield `NA`.
+#' @references Angel et al. (2025), doi:10.1107/S2053273325002682;
+#' JCGM 100:2008, doi:10.59161/JCGM100-2008E; IUCr recommendations on
+#' uncertainty of derived angles. The package vignette, "Error Propagation",
+#' gives the angle gradients.
 #' @param bond_angles Data.table of calculated bond angles.
 #' @param atomic_coordinates Data.table with fractional coordinates and errors.
 #' @param expanded_coords Data.table of supercell atom coordinates.
 #' @param unit_cell_metrics Data.table with unit cell parameters and errors.
+#' @param independent_coordinates Original asymmetric sites and their uncertainties.
+#' @param covariance Optional named covariance matrix for independent inputs.
 #' @return The input `bond_angles` data.table with a new 'AngleError' column.
 #' @family error propagators
 #' @export
@@ -511,190 +636,53 @@ propagate_distance_error <- function(bonded_pairs,
 propagate_angle_error <- function(bond_angles,
                                   atomic_coordinates,
                                   expanded_coords,
-                                  unit_cell_metrics) {
-  if (is.null(bond_angles) ||
-      nrow(bond_angles) == 0) {
-    return(bond_angles[, AngleError := NA_real_])
-  }
-  a <- unit_cell_metrics$`_cell_length_a`
-  b <- unit_cell_metrics$`_cell_length_b`
-  c <- unit_cell_metrics$`_cell_length_c`
-  s_a <- ifelse(
-    is.na(unit_cell_metrics$`_cell_length_a_error`),
-    0,
-    unit_cell_metrics$`_cell_length_a_error`
-  )
-  s_b <- ifelse(
-    is.na(unit_cell_metrics$`_cell_length_b_error`),
-    0,
-    unit_cell_metrics$`_cell_length_b_error`
-  )
-  s_c <- ifelse(
-    is.na(unit_cell_metrics$`_cell_length_c_error`),
-    0,
-    unit_cell_metrics$`_cell_length_c_error`
-  )
-  alpha_rad <- unit_cell_metrics$`_cell_angle_alpha` * pi / 180
-  beta_rad <- unit_cell_metrics$`_cell_angle_beta` * pi / 180
-  gamma_rad <- unit_cell_metrics$`_cell_angle_gamma` * pi / 180
-  s_alpha_rad <- ifelse(
-    is.na(unit_cell_metrics$`_cell_angle_alpha_error`),
-    0,
-    unit_cell_metrics$`_cell_angle_alpha_error` * pi / 180
-  )
-  s_beta_rad <- ifelse(
-    is.na(unit_cell_metrics$`_cell_angle_beta_error`),
-    0,
-    unit_cell_metrics$`_cell_angle_beta_error` * pi / 180
-  )
-  s_gamma_rad <- ifelse(
-    is.na(unit_cell_metrics$`_cell_angle_gamma_error`),
-    0,
-    unit_cell_metrics$`_cell_angle_gamma_error` * pi / 180
-  )
-  cos_a <- cos(alpha_rad)
-  sin_a <- sin(alpha_rad)
-  cos_b <- cos(beta_rad)
-  sin_b <- sin(beta_rad)
-  cos_g <- cos(gamma_rad)
-  sin_g <- sin(gamma_rad)
-  v_sq <- 1 - cos_a^2 - cos_b^2 - cos_g^2 + 2 * cos_a * cos_b * cos_g
-  v <- sqrt(v_sq)
-  cart_errors <- copy(atomic_coordinates)
-  for (col in c("x_error", "y_error", "z_error"))
-    set(cart_errors, which(is.na(cart_errors[[col]])), col, 0)
-  cart_errors[, `:=`(
-    p_xc_a = x_a,
-    p_xc_b = y_b * cos_g,
-    p_xc_c = z_c * cos_b,
-    p_xc_alpha = 0,
-    p_xc_beta = -c * z_c * sin_b,
-    p_xc_gamma = -b * y_b * sin_g,
-    p_xc_xf = a,
-    p_xc_yf = b * cos_g,
-    p_xc_zf = c * cos_b
-  )]
-  cart_errors[, `:=`(
-    p_yc_a = 0,
-    p_yc_b = y_b * sin_g,
-    p_yc_c = z_c * (cos_a - cos_b * cos_g) / sin_g,
-    p_yc_alpha = -c * z_c * sin_a / sin_g,
-    p_yc_beta = c * z_c * sin_b * cos_g / sin_g,
-    p_yc_gamma = b * y_b * cos_g + c * z_c * (cos_b - cos_a * cos_g) / sin_g^2,
-    p_yc_xf = 0,
-    p_yc_yf = b * sin_g,
-    p_yc_zf = c * (cos_a - cos_b * cos_g) / sin_g
-  )]
-  cart_errors[, `:=`(
-    p_zc_a = 0,
-    p_zc_b = 0,
-    p_zc_c = z_c * v / sin_g,
-    p_zc_alpha = c * z_c * (cos_b * cos_g - cos_a) / (sin_g * v),
-    p_zc_beta = c * z_c * (cos_a * cos_g - cos_b) / (sin_g * v),
-    p_zc_gamma = -c * z_c * (v_sq * cos_g + sin_g^2 * (cos_a * cos_b - cos_g)) /
-      (sin_g^2 * v),
-    p_zc_xf = 0,
-    p_zc_yf = 0,
-    p_zc_zf = c * v / sin_g
-  )]
-  cart_errors[, s_xc_sq := (p_xc_a * s_a)^2 + (p_xc_b * s_b)^2 + (p_xc_c *
-                                                                    s_c)^2 + (p_xc_alpha * s_alpha_rad)^2 + (p_xc_beta * s_beta_rad)^2 + (p_xc_gamma *
-                                                                                                                                            s_gamma_rad)^2 + (p_xc_xf * x_error)^2 + (p_xc_yf * y_error)^2 + (p_xc_zf *
-                                                                                                                                                                                                                z_error)^2]
-  cart_errors[, s_yc_sq := (p_yc_a * s_a)^2 + (p_yc_b * s_b)^2 + (p_yc_c *
-                                                                    s_c)^2 + (p_yc_alpha * s_alpha_rad)^2 + (p_yc_beta * s_beta_rad)^2 + (p_yc_gamma *
-                                                                                                                                            s_gamma_rad)^2 + (p_yc_xf * x_error)^2 + (p_yc_yf * y_error)^2 + (p_yc_zf *
-                                                                                                                                                                                                                z_error)^2]
-
-  cart_errors[, s_zc_sq := (p_zc_a * s_a)^2 + (p_zc_b * s_b)^2 + (p_zc_c *
-                                                                    s_c)^2 + (p_zc_alpha * s_alpha_rad)^2 + (p_zc_beta * s_beta_rad)^2 + (p_zc_gamma *
-                                                                                                                                            s_gamma_rad)^2 + (p_zc_xf * x_error)^2 + (p_zc_yf * y_error)^2 + (p_zc_zf *
-                                                                                                                                                                                                                z_error)^2]
-
-  # Select only compatible columns from expanded_coords to avoid column mismatch errors
-  all_frac_coords <- unique(rbind(atomic_coordinates[, .(Label, x_a, y_b, z_c)], expanded_coords[, .(Label, x_a, y_b, z_c)]), by = "Label")
-
-  all_cart_coords <- all_frac_coords[, `:=`(
-    xc = a * x_a + b * y_b * cos_g + c * z_c * cos_b,
-    yc = b * y_b * sin_g + c * z_c * (cos_a - cos_b * cos_g) / sin_g,
-    zc = c * z_c * v / sin_g
-  )][, .(Label, xc, yc, zc)]
-  setkey(all_cart_coords, Label)
-  error_subset <- cart_errors[, .(Label, s_xc_sq, s_yc_sq, s_zc_sq)]
-  setkey(error_subset, Label)
-  work_dt <- copy(bond_angles)
-  work_dt[all_cart_coords, on = .(CentralAtom = Label), `:=`(xc1 = i.xc, yc1 =
-                                                               i.yc, zc1 = i.zc)]
-  work_dt[all_cart_coords, on = .(Neighbor1 = Label), `:=`(xc2 = i.xc, yc2 =
-                                                             i.yc, zc2 = i.zc)]
-  work_dt[all_cart_coords, on = .(Neighbor2 = Label), `:=`(xc3 = i.xc, yc3 =
-                                                             i.yc, zc3 = i.zc)]
-  work_dt[, Parent_C := sub("_.*", "", CentralAtom)][, Parent_N1 := sub("_.*", "", Neighbor1)][, Parent_N2 :=
-                                                                                                 sub("_.*", "", Neighbor2)]
-  work_dt[error_subset, on = .(Parent_C = Label), `:=`(s_xc1_sq = i.s_xc_sq,
-                                                       s_yc1_sq = i.s_yc_sq,
-                                                       s_zc1_sq = i.s_zc_sq)]
-  work_dt[error_subset, on = .(Parent_N1 = Label), `:=`(s_xc2_sq = i.s_xc_sq,
-                                                        s_yc2_sq = i.s_yc_sq,
-                                                        s_zc2_sq = i.s_zc_sq)]
-  work_dt[error_subset, on = .(Parent_N2 = Label), `:=`(s_xc3_sq = i.s_xc_sq,
-                                                        s_yc3_sq = i.s_yc_sq,
-                                                        s_zc3_sq = i.s_zc_sq)]
-  work_dt[, `:=`(
-    a_vx = xc2 - xc1,
-    a_vy = yc2 - yc1,
-    a_vz = zc2 - zc1,
-    b_vx = xc3 - xc1,
-    b_vy = yc3 - yc1,
-    b_vz = zc3 - zc1
-  )]
-  work_dt[, `:=`(
-    mag_a = sqrt(a_vx^2 + a_vy^2 + a_vz^2),
-    mag_b = sqrt(b_vx^2 + b_vy^2 + b_vz^2)
-  )]
-  work_dt <- work_dt[mag_a > 1e-9 & mag_b > 1e-9]
-  work_dt[, C_val := pmin(pmax((a_vx * b_vx + a_vy * b_vy + a_vz * b_vz) /
-                                 (mag_a * mag_b), -1.0), 1.0)]
-  work_dt[, `:=`(
-    p_C_xc1 = -(((
-      b_vx / mag_b - C_val * a_vx / mag_a
-    ) / mag_a) + ((
-      a_vx / mag_a - C_val * b_vx / mag_b
-    ) / mag_b)),
-    p_C_yc1 = -(((
-      b_vy / mag_b - C_val * a_vy / mag_a
-    ) / mag_a) + ((
-      a_vy / mag_a - C_val * b_vy / mag_b
-    ) / mag_b)),
-    p_C_zc1 = -(((
-      b_vz / mag_b - C_val * a_vz / mag_a
-    ) / mag_a) + ((
-      a_vz / mag_a - C_val * b_vz / mag_b
-    ) / mag_b))
-  )]
-  work_dt[, `:=`(
-    p_C_xc2 = (b_vx / mag_b - C_val * a_vx / mag_a) / mag_a,
-    p_C_yc2 = (b_vy / mag_b - C_val * a_vy / mag_a) / mag_a,
-    p_C_zc2 = (b_vz / mag_b - C_val * a_vz / mag_a) / mag_a
-  )]
-  work_dt[, `:=`(
-    p_C_xc3 = (a_vx / mag_a - C_val * b_vx / mag_b) / mag_b,
-    p_C_yc3 = (a_vy / mag_a - C_val * b_vy / mag_b) / mag_b,
-    p_C_zc3 = (a_vz / mag_a - C_val * b_vz / mag_b) / mag_b
-  )]
-  work_dt[, s_C_sq := (p_C_xc1^2 * s_xc1_sq) + (p_C_yc1^2 * s_yc1_sq) +
-            (p_C_zc1^2 * s_zc1_sq) + (p_C_xc2^2 * s_xc2_sq) + (p_C_yc2^2 * s_yc2_sq) +
-            (p_C_zc2^2 * s_zc2_sq) + (p_C_xc3^2 * s_xc3_sq) + (p_C_yc3^2 * s_yc3_sq) +
-            (p_C_zc3^2 * s_zc3_sq)]
-  work_dt[C_val^2 >= 1.0, s_theta_sq := 0][C_val^2 < 1.0, s_theta_sq := s_C_sq /
-                                             (1 - C_val^2)]
-  work_dt[, AngleError := sqrt(pmax(0, s_theta_sq)) * 180 / pi]
-  return(merge(
-    bond_angles,
-    work_dt[, .(CentralAtom, Neighbor1, Neighbor2, AngleError)],
-    by = c("CentralAtom", "Neighbor1", "Neighbor2"),
-    all.x = TRUE
-  ))
+                                  unit_cell_metrics,
+                                  independent_coordinates = atomic_coordinates,
+                                  covariance = NULL) {
+  if (is.null(bond_angles)) return(NULL)
+  result <- copy(bond_angles)
+  result[, AngleError := NA_real_]
+  if (!nrow(result)) return(result)
+  geometry <- uncertainty_cell(unit_cell_metrics)
+  M <- geometry$M
+  errors <- vapply(seq_len(nrow(result)), function(i) {
+    labels <- c(result$CentralAtom[i], result$Neighbor1[i], result$Neighbor2[i])
+    sites <- lapply(labels, uncertainty_site, atomic_coordinates = atomic_coordinates,
+                    expanded_coords = expanded_coords)
+    if (any(vapply(sites, is.null, logical(1)))) return(NA_real_)
+    # Stage 1: convert all three generated positions c_k = M f_k.
+    positions <- lapply(sites, function(site) as.numeric(M %*% site$f))
+    a_vec <- positions[[2]] - positions[[1]]
+    b_vec <- positions[[3]] - positions[[1]]
+    na <- sqrt(sum(a_vec^2)); nb <- sqrt(sum(b_vec^2))
+    if (!is.finite(na * nb) || na <= 1e-12 || nb <= 1e-12) return(NA_real_)
+    C <- sum(a_vec * b_vec) / (na * nb)
+    if (!is.finite(C) || abs(C) >= 1 - 1e-12) return(NA_real_)
+    # Stage 2: differentiate C = (a.b)/(|a||b|), then theta = acos(C).
+    # The central gradient is minus the sum of the two neighbor gradients.
+    dC2 <- b_vec / (na * nb) - C * a_vec / na^2
+    dC3 <- a_vec / (na * nb) - C * b_vec / nb^2
+    g2 <- -dC2 / sqrt(1 - C^2)
+    g3 <- -dC3 / sqrt(1 - C^2)
+    g <- list(-g2 - g3, g2, g3)
+    # Stage 3: each cell input moves all three positions through dM/ds.
+    gradient <- stats::setNames(vapply(geometry$dM, function(dMs)
+      sum(vapply(seq_along(sites), function(k)
+        sum(g[[k]] * as.numeric(dMs %*% sites[[k]]$f)), numeric(1))), numeric(1)),
+      paste0("cell_", names(geometry$dM)))
+    # Stage 4: M^T g_k returns each Cartesian gradient to fractional space;
+    # the stored W mappings combine contributions from repeated parents.
+    for (k in seq_along(sites))
+      gradient <- uncertainty_add_parent(gradient, sites[[k]],
+                                         as.numeric(t(M) %*% g[[k]]))
+    variance <- uncertainty_variance(gradient, unit_cell_metrics,
+                                     independent_coordinates, covariance)
+    # Stage 5: the gradient is in radians; report the angle SU in degrees.
+    if (is.na(variance) || variance < -1e-10) NA_real_ else sqrt(max(0, variance)) * 180 / pi
+  }, numeric(1))
+  result[, AngleError := errors]
+  if (anyNA(errors)) warning("Angle uncertainty unavailable for singular geometry, missing input uncertainty, or provenance")
+  result
 }
 
 #' @title Filter Data by Atom Symbol Interactively
@@ -1088,6 +1076,14 @@ filter_ghost_distances <- function(distances,
 #' @description Computes a single, representative bond length for a specified atomic
 #'   network. This function precisely implements the validated logic that accounts
 #'   for site multiplicity and occupancy of the central atoms.
+#' @details
+#' The occupancy-corrected average interatomic distance is
+#' \deqn{\bar d=\frac{\sum_j m_j\,\mathrm{occ}_j\sum_{i=1}^{n_j}d_{ij}}
+#' {\sum_j m_j\,\mathrm{occ}_j\,n_j}.}
+#' The index \eqn{j} runs over symmetry-inequivalent central atoms in the selected
+#' network; \eqn{m_j} is the Wyckoff multiplicity, \eqn{\mathrm{occ}_j} the central
+#' site occupancy, \eqn{n_j} the retained distance count and \eqn{d_{ij}} a distance
+#' to a neighbour. The inner sum is not weighted by neighbour occupancy.
 #' @param distances A `data.table` of interatomic distances filtered to include
 #'   **only bonded pairs** (e.g., from `minimum_distance`).
 #' @param atomic_coordinates A `data.table` of asymmetric atoms from
@@ -1123,19 +1119,8 @@ calculate_weighted_average_network_distance <- function(distances,
     return(NA_real_)
   }
 
-  # This block explicitly merges neighbor occupancy information, which is a
-  # crucial data preparation step from the validated workflow.
-  network_distances[, Parent2 := sub("_.*", "", Atom2)]
-  network_distances <- merge(
-    network_distances,
-    atom_info[, .(Label, Occupancy2 = Occupancy)],
-    by.x = "Parent2",
-    by.y = "Label",
-    all.x = TRUE
-  )
-  network_distances[is.na(Occupancy2), Occupancy2 := 1]
-
-  # --- 3. Calculate SIMPLE sum of distances (sum_d) and coordination (n) ---
+  # --- 3. Sum lengths and count neighbors for each central site. Neighbor
+  # occupancy does not enter the network-distance formula. ---
   atom_dist_summary <- network_distances[, .(
     sum_d = sum(Distance),
     # Simple, unweighted sum of bond lengths

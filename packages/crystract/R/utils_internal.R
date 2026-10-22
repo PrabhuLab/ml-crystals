@@ -507,6 +507,8 @@ merge_partial_occupancy_sites <- function(atomic_coordinates, tolerance = 1e-4) 
   if (all(overlap_check$N == 1))
     return(atomic_coordinates)
 
+  # The collapsed coordinate uses the first site's refined position. Keep its
+  # original parent ID; other coincident sites do not become extra inputs.
   # 3. Merge overlapping sites
   collapsed <- dt[, .(
     Label = paste(Label, collapse = "_"),
@@ -528,7 +530,8 @@ merge_partial_occupancy_sites <- function(atomic_coordinates, tolerance = 1e-4) 
     z_c = z_c[1],
     x_error = x_error[1],
     y_error = y_error[1],
-    z_error = z_error[1]
+    z_error = z_error[1],
+    ParentJacobian = list(stats::setNames(list(diag(3)), Label[1]))
   ), by = .(gx, gy, gz)]
 
   collapsed[, c("gx", "gy", "gz") := NULL]

@@ -204,6 +204,13 @@ analyze_single_cif <- function(cif_content,
       collapsed_expanded_coords <- expand_transformed_coords(collapsed_transformed_coords, voronoi_factors)
     }
 
+    # TODO: replace the fixed grid only after a
+    # radius/convergence rule is defined for each neighbour algorithm.
+    # Pseudocode: bounds <- calculate_expansion_factors(metrics, search_radius)
+    #   images <- expand_transformed_coords(mapped_sites, bounds)
+    #   prune images outside every required Cartesian search region
+    # Validate neighbour IDs, CN, distances, angles and summary statistics
+    # against the existing datasets and a sufficiently large reference grid.
     # 5c. Standard Expansion (Used for MinDist, Brunner, EconNN)
     # Default 3x3x3 image grid (-1 to 1)
     expansion_factors <- c(1, 1, 1)
@@ -257,8 +264,12 @@ analyze_single_cif <- function(cif_content,
       if (!is.null(current_bonds) && nrow(current_bonds) > 0) {
         out_algo_name <- algo
 
+        # Pass generated-site Jacobians and the original refined sites to
+        # both propagators, so one parent contributes only once to Sigma_p.
         if (perform_error_propagation) {
-          current_bonds <- propagate_distance_error(current_bonds, ref_coords, unit_cell_metrics)
+          current_bonds <- propagate_distance_error(current_bonds, ref_coords,
+                                                    unit_cell_metrics, ref_expanded,
+                                                    atomic_coordinates)
         }
 
         # Coordination counts use the respective coordinate table (standard vs collapsed)
@@ -291,7 +302,8 @@ analyze_single_cif <- function(cif_content,
             current_angles <- propagate_angle_error(current_angles,
                                                     ref_coords,
                                                     ref_expanded,
-                                                    unit_cell_metrics)
+                                                    unit_cell_metrics,
+                                                    atomic_coordinates)
           }
           algo_results[[paste0("angles_", out_algo_name)]] <- list(current_angles)
         }

@@ -62,7 +62,7 @@ if (!file.exists(cif_path)) {
 }
 
 # Run the pipeline on our single example file, extracting multiple bonding types at once
-analysis_results <- analyze_single_cif(
+analysis_results <- analyze_cif_files(
   cif_path,
   bonding_algorithms = c("minimum_distance", "brunner", "econ", "voronoi", "crystal_nn")
 )
@@ -212,8 +212,8 @@ print(head(distances[order(Distance)]))
 
 Identifying which atoms are "bonded" is key to determining the **coordination number (CN)**. `crystract` implements several robust, geometric, and mathematical approaches:
 
--   **`minimum_distance`**: Defines a custom distance cutoff for each central atom $i$: $$ 
-    d_i^\text{cut} = (1+\delta) d_i^\text{min} 
+-   **`minimum_distance`**: Defines a custom distance cutoff for each central atom $i$: $$
+    d_i^\text{cut} = (1+\delta) d_i^\text{min}
     $$ Here, $d_i^\text{min}$ is the shortest distance from atom $i$ to any other atom, and $\delta$ is a tolerance parameter (default is 0.1).
 -   **`brunner`**: Identifies bonds by finding the largest gap in the reciprocal distances. Matches `pymatgen.analysis.local_env.BrunnerNNReciprocal`.
 -   **`econ`**: Uses Hoppe's iterative method to calculate Effective Coordination Numbers, weighting neighbor contributions exponentially by distance.
@@ -251,26 +251,28 @@ print(neighbor_counts)
 
 **Formula: Bond Angle Calculation**
 
-To calculate a bond angle A-B-C (with B at the vertex), the fractional coordinates must first be converted to an orthogonal Cartesian system.
-
-1.  **Fractional to Cartesian Conversion:** A fractional coordinate $(\mathbf{x}_f)$ is converted to a Cartesian coordinate $(\mathbf{x}_c)$ via a transformation matrix $\mathbf{M}$:
+The angle is $A_2$--$A_1$--$A_3$, with $A_1$ at the vertex. Write $\mathbf{c}_k=(x_{ck},y_{ck},z_{ck})^{\mathsf T}=\mathbf{M}\mathbf{f}_k$, where
 
 $$
-    \begin{pmatrix} x_c \\ y_c \\ z_c \end{pmatrix} = \mathbf{M} \cdot \begin{pmatrix} x_f \\ y_f \\ z_f \end{pmatrix} \quad \text{where} \quad
-    \mathbf{M} = \begin{pmatrix}
-    a & b \cos\gamma & c \cos\beta \\
-    0 & b \sin\gamma & \frac{c(\cos\alpha - \cos\beta \cos\gamma)}{\sin\gamma} \\
-    0 & 0 & \frac{V}{ab\sin\gamma}
-    \end{pmatrix}
-$$ where $V$ is the unit cell volume.
-
-2.  **Angle via Dot Product:** With atoms in Cartesian space, the angle $\theta$ between vectors $\vec{u}$ (from B to A) and $\vec{v}$ (from B to C) is:
-
-$$
-\theta = \arccos\left( \frac{\vec{u} \cdot \vec{v}}{|\vec{u}| |\vec{v}|} \right)
+D=1-\cos^2\alpha-\cos^2\beta-\cos^2\gamma+2\cos\alpha\cos\beta\cos\gamma,
+\qquad
+\mathbf{M}=\begin{pmatrix}
+a & b\cos\gamma & c\cos\beta \\
+0 & b\sin\gamma & c\dfrac{\cos\alpha-\cos\beta\cos\gamma}{\sin\gamma} \\
+0 & 0 & c\dfrac{\sqrt D}{\sin\gamma}
+\end{pmatrix}.
 $$
 
-The `calculate_angles` function implements this for all possible bond angles around each central atom. We'll pass it our `bonds_min` results:
+The bond vectors and angle are
+
+$$
+\mathbf{a}=\mathbf{c}_2-\mathbf{c}_1,\qquad
+\mathbf{b}=\mathbf{c}_3-\mathbf{c}_1,\qquad
+C=\frac{\mathbf{a}\cdot\mathbf{b}}{\lVert\mathbf{a}\rVert\lVert\mathbf{b}\rVert},\qquad
+\theta=\arccos C.
+$$
+
+Bold $\mathbf{a},\mathbf{b}$ denote bond vectors; scalar $a,b,c$ denote cell lengths. The `calculate_angles` function uses the algebraically equivalent fractional-coordinate metric product, $\mathbf{G}=\mathbf{M}^{\mathsf T}\mathbf{M}$, and returns angles in degrees. We pass it the `bonds_min` results:
 
 ```{r calc-angles, eval=TRUE}
 bond_angles <- calculate_angles(
@@ -310,30 +312,105 @@ Ge1 Ge 0.0355(4) 0.25 0.1268(5) Uani 0.0238(10) 4 1 d . . .
 
 **Formula: Error Propagation**
 
-The uncertainty, $\sigma_f$, in a calculated value $f$ that depends on several uncorrelated variables $p_i$ (each with uncertainty $\sigma_{p_i}$) is found using the sum of squares of the partial derivatives:
+Define $\mathbf{p}$ from the independently refined cell parameters and asymmetric-site fractional coordinates, with each input appearing once. For a derived quantity $q=d$ or $\theta$,
 
 $$
-\sigma_f^2 = \sum_i \left( \frac{\partial f}{\partial p_i} \sigma_{p_i} \right)^2
+\sigma_q^2=(\nabla_{\mathbf{p}}q)^{\mathsf T}\boldsymbol{\Sigma}_{\mathbf{p}}(\nabla_{\mathbf{p}}q).
 $$
+
+When the full refinement covariance is unavailable, use $\boldsymbol{\Sigma}_{\mathbf{p}}\approx\operatorname{diag}(\sigma_{p_1}^2,\ldots,\sigma_{p_n}^2)$ for the independent inputs, giving
+
+$$
+\sigma_q^2=\sum_i\left(\frac{\partial q}{\partial p_i}\sigma_{p_i}\right)^2.
+$$
+
+Known symmetry, special-position and cell constraints are retained through the chain rule. The diagonal approximation must not be applied again to transformed Cartesian coordinates that share inputs.
+
+**Implementation status:** the distance and angle routines now combine gradients at shared asymmetric-site parents before propagation. Generated-site mappings are retained through symmetry, site merging, and cell expansion. The two $z_c$ derivatives below are corrected. When a complete named refinement covariance is supplied, it is used directly; otherwise the routines use reported standard uncertainties as a diagonal approximation. A missing uncertainty that affects the result produces `NA`, rather than being treated as zero. CIF data alone may not describe every special-position or refinement constraint; absent constraints and refinement covariances cannot be reconstructed automatically.
 
 ##### Uncertainty in Interatomic Distance ($\sigma_d$)
 
-The uncertainty in the distance, $\sigma_d$, is found by applying the general formula to the distance $d$. The input parameters $p_i$ are the 12 variables that define the distance: $\{a, b, c, \alpha, \beta, \gamma, x_{f1}, y_{f1}, z_{f1}, x_{f2}, y_{f2}, z_{f2}\}$. Letting $\Delta x = x_{f1} - x_{f2}$, etc., the partial derivatives are, for example:
+With $\Delta x=x_{f1}-x_{f2}$, $\Delta y=y_{f1}-y_{f2}$ and $\Delta z=z_{f1}-z_{f2}$, the cell-length derivatives are
 
 $$
-\frac{\partial d}{\partial a} = \frac{1}{2d} \left( 2a(\Delta x)^2 + 2b(\Delta x)(\Delta y)\cos\gamma + 2c(\Delta x)(\Delta z)\cos\beta \right)
+\begin{aligned}
+\frac{\partial d}{\partial a}&=\frac{a\Delta x^2+b\Delta x\Delta y\cos\gamma+c\Delta x\Delta z\cos\beta}{d},\\
+\frac{\partial d}{\partial b}&=\frac{b\Delta y^2+a\Delta x\Delta y\cos\gamma+c\Delta y\Delta z\cos\alpha}{d},\\
+\frac{\partial d}{\partial c}&=\frac{c\Delta z^2+a\Delta x\Delta z\cos\beta+b\Delta y\Delta z\cos\alpha}{d}.
+\end{aligned}
 $$
+
+These direct derivatives already agree with the implementation. The remaining cell derivatives are
+
+$$
+\frac{\partial d}{\partial\alpha}=-\frac{bc\Delta y\Delta z\sin\alpha}{d},\quad
+\frac{\partial d}{\partial\beta}=-\frac{ac\Delta x\Delta z\sin\beta}{d},\quad
+\frac{\partial d}{\partial\gamma}=-\frac{ab\Delta x\Delta y\sin\gamma}{d}.
+$$
+
+For generated positions $\mathbf{f}_k=\mathbf{W}_k\mathbf{A}_{j(k)}+\mathbf{t}_k$, let $\mathbf{A}_j$ denote the asymmetric-site parent, $\mathbf{W}_k$ its symmetry matrix and $\mathbf{t}_k$ a fixed translation. With $\Delta\mathbf{f}=\mathbf{f}_1-\mathbf{f}_2$,
+
+$$
+\mathbf{h}_1=\nabla_{\mathbf{f}_1}d=\frac{\mathbf{G}\Delta\mathbf{f}}{d},\qquad
+\mathbf{h}_2=-\mathbf{h}_1,\qquad
+\nabla_{\mathbf{A}_j}d=\sum_{k:j(k)=j}\mathbf{W}_k^{\mathsf T}\mathbf{h}_k.
+$$
+
+Accumulate contributions from a common parent before applying $\boldsymbol{\Sigma}_{\mathbf{p}}$. The twelve-variable expansion applies only when the six cell parameters and both three-coordinate positions are independent. Fixed translations add no input uncertainty; they still determine the generated positions used to evaluate cell derivatives.
 
 ##### Uncertainty in Bond Angle ($\sigma_\theta$)
 
-Propagating error to the bond angle $\theta$ is a more complex, multi-step process involving propagating initial errors first to Cartesian coordinates, and then from those Cartesian uncertainties to the final angle via the chain rule.
+Differentiate the normalized dot product:
+
+$$
+\begin{aligned}
+\nabla_{\mathbf{c}_2}C&=\frac{\mathbf{b}}{\lVert\mathbf{a}\rVert\lVert\mathbf{b}\rVert}-\frac{C\mathbf{a}}{\lVert\mathbf{a}\rVert^2},\\
+\nabla_{\mathbf{c}_3}C&=\frac{\mathbf{a}}{\lVert\mathbf{a}\rVert\lVert\mathbf{b}\rVert}-\frac{C\mathbf{b}}{\lVert\mathbf{b}\rVert^2},\\
+\nabla_{\mathbf{c}_1}C&=-\nabla_{\mathbf{c}_2}C-\nabla_{\mathbf{c}_3}C,\qquad
+\mathbf{g}_k=\nabla_{\mathbf{c}_k}\theta=-\frac{\nabla_{\mathbf{c}_k}C}{\sqrt{1-C^2}}.
+\end{aligned}
+$$
+
+For each cell parameter $s\in\{a,b,c,\alpha,\beta,\gamma\}$ and each asymmetric-site parent,
+
+$$
+\frac{\partial\theta}{\partial s}=\sum_{k=1}^{3}\mathbf{g}_k^{\mathsf T}\frac{\partial\mathbf{M}}{\partial s}\mathbf{f}_k,
+\qquad
+\nabla_{\mathbf{A}_j}\theta=\sum_{k:j(k)=j}\mathbf{W}_k^{\mathsf T}\mathbf{M}^{\mathsf T}\mathbf{g}_k.
+$$
+
+Apply any further known input constraints by the chain rule, then evaluate
+
+$$
+\sigma_\theta^2=(\nabla_{\mathbf{p}}\theta)^{\mathsf T}\boldsymbol{\Sigma}_{\mathbf{p}}(\nabla_{\mathbf{p}}\theta).
+$$
+
+Equivalently, collect all nine Cartesian coordinates in $\mathbf{q}$ and retain the complete covariance $\boldsymbol{\Sigma}_{\mathbf{q}}=\mathbf{J}\boldsymbol{\Sigma}_{\mathbf{p}}\mathbf{J}^{\mathsf T}$, where $\mathbf{J}=\partial\mathbf{q}/\partial\mathbf{p}$. Separate Cartesian marginal variances omit the induced covariance between coordinates and between atoms.
+
+In the transformation Jacobian, the corrected derivatives of $z_c=cz_f\sqrt D/\sin\gamma$ are
+
+$$
+\frac{\partial z_c}{\partial\alpha}=\frac{cz_f\sin\alpha(\cos\alpha-\cos\beta\cos\gamma)}{\sqrt D\sin\gamma},\qquad
+\frac{\partial z_c}{\partial\beta}=\frac{cz_f\sin\beta(\cos\beta-\cos\alpha\cos\gamma)}{\sqrt D\sin\gamma}.
+$$
+
+These derivatives include the sine factors and corrected signs. The $z_c$ derivative with respect to $\gamma$ is
+
+$$
+\frac{\partial z_c}{\partial\gamma}=cz_f\frac{\sin^2\gamma(\cos\gamma-\cos\alpha\cos\beta)-D\cos\gamma}{\sqrt D\sin^2\gamma}.
+$$
+
+Cell angles and their standard uncertainties are converted to radians before differentiation, for example $\alpha_{\mathrm{rad}}=\alpha_{\mathrm{deg}}\pi/180$ and $\sigma_{\alpha,\mathrm{rad}}=\sigma_{\alpha,\mathrm{deg}}\pi/180$. Convert the final uncertainty by $\sigma_{\theta,\mathrm{deg}}=\sigma_{\theta,\mathrm{rad}}180/\pi$.
+
+The first-order angle gradients require nonzero bond lengths and $|C|<1$. At exactly $0$ or $180$ degrees they are singular; assigning zero uncertainty is not justified by these formulas. Near collinearity, validate the approximation by Monte Carlo propagation of the original independent inputs.
 
 ```{r propagate-errors, eval=TRUE}
 # Propagate errors for interatomic distances
 bonded_pairs_with_error <- propagate_distance_error(
   bonds_min,
   atomic_coordinates,
-  unit_cell_metrics
+  unit_cell_metrics,
+  expanded_coords
 )
 print("Bonded Pairs with Distance Error (first 6):")
 print(head(bonded_pairs_with_error))
@@ -444,21 +521,21 @@ This calculation should always be performed on a table of identified **bonds** t
 
 #### Formula: Weighted Average Network Distance
 
-To obtain a single, representative bond length for an atomic network, the function calculates a true weighted average over all individual bonds in the unit cell. This is equivalent to calculating the **total sum of all bond lengths** within the network and dividing by the **total number of bonds**. This method correctly accounts for site multiplicity, site occupancy, and varying coordination numbers.
-
-The formula is defined as:
+The occupancy-corrected average interatomic distance is
 
 $$
-\large \bar{d}_\text{network} = \frac{\sum_j (m_j \cdot \text{occ}_j \cdot S_j)}{\sum_j (m_j \cdot \text{occ}_j \cdot n_j)}
+\bar d=\frac{\sum_j m_j\,\mathrm{occ}_j\sum_{i=1}^{n_j}d_{ij}}{\sum_j m_j\,\mathrm{occ}_j\,n_j}.
 $$
 
-Where, for each unique atomic site *j* in the asymmetric unit: - $m_j$ is the **Wyckoff multiplicity** (how many equivalent atoms are generated by symmetry). - $\text{occ}_j$ is the **site occupancy** (accounts for disorder; 1.0 for a fully occupied site). - $n_j$ is the **coordination number** (the number of bonds for an atom at site *j*). - $S_j$ is the **sum of all bond distances** for a single atom at site *j*. It is calculated as:
+Here $j$ indexes symmetry-inequivalent central atoms in the selected network, $m_j$ is the Wyckoff multiplicity, $\mathrm{occ}_j$ is the central site occupancy, $n_j$ is the retained distance count, and $d_{ij}$ is one of those distances. The inner distance sum is unweighted; neighbour occupancies do not introduce an additional factor. Each retained central-atom neighbourhood contributes according to its multiplicity and occupancy.
+
+For comparison, `calculate_weighted_neighbor_counts()` uses the occupancy-corrected coordination number
 
 $$
-\large S_j = \sum_{i=1}^{n_j} d_{ij}
+\mathrm{CN}_{\mathrm{occ}}=\sum_{i\in\mathrm{neighbour\ sites}}m_i\,\mathrm{occ}_i.
 $$
 
-The numerator, $\sum_j (m_j \cdot \text{occ}_j \cdot S_j)$, represents the grand total sum of the lengths of every bond in the unit cell. The denominator, $\sum_j (m_j \cdot \text{occ}_j \cdot n_j)$, represents the total number of bonds in the unit cell.
+In this expression, $m_i$ is the **local multiplicity** of neighbour site $i$ in the coordination sphere, not its Wyckoff multiplicity. Both occupancy-weighted formulas already match the current calculations.
 
 #### Best Practices for Accurate Calculation
 
@@ -476,7 +553,7 @@ This "Ghosts -\> Bonds -\> Average" sequence ensures the final metric is calcula
 # First, identify the bonds in the structure. We use the `bonds_min` table
 # created in section 1.2.6.
 
-# Then, define the Wyckoff sites belonging to the network. 
+# Then, define the Wyckoff sites belonging to the network.
 # For this file, the framework atoms are on the "4d" sites.
 network_wyckoff_sites <- "4d"
 
@@ -499,16 +576,16 @@ Below is a complete, real-world example demonstrating how you might override the
 ```{r custom-radii-and-batch, eval=FALSE}
 # --- 1. Define and set the custom radii dictionary ---
 radii_dict <- c(
-  Ac=2.15, Ag=1.45, Al=1.21, Am=1.8, Ar=1.06, As=1.19, At=1.5, Au=1.36, B=0.84, 
-  Ba=2.15, Be=0.96, Bi=1.48, Br=1.2, C=0.73, Ca=1.76, Cd=1.44, Ce=2.04, Cl=1.02, 
-  Cm=1.69, Co=1.38, Cr=1.39, Cs=2.44, Cu=1.32, Dy=1.92, Er=1.89, Eu=1.98, F=0.57, 
-  Fe=1.42, Fr=2.6, Ga=1.22, Gd=1.96, Ge=1.2, H=0.31, He=0.28, Hf=1.75, Hg=1.32, 
-  Ho=1.92, I=1.39, In=1.42, Ir=1.41, K=2.03, Kr=1.16, La=2.07, Li=1.28, Lu=1.87, 
-  Mg=1.41, Mn=1.5, Mo=1.54, N=0.71, Na=1.66, Nb=1.64, Nd=2.01, Ne=0.58, Ni=1.24, 
-  Np=1.9, O=0.66, Os=1.44, P=1.07, Pa=2, Pb=1.46, Pd=1.39, Pm=1.99, Po=1.4, Pr=2.03, 
-  Pt=1.36, Pu=1.87, Ra=2.21, Rb=2.2, Re=1.51, Rh=1.42, Rn=1.5, Ru=1.46, S=1.05, 
-  Sb=1.39, Sc=1.7, Se=1.2, Si=1.11, Sm=1.98, Sn=1.39, Sr=1.95, Ta=1.7, Tb=1.94, 
-  Tc=1.47, Te=1.38, Th=2.06, Ti=1.6, Tl=1.45, Tm=1.9, U=1.96, V=1.53, W=1.62, 
+  Ac=2.15, Ag=1.45, Al=1.21, Am=1.8, Ar=1.06, As=1.19, At=1.5, Au=1.36, B=0.84,
+  Ba=2.15, Be=0.96, Bi=1.48, Br=1.2, C=0.73, Ca=1.76, Cd=1.44, Ce=2.04, Cl=1.02,
+  Cm=1.69, Co=1.38, Cr=1.39, Cs=2.44, Cu=1.32, Dy=1.92, Er=1.89, Eu=1.98, F=0.57,
+  Fe=1.42, Fr=2.6, Ga=1.22, Gd=1.96, Ge=1.2, H=0.31, He=0.28, Hf=1.75, Hg=1.32,
+  Ho=1.92, I=1.39, In=1.42, Ir=1.41, K=2.03, Kr=1.16, La=2.07, Li=1.28, Lu=1.87,
+  Mg=1.41, Mn=1.5, Mo=1.54, N=0.71, Na=1.66, Nb=1.64, Nd=2.01, Ne=0.58, Ni=1.24,
+  Np=1.9, O=0.66, Os=1.44, P=1.07, Pa=2, Pb=1.46, Pd=1.39, Pm=1.99, Po=1.4, Pr=2.03,
+  Pt=1.36, Pu=1.87, Ra=2.21, Rb=2.2, Re=1.51, Rh=1.42, Rn=1.5, Ru=1.46, S=1.05,
+  Sb=1.39, Sc=1.7, Se=1.2, Si=1.11, Sm=1.98, Sn=1.39, Sr=1.95, Ta=1.7, Tb=1.94,
+  Tc=1.47, Te=1.38, Th=2.06, Ti=1.6, Tl=1.45, Tm=1.9, U=1.96, V=1.53, W=1.62,
   Xe=1.4, Y=1.9, Yb=1.87, Zn=1.22, Zr=1.75
 )
 
@@ -543,26 +620,26 @@ cn_columns <- grep("^cn_", names(results), value = TRUE)
 cat("\nExtracting coordination numbers and saving to CSV...\n")
 
 for (col in cn_columns) {
-  
+
   # Extract the list of data.tables for this specific algorithm
   list_of_dts <- results[[col]]
-  
+
   # Associate each table with its CIF file name
   names(list_of_dts) <- results$file_name
-  
+
   # Unnest and bind all tables together into one giant table
   combined_dt <- rbindlist(list_of_dts, idcol = "file_name", fill = TRUE)
-  
+
   if (nrow(combined_dt) > 0) {
     # Format the file path (e.g., "cn_crystal_nn_crystract.csv")
     file_path <- file.path(output_dir, paste0(col, "_crystract.csv"))
-    
+
     # Save to CSV
     fwrite(combined_dt, file_path)
-    
-    cat(sprintf("Saved %d rows across %d files to: %s\n", 
-                nrow(combined_dt), 
-                uniqueN(combined_dt$file_name), 
+
+    cat(sprintf("Saved %d rows across %d files to: %s\n",
+                nrow(combined_dt),
+                uniqueN(combined_dt$file_name),
                 basename(file_path)))
   } else {
     cat(sprintf("No valid coordination data found for %s, skipping.\n", col))
@@ -576,7 +653,7 @@ This workflow ensures that you can adapt `crystract`'s core metrics to your own 
 
 ## Conclusion
 
-This vignette has demonstrated the core workflow of the `crystract` package, from the high-level, automated processing of multiple CIF files with `analyze_cif_files` to a detailed, step-by-step breakdown of the underlying calculations. We have seen how the package extracts fundamental data, builds a complete crystal model, calculates key geometric properties across five different mathematical definitions of bonding, and rigorously propagates experimental uncertainties into these final results.
+This vignette has demonstrated the core workflow of the `crystract` package, from the high-level, automated processing of multiple CIF files with `analyze_cif_files` to a detailed, step-by-step breakdown of the underlying calculations. The package extracts structural data, builds a crystal model, calculates geometric properties using five bonding methods, and propagates reported experimental uncertainties as described in Section 1.2.8.
 
 Furthermore, with a powerful suite of post-processing tools such as `filter_atoms_by_symbol`, `filter_by_wyckoff_symbol`, `filter_ghost_distances`, `calculate_weighted_average_network_distance`, and user-defined radii tables, you can easily refine, clean, analyze, and share the generated datasets to focus on the specific chemical or crystallographic features of interest.
 

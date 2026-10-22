@@ -25,6 +25,13 @@ If the fractional occupancies on any single crystallographic site sum to greater
 this indicates an invalid or physically impossible structure; the function will throw a
 warning and return \code{NULL} so the file can be discarded by the analysis pipeline.
 }
+\details{
+The occupancy-corrected coordination number is
+\deqn{\mathrm{CN}_{\mathrm{occ}}=\sum_{i\in\mathrm{neighbour\ sites}}m_i\,\mathrm{occ}_i.}
+Here \eqn{m_i} is the local number of appearances of asymmetric neighbour
+site \eqn{i} in the central atom's coordination sphere, not its unit-cell
+Wyckoff multiplicity, and \eqn{\mathrm{occ}_i} is its site occupancy.
+}
 \examples{
 bp <- data.table::data.table(Atom1 = c("Si1", "Si1"),
                              Atom2 = c("O1_1_0_0", "O2_1_0_0"))

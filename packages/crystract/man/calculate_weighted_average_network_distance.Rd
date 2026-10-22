@@ -28,6 +28,15 @@ Computes a single, representative bond length for a specified atomic
 network. This function precisely implements the validated logic that accounts
 for site multiplicity and occupancy of the central atoms.
 }
+\details{
+The occupancy-corrected average interatomic distance is
+\deqn{\bar d=\frac{\sum_j m_j\,\mathrm{occ}_j\sum_{i=1}^{n_j}d_{ij}}
+{\sum_j m_j\,\mathrm{occ}_j\,n_j}.}
+The index \eqn{j} runs over symmetry-inequivalent central atoms in the selected
+network; \eqn{m_j} is the Wyckoff multiplicity, \eqn{\mathrm{occ}_j} the central
+site occupancy, \eqn{n_j} the retained distance count and \eqn{d_{ij}} a distance
+to a neighbour. The inner sum is not weighted by neighbour occupancy.
+}
 \examples{
 dists <- data.table::data.table(Atom1 = "Si1", Atom2 = "O1", Distance = 1.6)
 ac <- data.table::data.table(Label = c("Si1", "O1"),

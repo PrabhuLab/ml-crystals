@@ -5,6 +5,9 @@
 #   2. Save it as "1590946.cif" inside the 'tests/testthat/' directory.
 
 cif_path_1590946 <- "1590946.cif"
+if (!file.exists(cif_path_1590946)) {
+  cif_path_1590946 <- system.file("extdata", "1590946.cif", package = "crystract")
+}
 
 # Only run the analysis if the test file has been provided by the user.
 if (file.exists(cif_path_1590946)) {
@@ -12,7 +15,7 @@ if (file.exists(cif_path_1590946)) {
   cif_content_1590946 <- read_cif_files(cif_path_1590946)[[1]]
 
   # Run the full analysis pipeline with multiple algorithms to get the final results object
-  results_1590946 <- analyze_cif_files(
+  results_1590946 <- suppressWarnings(analyze_cif_files(
     cif_path_1590946,
     bonding_algorithms = c(
       "minimum_distance",
@@ -21,7 +24,7 @@ if (file.exists(cif_path_1590946)) {
       "crystal_nn",
       "voronoi"
     )
-  )
+  ))
 
   # For more granular testing, create the intermediate building blocks
   atoms_1590946 <- extract_atomic_coordinates(cif_content_1590946)

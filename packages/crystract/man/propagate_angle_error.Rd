@@ -8,7 +8,9 @@ propagate_angle_error(
   bond_angles,
   atomic_coordinates,
   expanded_coords,
-  unit_cell_metrics
+  unit_cell_metrics,
+  independent_coordinates = atomic_coordinates,
+  covariance = NULL
 )
 }
 \arguments{
@@ -19,12 +21,53 @@ propagate_angle_error(
 \item{expanded_coords}{Data.table of supercell atom coordinates.}
 
 \item{unit_cell_metrics}{Data.table with unit cell parameters and errors.}
+
+\item{independent_coordinates}{Original asymmetric sites and their uncertainties.}
+
+\item{covariance}{Optional named covariance matrix for independent inputs.}
 }
 \value{
 The input \code{bond_angles} data.table with a new 'AngleError' column.
 }
 \description{
 Calculates the standard uncertainty for each bond angle.
+}
+\details{
+Use the notation \eqn{\mathbf{c}_k=\mathbf{M}\mathbf{f}_k},
+\eqn{\mathbf{a}=\mathbf{c}_2-\mathbf{c}_1},
+\eqn{\mathbf{b}=\mathbf{c}_3-\mathbf{c}_1} and
+\eqn{C=\mathbf{a}\cdot\mathbf{b}/(\lVert\mathbf{a}\rVert\lVert\mathbf{b}\rVert)}.
+The Cartesian gradients are
+\deqn{\nabla_{\mathbf{c}_2}C=\frac{\mathbf{b}}{\lVert\mathbf{a}\rVert\lVert\mathbf{b}\rVert}
+-\frac{C\mathbf{a}}{\lVert\mathbf{a}\rVert^2},\qquad
+\nabla_{\mathbf{c}_3}C=\frac{\mathbf{a}}{\lVert\mathbf{a}\rVert\lVert\mathbf{b}\rVert}
+-\frac{C\mathbf{b}}{\lVert\mathbf{b}\rVert^2}.}
+\deqn{\nabla_{\mathbf{c}_1}C=-\nabla_{\mathbf{c}_2}C-\nabla_{\mathbf{c}_3}C,
+\qquad \mathbf{g}_k=\nabla_{\mathbf{c}_k}\theta=-\frac{\nabla_{\mathbf{c}_k}C}{\sqrt{1-C^2}}.}
+For each cell parameter \eqn{s\in\{a,b,c,\alpha,\beta,\gamma\}} and
+parent \eqn{\mathbf{A}_j}, accumulate contributions before forming the variance:
+\deqn{\frac{\partial\theta}{\partial s}=\sum_{k=1}^3\mathbf{g}_k^{\mathsf T}
+\frac{\partial\mathbf{M}}{\partial s}\mathbf{f}_k,\qquad
+\nabla_{\mathbf{A}_j}\theta=\sum_{k:j(k)=j}\mathbf{W}_k^{\mathsf T}
+\mathbf{M}^{\mathsf T}\mathbf{g}_k.}
+After mapping any further known constraints to independent inputs \eqn{\mathbf{p}},
+\deqn{\sigma_\theta^2=(\nabla_{\mathbf{p}}\theta)^{\mathsf T}
+\boldsymbol{\Sigma}_{\mathbf{p}}(\nabla_{\mathbf{p}}\theta).}
+A diagonal approximation applies only to independent inputs. Equivalently,
+retain \eqn{\boldsymbol{\Sigma}_{\mathbf{q}}=\mathbf{J}\boldsymbol{\Sigma}_{\mathbf{p}}\mathbf{J}^{\mathsf T}}
+for all nine Cartesian coordinates, including off-diagonal entries.
+With \eqn{D=1-\cos^2\alpha-\cos^2\beta-\cos^2\gamma+2\cos\alpha\cos\beta\cos\gamma},
+the corrected transformation derivatives include
+\deqn{\frac{\partial z_c}{\partial\alpha}=
+\frac{cz_f\sin\alpha(\cos\alpha-\cos\beta\cos\gamma)}{\sqrt{D}\sin\gamma},\qquad
+\frac{\partial z_c}{\partial\beta}=
+\frac{cz_f\sin\beta(\cos\beta-\cos\alpha\cos\gamma)}{\sqrt{D}\sin\gamma}.}
+Differentiate in radians and return \eqn{\sigma_{\theta,\mathrm{deg}}=
+\sigma_{\theta,\mathrm{rad}}180/\pi}. These first-order gradients require
+nonzero bond lengths and \eqn{|C|<1}; they are singular at 0 and 180 degrees.
+
+Shared generated-site parents are combined before evaluating this variance.
+Singular angles and missing input uncertainty yield \code{NA}.
 }
 \examples{
 # 1. Create dummy bond angles
@@ -59,6 +102,12 @@ uc <- data.table::data.table(
 
 # 5. Run the error propagation
 propagate_angle_error(ba, ac, ec, uc)
+}
+\references{
+Angel et al. (2025), doi:10.1107/S2053273325002682;
+JCGM 100:2008, doi:10.59161/JCGM100-2008E; IUCr recommendations on
+uncertainty of derived angles. The package vignette, "Error Propagation",
+gives the angle gradients.
 }
 \seealso{
 Other error propagators: 

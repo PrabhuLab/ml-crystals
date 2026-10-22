@@ -4,7 +4,14 @@
 \alias{propagate_distance_error}
 \title{Propagate Distance Error}
 \usage{
-propagate_distance_error(bonded_pairs, atomic_coordinates, unit_cell_metrics)
+propagate_distance_error(
+  bonded_pairs,
+  atomic_coordinates,
+  unit_cell_metrics,
+  expanded_coords = NULL,
+  independent_coordinates = atomic_coordinates,
+  covariance = NULL
+)
 }
 \arguments{
 \item{bonded_pairs}{Data.table of bonded atoms with their distances.}
@@ -12,6 +19,12 @@ propagate_distance_error(bonded_pairs, atomic_coordinates, unit_cell_metrics)
 \item{atomic_coordinates}{Data.table with fractional coordinates and errors.}
 
 \item{unit_cell_metrics}{Data.table with unit cell parameters and errors.}
+
+\item{expanded_coords}{Generated sites with \code{ParentJacobian} provenance.}
+
+\item{independent_coordinates}{Original asymmetric sites and their uncertainties.}
+
+\item{covariance}{Optional named covariance matrix for independent inputs.}
 }
 \value{
 The input \code{bonded_pairs} data.table with a new 'DistanceError' column.
@@ -19,10 +32,33 @@ The input \code{bonded_pairs} data.table with a new 'DistanceError' column.
 \description{
 Calculates the standard uncertainty for each interatomic distance.
 }
+\details{
+The uncertainty is calculated using each independently refined
+input once in \eqn{\mathbf{p}}:
+\deqn{\sigma_d^2=(\nabla_{\mathbf{p}}d)^{\mathsf T}
+\boldsymbol{\Sigma}_{\mathbf{p}}(\nabla_{\mathbf{p}}d).}
+If only individual standard uncertainties are available, unavailable input
+covariances are approximated as zero, giving
+\eqn{\sigma_d^2=\sum_i(\partial d/\partial p_i)^2\sigma_{p_i}^2}
+only after known constraints have been mapped to independent inputs.
+For \eqn{\mathbf{f}_k=\mathbf{W}_k\mathbf{A}_{j(k)}+\mathbf{t}_k},
+\deqn{\nabla_{\mathbf{A}_j}d=\sum_{k:j(k)=j}\mathbf{W}_k^{\mathsf T}
+\nabla_{\mathbf{f}_k}d.}
+Here \eqn{\mathbf{A}_j} is the parent fractional-coordinate vector,
+\eqn{\mathbf{W}_k} is the symmetry matrix and \eqn{\mathbf{t}_k} is fixed.
+With the fractional-coordinate differences defined above, the cell derivative is
+\deqn{\frac{\partial d}{\partial c}=
+\frac{c\Delta z^2+a\Delta x\Delta z\cos\beta+b\Delta y\Delta z\cos\alpha}{d}.}
+Cell angles and their standard uncertainties are converted to radians.
+
+Shared generated-site parents are combined before evaluating this variance.
+Missing standard uncertainties yield \code{NA} unless a named covariance is supplied.
+}
 \examples{
-bp <- data.table::data.table(Atom1 = "Si1", Atom2 = "O1_1", Distance = 1.6,
+bp <- data.table::data.table(Atom1 = "Si1", Atom2 = "O1", Distance = sqrt(2),
                              DeltaX = 0.1, DeltaY = 0.1, DeltaZ = 0)
 ac <- data.table::data.table(Label = c("Si1", "O1"),
+                             x_a = c(0, 0.1), y_b = c(0, 0.1), z_c = c(0, 0),
                              x_error = c(0.01, 0.01),
                              y_error = c(0.01, 0.01),
                              z_error = c(0.01, 0.01))
@@ -33,6 +69,12 @@ uc <- data.table::data.table(`_cell_length_a` = 10, `_cell_length_a_error` = 0.1
                              `_cell_angle_beta` = 90, `_cell_angle_beta_error` = 0,
                              `_cell_angle_gamma` = 90, `_cell_angle_gamma_error` = 0)
 propagate_distance_error(bp, ac, uc)
+}
+\references{
+Angel et al. (2025), doi:10.1107/S2053273325002682;
+JCGM 100:2008, doi:10.59161/JCGM100-2008E; IUCr, "Matrices, Mappings
+and Crystallographic Symmetry" (2002). The package vignette, "Error
+Propagation", gives the derivative equations.
 }
 \seealso{
 Other error propagators: 

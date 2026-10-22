@@ -26,7 +26,7 @@ test_that("analyze_cif_files handles multiple files and batching", {
   file.copy(cif_path_1590946, file.path(temp_dir, "file1.cif"))
   file.copy(cif_path_1590946, file.path(temp_dir, "file2.cif"))
 
-  multi_results <- analyze_cif_files(list.files(temp_dir, full.names = TRUE))
+  multi_results <- suppressWarnings(analyze_cif_files(list.files(temp_dir, full.names = TRUE)))
   expect_equal(nrow(multi_results), 2)
 })
 
@@ -37,7 +37,12 @@ test_that("analyze_cif_files handles errors gracefully", {
 
   # Expect a warning that processing failed.
   # The function should return an EMPTY data.table if no files succeed.
-  expect_warning(results <- analyze_cif_files(bad_cif_path))
+  warnings <- character()
+  results <- withCallingHandlers(analyze_cif_files(bad_cif_path), warning = function(w) {
+    warnings <<- c(warnings, conditionMessage(w))
+    invokeRestart("muffleWarning")
+  })
+  expect_true(length(warnings) > 0)
   expect_s3_class(results, "data.table")
   expect_equal(nrow(results), 0)
 })

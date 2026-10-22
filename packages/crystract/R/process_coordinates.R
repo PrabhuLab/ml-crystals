@@ -133,6 +133,17 @@ merge_sites_pbc <- function(atomic_coordinates,
         y_b = avg_y / n_clus,
         z_c = avg_z / n_clus
       )]
+      if ("ParentJacobian" %in% names(work_dt)) {
+        # The averaged site has derivative J = (J_1 + ... + J_n) / n.
+        maps <- work_dt$ParentJacobian[indices]
+        parents <- unique(unlist(lapply(maps, names)))
+        averaged <- stats::setNames(lapply(parents, function(parent) {
+          Reduce(`+`, lapply(maps, function(map) {
+            if (parent %in% names(map)) map[[parent]] else matrix(0, 3, 3)
+          })) / n_clus
+        }), parents)
+        work_dt[indices, ParentJacobian := rep(list(averaged), n_clus)]
+      }
     }
   }
 
@@ -152,6 +163,13 @@ merge_sites_pbc <- function(atomic_coordinates,
 
 #' @title Apply Symmetry Operations to Generate a Full Unit Cell
 #' @description Generates all symmetry-equivalent atomic positions within the unit cell.
+#' @details
+#' A generated fractional position is written as
+#' \deqn{\mathbf{f}_k=\mathbf{W}_k\mathbf{A}_{j(k)}+\mathbf{t}_k.}
+#' The fixed translation contributes no uncertainty. Uncertainty propagation
+#' requires \eqn{\boldsymbol{\Sigma}_{\mathbf{f}_k}=
+#' \mathbf{W}_k\boldsymbol{\Sigma}_{\mathbf{A}_{j(k)}}\mathbf{W}_k^{\mathsf T}}
+#' and shared-parent derivatives. `ParentJacobian` retains that mapping.
 #' @param atomic_coordinates A `data.table` of asymmetric atoms.
 #' @param symmetry_operations A `data.table` of operations.
 #' @param unit_cell_metrics A `data.table` of cell parameters (needed for distance merging).
@@ -201,6 +219,21 @@ apply_symmetry_operations <- function(atomic_coordinates,
   op_funcs_y <- lapply(symmetry_operations$y, compile_op)
   op_funcs_z <- lapply(symmetry_operations$z, compile_op)
 
+  # A symmetry operation is affine: f = W A + t. Evaluating it at the origin
+  # and three basis vectors gives W without differentiating the CIF text.
+  operation_matrix <- function(fx, fy, fz) {
+    evaluate <- function(x, y, z) c(fx(x, y, z), fy(x, y, z), fz(x, y, z))
+    origin <- evaluate(0, 0, 0)
+    cbind(evaluate(1, 0, 0) - origin,
+          evaluate(0, 1, 0) - origin,
+          evaluate(0, 0, 1) - origin)
+  }
+  source_maps <- if ("ParentJacobian" %in% names(atomic_coordinates)) {
+    atomic_coordinates$ParentJacobian
+  } else {
+    lapply(atomic_coordinates$Label, function(label) stats::setNames(list(diag(3)), label))
+  }
+
   # Fully vectorized coordinate arrays
   val_x <- as.numeric(atomic_coordinates$x_a)
   val_y <- as.numeric(atomic_coordinates$y_b)
@@ -212,13 +245,17 @@ apply_symmetry_operations <- function(atomic_coordinates,
     fx <- op_funcs_x[[j]]
     fy <- op_funcs_y[[j]]
     fz <- op_funcs_z[[j]]
+    W <- operation_matrix(fx, fy, fz)
 
     data.table::data.table(
       Label = paste(lbls, j, sep = "_"),
       SymOp = j,
       x_a = snap_to_fraction(fx(val_x, val_y, val_z), wrap = TRUE),
       y_b = snap_to_fraction(fy(val_x, val_y, val_z), wrap = TRUE),
-      z_c = snap_to_fraction(fz(val_x, val_y, val_z), wrap = TRUE)
+      z_c = snap_to_fraction(fz(val_x, val_y, val_z), wrap = TRUE),
+      ParentJacobian = lapply(source_maps, function(map) {
+        lapply(map, function(J) W %*% J)
+      })
     )
   })
 
@@ -254,6 +291,14 @@ calculate_expansion_factors <- function(unit_cell_metrics, radius) {
   beta <- as.numeric(unit_cell_metrics$`_cell_angle_beta`) * pi / 180
   gamma <- as.numeric(unit_cell_metrics$`_cell_angle_gamma`) * pi / 180
 
+  # TODO (periodic expansion): use these perpendicular
+  # widths to bound a requested Cartesian search region and validate any
+  # reduction against the reference datasets, including triclinic cells.
+  # Pseudocode: generate safe integer translations using radius/h_a,b,c;
+  #   keep an image if any requested centre is within the Cartesian radius
+  #   compare neighbour IDs, CN, distances and angles with a converged grid
+  # The max(1, ...) below still forces at least a 3x3x3 grid; lowering this
+  # alone is not a safe boundary-aware reduction.
   # Volume calculation
   cos_a <- cos(alpha)
   cos_b <- cos(beta)
@@ -345,6 +390,7 @@ expand_transformed_coords <- function(transformed_coords,
     return(dt)
   }))
 
+  # Integer cell translation is fixed, so it changes f but not df/dA.
   # Simple unique check
   expanded_coords <- unique(expanded_coords, by = c("x_a", "y_b", "z_c"))
   return(expanded_coords)
