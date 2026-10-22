@@ -374,12 +374,12 @@ uncertainty_cell <- function(unit_cell_metrics) {
     if (any(!is.finite(cell)) || D <= 0 || abs(sg) < 1e-12)
       stop("Invalid unit cell for uncertainty propagation")
     v <- sqrt(D)
-    # Stage 1: convert fractional position f to Cartesian c = M f.
+    # r_k = M f_k; v = sqrt(D), and ca/cb/cg and sa/sb/sg denote cos/sin of cell angles.
     M <- rbind(c(a, b * cg, c * cb),
                c(0, b * sg, c * (ca - cb * cg) / sg),
                c(0, 0, c * v / sg))
-    # Stage 2: differentiate M in each independent cell parameter. In
-    # particular, dz_c/dalpha and dz_c/dbeta include their sine factors.
+    # dM[[s]] = dM/ds: multiplying by f_k gives dr_k/ds for s = a,b,c,alpha,beta,gamma.
+    # The [3,3] entries times z_f are dz_c/dalpha, dz_c/dbeta and dz_c/dgamma.
     dM <- list(
       a = rbind(c(1, 0, 0), c(0, 0, 0), c(0, 0, 0)),
       b = rbind(c(0, cg, 0), c(0, sg, 0), c(0, 0, 0)),
@@ -413,7 +413,7 @@ uncertainty_site <- function(label, atomic_coordinates, expanded_coords = NULL) 
 }
 
 uncertainty_add_parent <- function(gradient, site, fractional_gradient) {
-  # Stage 3: apply the chain rule and add shared-parent terms before squaring.
+  # grad_(A_j) q = sum_k J_kj^T grad_(f_k) q; site$map[[parent]] is J_kj = df_k/dA_j.
   for (parent in names(site$map)) {
     contribution <- as.numeric(t(site$map[[parent]]) %*% fractional_gradient)
     for (axis in seq_along(contribution)) {
@@ -426,8 +426,8 @@ uncertainty_add_parent <- function(gradient, site, fractional_gradient) {
 
 uncertainty_variance <- function(gradient, unit_cell_metrics,
                                  independent_coordinates, covariance = NULL) {
-  # Stage 4: keep one entry per independent input p. A full named Sigma_p
-  # may be supplied; otherwise use reported CIF variances on the diagonal.
+  # gradient = grad_p q and covariance = Sigma_p: sigma_q^2 = gradient^T Sigma_p gradient.
+  # With diagonal Sigma_p, su_i = sigma_(p_i) and sigma_q^2 = sum_i (gradient_i * su_i)^2.
   if (any(!is.finite(gradient))) return(NA_real_)
   gradient <- gradient[abs(gradient) > 1e-12]
   if (!length(gradient)) return(0)
@@ -525,18 +525,18 @@ propagate_distance_error <- function(bonded_pairs,
     first <- uncertainty_site(result$Atom1[i], atomic_coordinates, expanded_coords)
     second <- uncertainty_site(result$Atom2[i], atomic_coordinates, expanded_coords)
     if (is.null(first) || is.null(second)) return(NA_real_)
-    # Stage 1: fractional displacement gives d^2 = Delta_f^T G Delta_f.
+    # delta = Delta_f = f_1-f_2; G = M^T M; d = sqrt(Delta_f^T G Delta_f).
     delta <- first$f - second$f
     d <- sqrt(as.numeric(t(delta) %*% G %*% delta))
     if (!is.finite(d) || d <= 1e-12) return(NA_real_)
-    # Stage 2: differentiate the metric distance in all six cell inputs.
-    # This is the vignette's explicit dd/da, dd/db, dd/dc and angle formulas.
+    # dd/ds = (M Delta_f)^T (dM/ds) Delta_f / d for each cell parameter s.
+    # For s=c: dd/dc = (c*dz^2 + a*dx*dz*cos(beta) + b*dy*dz*cos(alpha))/d.
     cart_delta <- as.numeric(M %*% delta)
     gradient <- stats::setNames(vapply(geometry$dM, function(dMs)
       sum(cart_delta * as.numeric(dMs %*% delta)) / d, numeric(1)),
       paste0("cell_", names(geometry$dM)))
-    # Stage 3: h_1 = G Delta_f/d, h_2 = -h_1. Shared parents cancel or
-    # reinforce through W^T h before calculating their variance.
+    # h_1 = grad_(f_1) d = G Delta_f/d; h_2 = grad_(f_2) d = -h_1. Shared parents
+    # contribute sum_k J_kj^T h_k before sigma_d^2 = grad_p(d)^T Sigma_p grad_p(d).
     h <- as.numeric(G %*% delta) / d
     gradient <- uncertainty_add_parent(gradient, first, h)
     gradient <- uncertainty_add_parent(gradient, second, -h)
@@ -650,7 +650,7 @@ propagate_angle_error <- function(bond_angles,
     sites <- lapply(labels, uncertainty_site, atomic_coordinates = atomic_coordinates,
                     expanded_coords = expanded_coords)
     if (any(vapply(sites, is.null, logical(1)))) return(NA_real_)
-    # Stage 1: convert all three generated positions c_k = M f_k.
+    # r_k = M f_k; a_vec = u = r_2-r_1, b_vec = v = r_3-r_1, na = A, nb = B.
     positions <- lapply(sites, function(site) as.numeric(M %*% site$f))
     a_vec <- positions[[2]] - positions[[1]]
     b_vec <- positions[[3]] - positions[[1]]
@@ -658,26 +658,26 @@ propagate_angle_error <- function(bond_angles,
     if (!is.finite(na * nb) || na <= 1e-12 || nb <= 1e-12) return(NA_real_)
     C <- sum(a_vec * b_vec) / (na * nb)
     if (!is.finite(C) || abs(C) >= 1 - 1e-12) return(NA_real_)
-    # Stage 2: differentiate C = (a.b)/(|a||b|), then theta = acos(C).
-    # The central gradient is minus the sum of the two neighbor gradients.
+    # dC2 = grad_(r_2) C = v/(A*B)-C*u/A^2; dC3 = grad_(r_3) C = u/(A*B)-C*v/B^2.
+    # g_k = -grad_(r_k) C/sqrt(1-C^2); g = (g_1,g_2,g_3), with g_1 = -g_2-g_3.
     dC2 <- b_vec / (na * nb) - C * a_vec / na^2
     dC3 <- a_vec / (na * nb) - C * b_vec / nb^2
     g2 <- -dC2 / sqrt(1 - C^2)
     g3 <- -dC3 / sqrt(1 - C^2)
     g <- list(-g2 - g3, g2, g3)
-    # Stage 3: each cell input moves all three positions through dM/ds.
+    # dtheta/ds = sum_k g_k^T (dM/ds) f_k: accumulate all three positions for each s.
     gradient <- stats::setNames(vapply(geometry$dM, function(dMs)
       sum(vapply(seq_along(sites), function(k)
         sum(g[[k]] * as.numeric(dMs %*% sites[[k]]$f)), numeric(1))), numeric(1)),
       paste0("cell_", names(geometry$dM)))
-    # Stage 4: M^T g_k returns each Cartesian gradient to fractional space;
-    # the stored W mappings combine contributions from repeated parents.
+    # grad_(f_k) theta = M^T g_k; grad_(A_j) theta = sum_k J_kj^T M^T g_k.
+    # J_kj is W_k for a direct symmetry image; merged sites retain the averaged Jacobian.
     for (k in seq_along(sites))
       gradient <- uncertainty_add_parent(gradient, sites[[k]],
                                          as.numeric(t(M) %*% g[[k]]))
     variance <- uncertainty_variance(gradient, unit_cell_metrics,
                                      independent_coordinates, covariance)
-    # Stage 5: the gradient is in radians; report the angle SU in degrees.
+    # sigma_theta(degrees) = sqrt(grad_p(theta)^T Sigma_p grad_p(theta)) * 180/pi.
     if (is.na(variance) || variance < -1e-10) NA_real_ else sqrt(max(0, variance)) * 180 / pi
   }, numeric(1))
   result[, AngleError := errors]
