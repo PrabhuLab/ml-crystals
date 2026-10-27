@@ -24,10 +24,14 @@ propagate_angle_error(
 
 \item{independent_coordinates}{Original asymmetric sites and their uncertainties.}
 
-\item{covariance}{Optional named covariance matrix for independent inputs.}
+\item{covariance}{Optional named covariance matrix for independent inputs.
+Angular inputs must use radians: angular variances are in radians squared
+and cross-covariances must use the corresponding mixed units.}
 }
 \value{
-The input \code{bond_angles} data.table with a new 'AngleError' column.
+The input \code{bond_angles} data.table with a new 'AngleError' column,
+expressed in degrees. Input cell angles and their standard uncertainties
+are supplied in degrees and converted to radians internally.
 }
 \description{
 Calculates the standard uncertainty for each bond angle.

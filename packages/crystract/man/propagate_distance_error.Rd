@@ -24,7 +24,9 @@ propagate_distance_error(
 
 \item{independent_coordinates}{Original asymmetric sites and their uncertainties.}
 
-\item{covariance}{Optional named covariance matrix for independent inputs.}
+\item{covariance}{Optional named covariance matrix for independent inputs.
+Angular inputs must use radians: angular variances are in radians squared
+and cross-covariances must use the corresponding mixed units.}
 }
 \value{
 The input \code{bonded_pairs} data.table with a new 'DistanceError' column.
@@ -49,7 +51,9 @@ Here \eqn{\mathbf{A}_j} is the parent fractional-coordinate vector,
 With the fractional-coordinate differences defined above, the cell derivative is
 \deqn{\frac{\partial d}{\partial c}=
 \frac{c\Delta z^2+a\Delta x\Delta z\cos\beta+b\Delta y\Delta z\cos\alpha}{d}.}
-Cell angles and their standard uncertainties are converted to radians.
+Cell angles and their standard uncertainties are retained in degrees in
+\code{unit_cell_metrics} and converted to radians internally. Returned \code{Angle}
+and \code{AngleError} values use degrees.
 
 Shared generated-site parents are combined before evaluating this variance.
 Missing standard uncertainties yield \code{NA} unless a named covariance is supplied.

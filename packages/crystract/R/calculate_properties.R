@@ -378,6 +378,8 @@ uncertainty_cell <- function(unit_cell_metrics) {
     M <- rbind(c(a, b * cg, c * cb),
                c(0, b * sg, c * (ca - cb * cg) / sg),
                c(0, 0, c * v / sg))
+    # Matrix products sum over x/y/z components: r_i = sum_j M_ij f_j.
+    # Each dM entry is a separate cell derivative; the six parameters are not summed.
     # dM[[s]] = dM/ds: multiplying by f_k gives dr_k/ds for s = a,b,c,alpha,beta,gamma.
     # The [3,3] entries times z_f are dz_c/dalpha, dz_c/dbeta and dz_c/dgamma.
     dM <- list(
@@ -415,9 +417,11 @@ uncertainty_site <- function(label, atomic_coordinates, expanded_coords = NULL) 
 uncertainty_add_parent <- function(gradient, site, fractional_gradient) {
   # grad_(A_j) q = sum_k J_kj^T grad_(f_k) q; site$map[[parent]] is J_kj = df_k/dA_j.
   for (parent in names(site$map)) {
+    # Map this image's gradient to its original refined parent via the chain rule.
     contribution <- as.numeric(t(site$map[[parent]]) %*% fractional_gradient)
     for (axis in seq_along(contribution)) {
       key <- paste0(parent, ":", c("x", "y", "z")[axis])
+      # Add signed paths sharing one input before squaring, retaining cancellation and cross-terms.
       gradient[key] <- if (key %in% names(gradient)) gradient[key] + contribution[axis] else contribution[axis]
     }
   }
@@ -438,6 +442,11 @@ uncertainty_variance <- function(gradient, unit_cell_metrics,
       stop("covariance must name every independent input with a nonzero gradient")
     Sigma <- covariance[names(gradient), names(gradient), drop = FALSE]
     if (any(!is.finite(Sigma))) return(NA_real_)
+    # g_i = dq/dp_i was calculated by the distance/angle propagator and mapped to parents.
+    # t(gradient) is g^T; %*% is matrix multiplication, which performs the component sums.
+    # Thus g^T Sigma g = sum_i sum_j g_i * Sigma_ij * g_j = sigma_q^2.
+    # For two inputs: g1^2*sigma1^2 + g2^2*sigma2^2 + 2*g1*g2*cov(p1,p2).
+    # as.numeric() extracts the scalar variance; the caller takes sqrt() for standard uncertainty.
     return(as.numeric(t(gradient) %*% Sigma %*% gradient))
   }
   cell_su <- vapply(c("a", "b", "c", "alpha", "beta", "gamma"), function(name) {
@@ -454,6 +463,10 @@ uncertainty_variance <- function(gradient, unit_cell_metrics,
   }))
   su <- c(cell_su, atom_su)[names(gradient)]
   if (anyNA(su) || any(!is.finite(su)) || any(su < 0)) return(NA_real_)
+  # With diagonal Sigma, g^T Sigma g reduces to sum_i (g_i * sigma_i)^2.
+  # gradient already contains dq/dp_i; su contains sigma_i, not variances.
+  # (gradient * su)^2 returns one variance contribution per independent input.
+  # sum() adds them to one variance after shared-parent gradients have been combined.
   sum((gradient * su)^2)
 }
 
@@ -476,7 +489,9 @@ uncertainty_variance <- function(gradient, unit_cell_metrics,
 #' With the fractional-coordinate differences defined above, the cell derivative is
 #' \deqn{\frac{\partial d}{\partial c}=
 #' \frac{c\Delta z^2+a\Delta x\Delta z\cos\beta+b\Delta y\Delta z\cos\alpha}{d}.}
-#' Cell angles and their standard uncertainties are converted to radians.
+#' Cell angles and their standard uncertainties are retained in degrees in
+#' `unit_cell_metrics` and converted to radians internally. Returned `Angle`
+#' and `AngleError` values use degrees.
 #'
 #' Shared generated-site parents are combined before evaluating this variance.
 #' Missing standard uncertainties yield `NA` unless a named covariance is supplied.
@@ -490,6 +505,8 @@ uncertainty_variance <- function(gradient, unit_cell_metrics,
 #' @param expanded_coords Generated sites with `ParentJacobian` provenance.
 #' @param independent_coordinates Original asymmetric sites and their uncertainties.
 #' @param covariance Optional named covariance matrix for independent inputs.
+#'   Angular inputs must use radians: angular variances are in radians squared
+#'   and cross-covariances must use the corresponding mixed units.
 #' @return The input `bonded_pairs` data.table with a new 'DistanceError' column.
 #' @family error propagators
 #' @export
@@ -531,6 +548,8 @@ propagate_distance_error <- function(bonded_pairs,
     if (!is.finite(d) || d <= 1e-12) return(NA_real_)
     # dd/ds = (M Delta_f)^T (dM/ds) Delta_f / d for each cell parameter s.
     # For s=c: dd/dc = (c*dz^2 + a*dx*dz*cos(beta) + b*dy*dz*cos(alpha))/d.
+    # The product below returns three component values; sum() adds them to one dot product.
+    # Dividing that scalar by d gives the derivative for one cell parameter.
     cart_delta <- as.numeric(M %*% delta)
     gradient <- stats::setNames(vapply(geometry$dM, function(dMs)
       sum(cart_delta * as.numeric(dMs %*% delta)) / d, numeric(1)),
@@ -597,7 +616,11 @@ propagate_distance_error <- function(bonded_pairs,
 #' @param unit_cell_metrics Data.table with unit cell parameters and errors.
 #' @param independent_coordinates Original asymmetric sites and their uncertainties.
 #' @param covariance Optional named covariance matrix for independent inputs.
-#' @return The input `bond_angles` data.table with a new 'AngleError' column.
+#'   Angular inputs must use radians: angular variances are in radians squared
+#'   and cross-covariances must use the corresponding mixed units.
+#' @return The input `bond_angles` data.table with a new 'AngleError' column,
+#'   expressed in degrees. Input cell angles and their standard uncertainties
+#'   are supplied in degrees and converted to radians internally.
 #' @family error propagators
 #' @export
 #' @examples
@@ -654,8 +677,11 @@ propagate_angle_error <- function(bond_angles,
     positions <- lapply(sites, function(site) as.numeric(M %*% site$f))
     a_vec <- positions[[2]] - positions[[1]]
     b_vec <- positions[[3]] - positions[[1]]
+    # a_vec^2 gives three squared components; sum() adds them before sqrt() gives one length.
     na <- sqrt(sum(a_vec^2)); nb <- sqrt(sum(b_vec^2))
     if (!is.finite(na * nb) || na <= 1e-12 || nb <= 1e-12) return(NA_real_)
+    # a_vec * b_vec returns c(u_x*v_x, u_y*v_y, u_z*v_z), not a scalar.
+    # sum() adds those three products to give the scalar dot product needed for cos(theta).
     C <- sum(a_vec * b_vec) / (na * nb)
     if (!is.finite(C) || abs(C) >= 1 - 1e-12) return(NA_real_)
     # dC2 = grad_(r_2) C = v/(A*B)-C*u/A^2; dC3 = grad_(r_3) C = u/(A*B)-C*v/B^2.
@@ -664,8 +690,11 @@ propagate_angle_error <- function(bond_angles,
     dC3 <- a_vec / (na * nb) - C * b_vec / nb^2
     g2 <- -dC2 / sqrt(1 - C^2)
     g3 <- -dC3 / sqrt(1 - C^2)
+    # Moving the central atom changes both bond vectors with a minus sign.
     g <- list(-g2 - g3, g2, g3)
-    # dtheta/ds = sum_k g_k^T (dM/ds) f_k: accumulate all three positions for each s.
+    # dtheta/ds = sum_k g_k^T (dM/ds) f_k: all three positions share the same cell.
+    # The inner product expression returns three x/y/z products; inner sum() makes one scalar per atom.
+    # vapply() returns those three atom contributions; outer sum() adds them for one cell derivative.
     gradient <- stats::setNames(vapply(geometry$dM, function(dMs)
       sum(vapply(seq_along(sites), function(k)
         sum(g[[k]] * as.numeric(dMs %*% sites[[k]]$f)), numeric(1))), numeric(1)),
