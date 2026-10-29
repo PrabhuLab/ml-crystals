@@ -212,12 +212,12 @@ calculate_weighted_neighbor_counts <- function(bonded_pairs_table, atomic_coordi
 #'   of its bonded neighbors.
 #' @details
 #' Atom \eqn{A_1} is central and
-#' \eqn{\mathbf{c}_k=(x_{ck},y_{ck},z_{ck})^{\mathsf T}=\mathbf{M}\mathbf{f}_k}.
-#' Set \eqn{\mathbf{a}=\mathbf{c}_2-\mathbf{c}_1} and
-#' \eqn{\mathbf{b}=\mathbf{c}_3-\mathbf{c}_1}. Then
-#' \deqn{C=\frac{\mathbf{a}\cdot\mathbf{b}}{\lVert\mathbf{a}\rVert\lVert\mathbf{b}\rVert},
+#' \eqn{\mathbf{r}_k=(x_{ck},y_{ck},z_{ck})^{\mathsf T}=\mathbf{M}\mathbf{f}_k}.
+#' Set \eqn{\mathbf{u}=\mathbf{r}_2-\mathbf{r}_1} and
+#' \eqn{\mathbf{v}=\mathbf{r}_3-\mathbf{r}_1}. Then
+#' \deqn{C=\frac{\mathbf{u}\cdot\mathbf{v}}{\lVert\mathbf{u}\rVert\lVert\mathbf{v}\rVert},
 #' \qquad \theta=\arccos C.}
-#' Bold \eqn{\mathbf{a},\mathbf{b}} are bond vectors; scalar \eqn{a,b,c}
+#' Bold \eqn{\mathbf{u},\mathbf{v}} are bond vectors; scalar \eqn{a,b,c}
 #' are cell lengths. The implementation uses the equivalent fractional-coordinate
 #' metric product, with \eqn{\mathbf{G}=\mathbf{M}^{\mathsf T}\mathbf{M}},
 #' and returns \eqn{\theta} in degrees.
@@ -299,52 +299,52 @@ calculate_angles <- function(bonded_pairs,
   angle_triplets[all_coords, on = .(Neighbor1_sorted = Label), `:=`(n1x = i.x_a, n1y = i.y_b, n1z = i.z_c)]
   angle_triplets[all_coords, on = .(Neighbor2_sorted = Label), `:=`(n2x = i.x_a, n2y = i.y_b, n2z = i.z_c)]
 
-  # Calculate vectors v1 (CentralAtom -> Neighbor1) and v2 (CentralAtom -> Neighbor2)
+  # u_f = f_2-f_1 and v_f = f_3-f_1; u = M u_f and v = M v_f in the formulas.
   angle_triplets[, `:=`(
-    xf1 = n1x - cx,
-    yf1 = n1y - cy,
-    zf1 = n1z - cz,
-    xf2 = n2x - cx,
-    yf2 = n2y - cy,
-    zf2 = n2z - cz
+    u_f_x = n1x - cx,
+    u_f_y = n1y - cy,
+    u_f_z = n1z - cz,
+    v_f_x = n2x - cx,
+    v_f_y = n2y - cy,
+    v_f_z = n2z - cz
   )]
 
-  # Vectorized calculation of dot product using metric tensor
-  angle_triplets[, dot_product := (
-    xf1 * xf2 * a^2 + yf1 * yf2 * b^2 + zf1 * zf2 * c^2 +
-      (xf1 * yf2 + yf1 * xf2) * a * b * cos_gamma +
-      (xf1 * zf2 + zf1 * xf2) * a * c * cos_beta +
-      (yf1 * zf2 + zf1 * yf2) * b * c * cos_alpha
+  # u_dot_v = u_f^T G v_f = u^T v, with G = M^T M.
+  angle_triplets[, u_dot_v := (
+    u_f_x * v_f_x * a^2 + u_f_y * v_f_y * b^2 + u_f_z * v_f_z * c^2 +
+      (u_f_x * v_f_y + u_f_y * v_f_x) * a * b * cos_gamma +
+      (u_f_x * v_f_z + u_f_z * v_f_x) * a * c * cos_beta +
+      (u_f_y * v_f_z + u_f_z * v_f_y) * b * c * cos_alpha
   )]
 
   # Vectorized calculation of squared magnitudes for both vectors
-  angle_triplets[, mag_sq1 := (
-    xf1^2 * a^2 + yf1^2 * b^2 + zf1^2 * c^2 +
-      2 * xf1 * yf1 * a * b * cos_gamma +
-      2 * xf1 * zf1 * a * c * cos_beta +
-      2 * yf1 * zf1 * b * c * cos_alpha
+  angle_triplets[, A_squared := (
+    u_f_x^2 * a^2 + u_f_y^2 * b^2 + u_f_z^2 * c^2 +
+      2 * u_f_x * u_f_y * a * b * cos_gamma +
+      2 * u_f_x * u_f_z * a * c * cos_beta +
+      2 * u_f_y * u_f_z * b * c * cos_alpha
   )]
-  angle_triplets[, mag_sq2 := (
-    xf2^2 * a^2 + yf2^2 * b^2 + zf2^2 * c^2 +
-      2 * xf2 * yf2 * a * b * cos_gamma +
-      2 * xf2 * zf2 * a * c * cos_beta +
-      2 * yf2 * zf2 * b * c * cos_alpha
+  angle_triplets[, B_squared := (
+    v_f_x^2 * a^2 + v_f_y^2 * b^2 + v_f_z^2 * c^2 +
+      2 * v_f_x * v_f_y * a * b * cos_gamma +
+      2 * v_f_x * v_f_z * a * c * cos_beta +
+      2 * v_f_y * v_f_z * b * c * cos_alpha
   )]
 
   # Calculate magnitudes, guarding against division by zero for very small lengths
   angle_triplets[, `:=`(
-    mag1 = sqrt(pmax(mag_sq1, 0)),
+    A = sqrt(pmax(A_squared, 0)),
     # pmax(...,0) to handle potential negative due to FP error
-    mag2 = sqrt(pmax(mag_sq2, 0))
+    B = sqrt(pmax(B_squared, 0))
   )]
 
-  # Calculate cos_theta, guarding against division by zero or invalid acos input range [-1, 1]
-  angle_triplets[, cos_theta := pmin(pmax(dot_product / (mag1 * mag2), -1.0), 1.0)]
-  angle_triplets[mag1 <= 1e-10 |
-                   mag2 <= 1e-10, cos_theta := NA_real_] # Set to NA if magnitudes are too small
+  # Calculate C, guarding against division by zero or invalid acos input range [-1, 1]
+  angle_triplets[, C := pmin(pmax(u_dot_v / (A * B), -1.0), 1.0)]
+  angle_triplets[A <= 1e-10 |
+                   B <= 1e-10, C := NA_real_] # Set to NA if magnitudes are too small
 
   # Calculate angle in degrees
-  angle_triplets[, Angle := acos(cos_theta) * 180 / pi]
+  angle_triplets[, Angle := acos(C) * 180 / pi]
 
   # Filter out NA angles (if any, due to impossible geometry) and select final columns
   result_angles <- angle_triplets[!is.na(Angle), .(
@@ -368,31 +368,31 @@ uncertainty_cell <- function(unit_cell_metrics) {
             beta = unit_cell_metrics$`_cell_angle_beta` * pi / 180,
             gamma = unit_cell_metrics$`_cell_angle_gamma` * pi / 180)
   with(as.list(cell), {
-    ca <- cos(alpha); cb <- cos(beta); cg <- cos(gamma)
-    sa <- sin(alpha); sb <- sin(beta); sg <- sin(gamma)
-    D <- 1 - ca^2 - cb^2 - cg^2 + 2 * ca * cb * cg
-    if (any(!is.finite(cell)) || D <= 0 || abs(sg) < 1e-12)
+    cos_alpha <- cos(alpha); cos_beta <- cos(beta); cos_gamma <- cos(gamma)
+    sin_alpha <- sin(alpha); sin_beta <- sin(beta); sin_gamma <- sin(gamma)
+    D <- 1 - cos_alpha^2 - cos_beta^2 - cos_gamma^2 + 2 * cos_alpha * cos_beta * cos_gamma
+    if (any(!is.finite(cell)) || D <= 0 || abs(sin_gamma) < 1e-12)
       stop("Invalid unit cell for uncertainty propagation")
-    v <- sqrt(D)
-    # r_k = M f_k; v = sqrt(D), and ca/cb/cg and sa/sb/sg denote cos/sin of cell angles.
-    M <- rbind(c(a, b * cg, c * cb),
-               c(0, b * sg, c * (ca - cb * cg) / sg),
-               c(0, 0, c * v / sg))
+    sqrt_D <- sqrt(D)
+    # r_k = M f_k; sqrt_D = sqrt(D); trigonometric names identify their cell angles.
+    M <- rbind(c(a, b * cos_gamma, c * cos_beta),
+               c(0, b * sin_gamma, c * (cos_alpha - cos_beta * cos_gamma) / sin_gamma),
+               c(0, 0, c * sqrt_D / sin_gamma))
     # Matrix products sum over x/y/z components: r_i = sum_j M_ij f_j.
     # Each dM entry is a separate cell derivative; the six parameters are not summed.
     # dM[[s]] = dM/ds: multiplying by f_k gives dr_k/ds for s = a,b,c,alpha,beta,gamma.
     # The [3,3] entries times z_f are dz_c/dalpha, dz_c/dbeta and dz_c/dgamma.
     dM <- list(
       a = rbind(c(1, 0, 0), c(0, 0, 0), c(0, 0, 0)),
-      b = rbind(c(0, cg, 0), c(0, sg, 0), c(0, 0, 0)),
-      c = rbind(c(0, 0, cb), c(0, 0, (ca - cb * cg) / sg), c(0, 0, v / sg)),
-      alpha = rbind(c(0, 0, 0), c(0, 0, -c * sa / sg),
-                    c(0, 0, c * sa * (ca - cb * cg) / (v * sg))),
-      beta = rbind(c(0, 0, -c * sb), c(0, 0, c * sb * cg / sg),
-                   c(0, 0, c * sb * (cb - ca * cg) / (v * sg))),
-      gamma = rbind(c(0, -b * sg, 0),
-                    c(0, b * cg, c * (cb - ca * cg) / sg^2),
-                    c(0, 0, c * (sg^2 * (cg - ca * cb) - D * cg) / (v * sg^2)))
+      b = rbind(c(0, cos_gamma, 0), c(0, sin_gamma, 0), c(0, 0, 0)),
+      c = rbind(c(0, 0, cos_beta), c(0, 0, (cos_alpha - cos_beta * cos_gamma) / sin_gamma), c(0, 0, sqrt_D / sin_gamma)),
+      alpha = rbind(c(0, 0, 0), c(0, 0, -c * sin_alpha / sin_gamma),
+                    c(0, 0, c * sin_alpha * (cos_alpha - cos_beta * cos_gamma) / (sqrt_D * sin_gamma))),
+      beta = rbind(c(0, 0, -c * sin_beta), c(0, 0, c * sin_beta * cos_gamma / sin_gamma),
+                   c(0, 0, c * sin_beta * (cos_beta - cos_alpha * cos_gamma) / (sqrt_D * sin_gamma))),
+      gamma = rbind(c(0, -b * sin_gamma, 0),
+                    c(0, b * cos_gamma, c * (cos_beta - cos_alpha * cos_gamma) / sin_gamma^2),
+                    c(0, 0, c * (sin_gamma^2 * (cos_gamma - cos_alpha * cos_beta) - D * cos_gamma) / (sqrt_D * sin_gamma^2)))
     )
     list(M = M, dM = dM)
   })
@@ -431,7 +431,7 @@ uncertainty_add_parent <- function(gradient, site, fractional_gradient) {
 uncertainty_variance <- function(gradient, unit_cell_metrics,
                                  independent_coordinates, covariance = NULL) {
   # gradient = grad_p q and covariance = Sigma_p: sigma_q^2 = gradient^T Sigma_p gradient.
-  # With diagonal Sigma_p, su_i = sigma_(p_i) and sigma_q^2 = sum_i (gradient_i * su_i)^2.
+  # With diagonal Sigma_p, sigma_p[i] = sigma_(p_i) and sigma_q^2 = sum_i (gradient_i * sigma_p[i])^2.
   if (any(!is.finite(gradient))) return(NA_real_)
   gradient <- gradient[abs(gradient) > 1e-12]
   if (!length(gradient)) return(0)
@@ -440,34 +440,34 @@ uncertainty_variance <- function(gradient, unit_cell_metrics,
         !all(names(gradient) %in% rownames(covariance)) ||
         !all(names(gradient) %in% colnames(covariance)))
       stop("covariance must name every independent input with a nonzero gradient")
-    Sigma <- covariance[names(gradient), names(gradient), drop = FALSE]
-    if (any(!is.finite(Sigma))) return(NA_real_)
+    Sigma_p <- covariance[names(gradient), names(gradient), drop = FALSE]
+    if (any(!is.finite(Sigma_p))) return(NA_real_)
     # g_i = dq/dp_i was calculated by the distance/angle propagator and mapped to parents.
     # t(gradient) is g^T; %*% is matrix multiplication, which performs the component sums.
-    # Thus g^T Sigma g = sum_i sum_j g_i * Sigma_ij * g_j = sigma_q^2.
+    # Thus g^T Sigma_p g = sum_i sum_j g_i * Sigma_ij * g_j = sigma_q^2.
     # For two inputs: g1^2*sigma1^2 + g2^2*sigma2^2 + 2*g1*g2*cov(p1,p2).
     # as.numeric() extracts the scalar variance; the caller takes sqrt() for standard uncertainty.
-    return(as.numeric(t(gradient) %*% Sigma %*% gradient))
+    return(as.numeric(t(gradient) %*% Sigma_p %*% gradient))
   }
-  cell_su <- vapply(c("a", "b", "c", "alpha", "beta", "gamma"), function(name) {
+  cell_sigma <- vapply(c("a", "b", "c", "alpha", "beta", "gamma"), function(name) {
     field <- paste0(if (name %in% c("a", "b", "c"))
       "_cell_length_" else "_cell_angle_", name, "_error")
     value <- unit_cell_metrics[[field]]
     if (!length(value)) return(NA_real_)
     as.numeric(value[[1]]) * if (name %in% c("a", "b", "c")) 1 else pi / 180
   }, numeric(1))
-  names(cell_su) <- paste0("cell_", names(cell_su))
-  atom_su <- unlist(lapply(seq_len(nrow(independent_coordinates)), function(i) {
+  names(cell_sigma) <- paste0("cell_", names(cell_sigma))
+  coordinate_sigma <- unlist(lapply(seq_len(nrow(independent_coordinates)), function(i) {
     x <- unlist(independent_coordinates[i, .(x_error, y_error, z_error)], use.names = FALSE)
     stats::setNames(x, paste0(independent_coordinates$Label[i], ":", c("x", "y", "z")))
   }))
-  su <- c(cell_su, atom_su)[names(gradient)]
-  if (anyNA(su) || any(!is.finite(su)) || any(su < 0)) return(NA_real_)
-  # With diagonal Sigma, g^T Sigma g reduces to sum_i (g_i * sigma_i)^2.
-  # gradient already contains dq/dp_i; su contains sigma_i, not variances.
-  # (gradient * su)^2 returns one variance contribution per independent input.
+  sigma_p <- c(cell_sigma, coordinate_sigma)[names(gradient)]
+  if (anyNA(sigma_p) || any(!is.finite(sigma_p)) || any(sigma_p < 0)) return(NA_real_)
+  # With diagonal Sigma_p, g^T Sigma_p g reduces to sum_i (g_i * sigma_i)^2.
+  # gradient already contains dq/dp_i; sigma_p contains sigma_i, not variances.
+  # (gradient * sigma_p)^2 returns one variance contribution per independent input.
   # sum() adds them to one variance after shared-parent gradients have been combined.
-  sum((gradient * su)^2)
+  sum((gradient * sigma_p)^2)
 }
 
 #' @title Propagate Distance Error
@@ -542,23 +542,23 @@ propagate_distance_error <- function(bonded_pairs,
     first <- uncertainty_site(result$Atom1[i], atomic_coordinates, expanded_coords)
     second <- uncertainty_site(result$Atom2[i], atomic_coordinates, expanded_coords)
     if (is.null(first) || is.null(second)) return(NA_real_)
-    # delta = Delta_f = f_1-f_2; G = M^T M; d = sqrt(Delta_f^T G Delta_f).
-    delta <- first$f - second$f
-    d <- sqrt(as.numeric(t(delta) %*% G %*% delta))
+    # delta_f = f_1-f_2; M_delta_f = M delta_f; d = sqrt(delta_f^T G delta_f).
+    delta_f <- first$f - second$f
+    d <- sqrt(as.numeric(t(delta_f) %*% G %*% delta_f))
     if (!is.finite(d) || d <= 1e-12) return(NA_real_)
     # dd/ds = (M Delta_f)^T (dM/ds) Delta_f / d for each cell parameter s.
     # For s=c: dd/dc = (c*dz^2 + a*dx*dz*cos(beta) + b*dy*dz*cos(alpha))/d.
     # The product below returns three component values; sum() adds them to one dot product.
     # Dividing that scalar by d gives the derivative for one cell parameter.
-    cart_delta <- as.numeric(M %*% delta)
-    gradient <- stats::setNames(vapply(geometry$dM, function(dMs)
-      sum(cart_delta * as.numeric(dMs %*% delta)) / d, numeric(1)),
+    M_delta_f <- as.numeric(M %*% delta_f)
+    gradient <- stats::setNames(vapply(geometry$dM, function(dM_ds)
+      sum(M_delta_f * as.numeric(dM_ds %*% delta_f)) / d, numeric(1)),
       paste0("cell_", names(geometry$dM)))
-    # h_1 = grad_(f_1) d = G Delta_f/d; h_2 = grad_(f_2) d = -h_1. Shared parents
+    # grad_d_f1 = h_1 = grad_(f_1) d; the second-site gradient is -h_1. Shared parents
     # contribute sum_k J_kj^T h_k before sigma_d^2 = grad_p(d)^T Sigma_p grad_p(d).
-    h <- as.numeric(G %*% delta) / d
-    gradient <- uncertainty_add_parent(gradient, first, h)
-    gradient <- uncertainty_add_parent(gradient, second, -h)
+    grad_d_f1 <- as.numeric(G %*% delta_f) / d
+    gradient <- uncertainty_add_parent(gradient, first, grad_d_f1)
+    gradient <- uncertainty_add_parent(gradient, second, -grad_d_f1)
     variance <- uncertainty_variance(gradient, unit_cell_metrics,
                                      independent_coordinates, covariance)
     if (is.na(variance) || variance < -1e-10) NA_real_ else sqrt(max(0, variance))
@@ -571,17 +571,17 @@ propagate_distance_error <- function(bonded_pairs,
 #' @title Propagate Angle Error
 #' @description Calculates the standard uncertainty for each bond angle.
 #' @details
-#' Use the notation \eqn{\mathbf{c}_k=\mathbf{M}\mathbf{f}_k},
-#' \eqn{\mathbf{a}=\mathbf{c}_2-\mathbf{c}_1},
-#' \eqn{\mathbf{b}=\mathbf{c}_3-\mathbf{c}_1} and
-#' \eqn{C=\mathbf{a}\cdot\mathbf{b}/(\lVert\mathbf{a}\rVert\lVert\mathbf{b}\rVert)}.
+#' Use the notation \eqn{\mathbf{r}_k=\mathbf{M}\mathbf{f}_k},
+#' \eqn{\mathbf{u}=\mathbf{r}_2-\mathbf{r}_1},
+#' \eqn{\mathbf{v}=\mathbf{r}_3-\mathbf{r}_1} and
+#' \eqn{C=\mathbf{u}\cdot\mathbf{v}/(\lVert\mathbf{u}\rVert\lVert\mathbf{v}\rVert)}.
 #' The Cartesian gradients are
-#' \deqn{\nabla_{\mathbf{c}_2}C=\frac{\mathbf{b}}{\lVert\mathbf{a}\rVert\lVert\mathbf{b}\rVert}
-#' -\frac{C\mathbf{a}}{\lVert\mathbf{a}\rVert^2},\qquad
-#' \nabla_{\mathbf{c}_3}C=\frac{\mathbf{a}}{\lVert\mathbf{a}\rVert\lVert\mathbf{b}\rVert}
-#' -\frac{C\mathbf{b}}{\lVert\mathbf{b}\rVert^2}.}
-#' \deqn{\nabla_{\mathbf{c}_1}C=-\nabla_{\mathbf{c}_2}C-\nabla_{\mathbf{c}_3}C,
-#' \qquad \mathbf{g}_k=\nabla_{\mathbf{c}_k}\theta=-\frac{\nabla_{\mathbf{c}_k}C}{\sqrt{1-C^2}}.}
+#' \deqn{\nabla_{\mathbf{r}_2}C=\frac{\mathbf{v}}{\lVert\mathbf{u}\rVert\lVert\mathbf{v}\rVert}
+#' -\frac{C\mathbf{u}}{\lVert\mathbf{u}\rVert^2},\qquad
+#' \nabla_{\mathbf{r}_3}C=\frac{\mathbf{u}}{\lVert\mathbf{u}\rVert\lVert\mathbf{v}\rVert}
+#' -\frac{C\mathbf{v}}{\lVert\mathbf{v}\rVert^2}.}
+#' \deqn{\nabla_{\mathbf{r}_1}C=-\nabla_{\mathbf{r}_2}C-\nabla_{\mathbf{r}_3}C,
+#' \qquad \mathbf{g}_k=\nabla_{\mathbf{r}_k}\theta=-\frac{\nabla_{\mathbf{r}_k}C}{\sqrt{1-C^2}}.}
 #' For each cell parameter \eqn{s\in\{a,b,c,\alpha,\beta,\gamma\}} and
 #' parent \eqn{\mathbf{A}_j}, accumulate contributions before forming the variance:
 #' \deqn{\frac{\partial\theta}{\partial s}=\sum_{k=1}^3\mathbf{g}_k^{\mathsf T}
@@ -673,31 +673,31 @@ propagate_angle_error <- function(bond_angles,
     sites <- lapply(labels, uncertainty_site, atomic_coordinates = atomic_coordinates,
                     expanded_coords = expanded_coords)
     if (any(vapply(sites, is.null, logical(1)))) return(NA_real_)
-    # r_k = M f_k; a_vec = u = r_2-r_1, b_vec = v = r_3-r_1, na = A, nb = B.
-    positions <- lapply(sites, function(site) as.numeric(M %*% site$f))
-    a_vec <- positions[[2]] - positions[[1]]
-    b_vec <- positions[[3]] - positions[[1]]
-    # a_vec^2 gives three squared components; sum() adds them before sqrt() gives one length.
-    na <- sqrt(sum(a_vec^2)); nb <- sqrt(sum(b_vec^2))
-    if (!is.finite(na * nb) || na <= 1e-12 || nb <= 1e-12) return(NA_real_)
-    # a_vec * b_vec returns c(u_x*v_x, u_y*v_y, u_z*v_z), not a scalar.
+    # u = r_2-r_1 and v = r_3-r_1; A = ||u||, B = ||v||, C = cos(theta).
+    r <- lapply(sites, function(site) as.numeric(M %*% site$f))
+    u <- r[[2]] - r[[1]]
+    v <- r[[3]] - r[[1]]
+    # u^2 gives three squared components; sum() adds them before sqrt() gives one length.
+    A <- sqrt(sum(u^2)); B <- sqrt(sum(v^2))
+    if (!is.finite(A * B) || A <= 1e-12 || B <= 1e-12) return(NA_real_)
+    # u * v returns c(u_x*v_x, u_y*v_y, u_z*v_z), not a scalar.
     # sum() adds those three products to give the scalar dot product needed for cos(theta).
-    C <- sum(a_vec * b_vec) / (na * nb)
+    C <- sum(u * v) / (A * B)
     if (!is.finite(C) || abs(C) >= 1 - 1e-12) return(NA_real_)
-    # dC2 = grad_(r_2) C = v/(A*B)-C*u/A^2; dC3 = grad_(r_3) C = u/(A*B)-C*v/B^2.
+    # grad_C_r2 = grad_(r_2) C = v/(A*B)-C*u/A^2; grad_C_r3 = grad_(r_3) C = u/(A*B)-C*v/B^2.
     # g_k = -grad_(r_k) C/sqrt(1-C^2); g = (g_1,g_2,g_3), with g_1 = -g_2-g_3.
-    dC2 <- b_vec / (na * nb) - C * a_vec / na^2
-    dC3 <- a_vec / (na * nb) - C * b_vec / nb^2
-    g2 <- -dC2 / sqrt(1 - C^2)
-    g3 <- -dC3 / sqrt(1 - C^2)
+    grad_C_r2 <- v / (A * B) - C * u / A^2
+    grad_C_r3 <- u / (A * B) - C * v / B^2
+    g2 <- -grad_C_r2 / sqrt(1 - C^2)
+    g3 <- -grad_C_r3 / sqrt(1 - C^2)
     # Moving the central atom changes both bond vectors with a minus sign.
     g <- list(-g2 - g3, g2, g3)
-    # dtheta/ds = sum_k g_k^T (dM/ds) f_k: all three positions share the same cell.
+    # dtheta/ds = sum_k g_k^T (dM/ds) f_k: all three r share the same cell.
     # The inner product expression returns three x/y/z products; inner sum() makes one scalar per atom.
     # vapply() returns those three atom contributions; outer sum() adds them for one cell derivative.
-    gradient <- stats::setNames(vapply(geometry$dM, function(dMs)
+    gradient <- stats::setNames(vapply(geometry$dM, function(dM_ds)
       sum(vapply(seq_along(sites), function(k)
-        sum(g[[k]] * as.numeric(dMs %*% sites[[k]]$f)), numeric(1))), numeric(1)),
+        sum(g[[k]] * as.numeric(dM_ds %*% sites[[k]]$f)), numeric(1))), numeric(1)),
       paste0("cell_", names(geometry$dM)))
     # grad_(f_k) theta = M^T g_k; grad_(A_j) theta = sum_k J_kj^T M^T g_k.
     # J_kj is W_k for a direct symmetry image; merged sites retain the averaged Jacobian.

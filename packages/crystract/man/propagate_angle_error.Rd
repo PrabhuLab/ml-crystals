@@ -37,17 +37,17 @@ are supplied in degrees and converted to radians internally.
 Calculates the standard uncertainty for each bond angle.
 }
 \details{
-Use the notation \eqn{\mathbf{c}_k=\mathbf{M}\mathbf{f}_k},
-\eqn{\mathbf{a}=\mathbf{c}_2-\mathbf{c}_1},
-\eqn{\mathbf{b}=\mathbf{c}_3-\mathbf{c}_1} and
-\eqn{C=\mathbf{a}\cdot\mathbf{b}/(\lVert\mathbf{a}\rVert\lVert\mathbf{b}\rVert)}.
+Use the notation \eqn{\mathbf{r}_k=\mathbf{M}\mathbf{f}_k},
+\eqn{\mathbf{u}=\mathbf{r}_2-\mathbf{r}_1},
+\eqn{\mathbf{v}=\mathbf{r}_3-\mathbf{r}_1} and
+\eqn{C=\mathbf{u}\cdot\mathbf{v}/(\lVert\mathbf{u}\rVert\lVert\mathbf{v}\rVert)}.
 The Cartesian gradients are
-\deqn{\nabla_{\mathbf{c}_2}C=\frac{\mathbf{b}}{\lVert\mathbf{a}\rVert\lVert\mathbf{b}\rVert}
--\frac{C\mathbf{a}}{\lVert\mathbf{a}\rVert^2},\qquad
-\nabla_{\mathbf{c}_3}C=\frac{\mathbf{a}}{\lVert\mathbf{a}\rVert\lVert\mathbf{b}\rVert}
--\frac{C\mathbf{b}}{\lVert\mathbf{b}\rVert^2}.}
-\deqn{\nabla_{\mathbf{c}_1}C=-\nabla_{\mathbf{c}_2}C-\nabla_{\mathbf{c}_3}C,
-\qquad \mathbf{g}_k=\nabla_{\mathbf{c}_k}\theta=-\frac{\nabla_{\mathbf{c}_k}C}{\sqrt{1-C^2}}.}
+\deqn{\nabla_{\mathbf{r}_2}C=\frac{\mathbf{v}}{\lVert\mathbf{u}\rVert\lVert\mathbf{v}\rVert}
+-\frac{C\mathbf{u}}{\lVert\mathbf{u}\rVert^2},\qquad
+\nabla_{\mathbf{r}_3}C=\frac{\mathbf{u}}{\lVert\mathbf{u}\rVert\lVert\mathbf{v}\rVert}
+-\frac{C\mathbf{v}}{\lVert\mathbf{v}\rVert^2}.}
+\deqn{\nabla_{\mathbf{r}_1}C=-\nabla_{\mathbf{r}_2}C-\nabla_{\mathbf{r}_3}C,
+\qquad \mathbf{g}_k=\nabla_{\mathbf{r}_k}\theta=-\frac{\nabla_{\mathbf{r}_k}C}{\sqrt{1-C^2}}.}
 For each cell parameter \eqn{s\in\{a,b,c,\alpha,\beta,\gamma\}} and
 parent \eqn{\mathbf{A}_j}, accumulate contributions before forming the variance:
 \deqn{\frac{\partial\theta}{\partial s}=\sum_{k=1}^3\mathbf{g}_k^{\mathsf T}

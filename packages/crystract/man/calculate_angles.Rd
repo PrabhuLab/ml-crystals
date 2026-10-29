@@ -29,12 +29,12 @@ of its bonded neighbors.
 }
 \details{
 Atom \eqn{A_1} is central and
-\eqn{\mathbf{c}_k=(x_{ck},y_{ck},z_{ck})^{\mathsf T}=\mathbf{M}\mathbf{f}_k}.
-Set \eqn{\mathbf{a}=\mathbf{c}_2-\mathbf{c}_1} and
-\eqn{\mathbf{b}=\mathbf{c}_3-\mathbf{c}_1}. Then
-\deqn{C=\frac{\mathbf{a}\cdot\mathbf{b}}{\lVert\mathbf{a}\rVert\lVert\mathbf{b}\rVert},
+\eqn{\mathbf{r}_k=(x_{ck},y_{ck},z_{ck})^{\mathsf T}=\mathbf{M}\mathbf{f}_k}.
+Set \eqn{\mathbf{u}=\mathbf{r}_2-\mathbf{r}_1} and
+\eqn{\mathbf{v}=\mathbf{r}_3-\mathbf{r}_1}. Then
+\deqn{C=\frac{\mathbf{u}\cdot\mathbf{v}}{\lVert\mathbf{u}\rVert\lVert\mathbf{v}\rVert},
 \qquad \theta=\arccos C.}
-Bold \eqn{\mathbf{a},\mathbf{b}} are bond vectors; scalar \eqn{a,b,c}
+Bold \eqn{\mathbf{u},\mathbf{v}} are bond vectors; scalar \eqn{a,b,c}
 are cell lengths. The implementation uses the equivalent fractional-coordinate
 metric product, with \eqn{\mathbf{G}=\mathbf{M}^{\mathsf T}\mathbf{M}},
 and returns \eqn{\theta} in degrees.
